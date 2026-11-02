@@ -1,7 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -39,8 +44,31 @@ internal static class Program
 internal sealed class MainForm : Form
 {
     private readonly WebView2 _web = new();
+    private readonly HttpClient _liveHttp = new() { Timeout = TimeSpan.FromSeconds(25) };
+    private System.Windows.Forms.Timer? _liveTimer;
+    private bool _liveBusy;
     private int _savedW;
     private int _savedH;
+
+    private sealed class LiveRow
+    {
+        public string Symbol { get; set; } = "";
+        public string BaseAsset { get; set; } = "";
+        public double Price { get; set; }
+        public double Change24h { get; set; }
+        public double Change1m { get; set; }
+        public double Change5m { get; set; }
+        public double QuoteVolume24h { get; set; }
+        public double OiNotional { get; set; }
+        public double Oi5m { get; set; }
+        public double Oi15m { get; set; }
+        public double Pullback { get; set; }
+        public double Score { get; set; }
+        public string Stage { get; set; } = "low";
+        public string StageLabel { get; set; } = "";
+        public bool Focus { get; set; }
+        public string StateLabel { get; set; } = "";
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct RECT { public int Left, Top, Right, Bottom; }
@@ -198,6 +226,7 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.NavigationCompleted += (_, args) =>
             {
                 try { File.AppendAllText(log, $"[{DateTime.Now:O}] nav done ok={args.IsSuccess} err={args.WebErrorStatus}\r\n"); } catch { }
+                if (args.IsSuccess) StartLiveBridge();
             };
             _web.CoreWebView2.ProcessFailed += (_, args) =>
             {
@@ -213,7 +242,7 @@ internal sealed class MainForm : Form
                 return;
             }
 
-            var uri = new Uri(page).AbsoluteUri + "?v=20261102b#neural";
+            var uri = new Uri(page).AbsoluteUri + "?v=20261102-live#neural";
             File.AppendAllText(log, $"[{DateTime.Now:O}] navigating {uri}\r\n");
             _web.CoreWebView2.Navigate(uri);
         }
@@ -229,6 +258,102 @@ internal sealed class MainForm : Form
                 // Never show a launch dialog; close silently if WebView2 is unavailable.
             }
             Close();
+        }
+    }
+
+    private void StartLiveBridge()
+    {
+        if (_liveTimer != null) return;
+        _liveTimer = new System.Windows.Forms.Timer { Interval = 20000 };
+        _liveTimer.Tick += async (_, _) => await PullLiveAsync();
+        _liveTimer.Start();
+        _ = PullLiveAsync();
+    }
+
+    private static string S(JsonElement e, string name)
+        => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : "";
+
+    private static double D(JsonElement e, string name)
+        => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetDouble(out var d) ? d : 0;
+
+    private static bool B(JsonElement e, string name)
+        => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.True;
+
+    private async Task PullLiveAsync()
+    {
+        if (_liveBusy) return;
+        _liveBusy = true;
+        try
+        {
+            const string url = "http://43.106.19.243:8765/api/specified-anomaly-watch?view=page&initial=1";
+            using var response = await _liveHttp.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("rows", out var rowsElement) || rowsElement.ValueKind != JsonValueKind.Array) return;
+
+            var watched = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (root.TryGetProperty("self_selected_watchlist", out var watchElement) && watchElement.ValueKind == JsonValueKind.Array)
+                foreach (var item in watchElement.EnumerateArray())
+                    if (item.ValueKind == JsonValueKind.String) watched.Add(item.GetString() ?? "");
+
+            var rows = new List<LiveRow>();
+            foreach (var r in rowsElement.EnumerateArray().Take(24))
+            {
+                var symbol = S(r, "symbol");
+                if (string.IsNullOrWhiteSpace(symbol)) continue;
+                var oi = 0.0;
+                if (r.TryGetProperty("oi_focus_signal", out var oiFocus)) oi = D(oiFocus, "open_interest_notional_usdt");
+                if (oi <= 0 && r.TryGetProperty("cross_exchange_positioning", out var cross)
+                    && cross.TryGetProperty("exchanges", out var exchanges)
+                    && exchanges.TryGetProperty("binance", out var binance))
+                    oi = D(binance, "current_oi_notional_usdt");
+
+                var oi5 = D(r, "oi_5m_change_pct");
+                var oi15 = 0.0;
+                if (r.TryGetProperty("oi_horizon_changes_pct", out var horizon) && horizon.ValueKind == JsonValueKind.Object)
+                {
+                    if (oi5 == 0) oi5 = D(horizon, "5m");
+                    oi15 = D(horizon, "15m");
+                }
+
+                var rawStage = S(r, "signal_level").ToLowerInvariant();
+                var stage = rawStage is "entry" or "watch" ? rawStage : "low";
+                var label = S(r, "state_label");
+                var focus = watched.Contains(symbol) || B(r, "user_selected_watch")
+                    || (r.TryGetProperty("focus_attention_signal", out var fa) && B(fa, "active"));
+                rows.Add(new LiveRow
+                {
+                    Symbol = symbol,
+                    BaseAsset = string.IsNullOrWhiteSpace(S(r, "base_asset")) ? symbol.Replace("USDT", "") : S(r, "base_asset"),
+                    Price = D(r, "price"),
+                    Change24h = D(r, "change_24h_pct"),
+                    Change1m = D(r, "change_1m_pct"),
+                    Change5m = D(r, "change_5m_pct"),
+                    QuoteVolume24h = D(r, "quote_volume_24h_usdt"),
+                    OiNotional = oi,
+                    Oi5m = oi5,
+                    Oi15m = oi15,
+                    Pullback = D(r, "pullback_pct"),
+                    Score = D(r, "score"),
+                    Stage = stage,
+                    StageLabel = label,
+                    Focus = focus,
+                    StateLabel = S(r, "state_label")
+                });
+            }
+
+            var payload = new { updatedAt = DateTime.Now.ToString("HH:mm:ss"), rows };
+            var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            await _web.ExecuteScriptAsync("window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));");
+        }
+        catch (Exception ex)
+        {
+            try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"), $"[{DateTime.Now:O}] live: {ex.Message}\r\n"); } catch { }
+        }
+        finally
+        {
+            _liveBusy = false;
         }
     }
 }

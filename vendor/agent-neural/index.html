@@ -5197,9 +5197,10 @@ let fps = 60, fpsN = 0, fpsT = 0, lowT = 0, autoNote = '';
 function renderBottom(iOverride){
   if (window.__NOVA_VISUAL) {
     const key = window.__NOVA_SELECTED || 'focus';
-    const d = key === 'imported'
+    const live = window.__NOVA_BOTTOM && window.__NOVA_BOTTOM[key];
+    const d = live || (key === 'imported'
       ? { v: ['+25.37%', '+0.17%', '9.6K', '待核验', '1.19%', '77.2'], s: ['SOPH · 24H', '5M', '1M QV', '全网 OI', '距高点', '策略分'] }
-      : { v: ['+7.94%', '+1.81%', '70.5K', '待核验', '0.00%', '97.0'], s: ['BLESS · 24H', '5M', '1M QV', '全网 OI', '距高点', '策略分'] };
+      : { v: ['+7.94%', '+1.81%', '70.5K', '待核验', '0.00%', '97.0'], s: ['BLESS · 24H', '5M', '1M QV', '全网 OI', '距高点', '策略分'] });
     const ids = ['bOi','bPrice','bVol','bFund','bDepth','bRisk'];
     const subs = ['bOiS','bPriceS','bVolS','bFundS','bDepthS','bRiskS'];
     const labels = ['24H','5M','1M QV','全网 OI','回撤','策略分'];
@@ -10747,6 +10748,70 @@ requestAnimationFrame(frame);
       setTimeout(arrive, dur + 90);
     };
     window.__NOVA_FIRE = fire;
+    const fmtQv = (v) => v >= 1e9 ? (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(1) + 'K' : String(Math.round(v || 0));
+    const sign = (v) => (v > 0 ? '+' : '') + Number(v || 0).toFixed(2);
+    const applyLive = (live) => {
+      if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
+      window.__MOSS_LIVE_ACTIVE = true;
+      const rows = [...live.rows].sort((a, b) => (b.score || 0) - (a.score || 0));
+      let focusRows = rows.filter(r => r.focus && (r.score || 0) >= 35);
+      if (focusRows.length < 4) {
+        const picked = new Set(focusRows.map(r => r.symbol));
+        focusRows = focusRows.concat(rows.filter(r => !picked.has(r.symbol)));
+      }
+      focusRows = focusRows.slice(0, 4);
+      const focusSet = new Set(focusRows.map(r => r.symbol));
+      const importRows = rows.filter(r => !focusSet.has(r.symbol)).slice(0, 4);
+      const stageClass = (s) => s === 'entry' ? 'entry' : s === 'watch' ? 'watch' : 'low';
+      const fillRows = (mod, list) => {
+        if (!mod) return;
+        const els = [...mod.querySelectorAll('.nv-row')];
+        els.forEach((row, i) => {
+          const r = list[i];
+          if (!r) return;
+          const sym = row.querySelector('.nv-sym');
+          const sub = row.querySelector('.nv-sub');
+          const score = row.querySelector('.nv-score');
+          if (sym) sym.textContent = r.baseAsset || r.symbol;
+          if (sub) sub.innerHTML = `<i class="nv-stage ${stageClass(r.stage)}">${r.stage === 'entry' ? '开仓' : r.stage === 'watch' ? '候选' : '观察'}</i>${sign(r.change5m)}% · ${fmtQv(r.quoteVolume24h)}`;
+          if (score) score.textContent = Number(r.score || 0).toFixed(1);
+          row.style.setProperty('--p', Math.max(0, Math.min(100, r.score || 0)));
+        });
+      };
+      const focusMod = sr.querySelector('.nv-mod.focus');
+      const importMod = sr.querySelector('.nv-mod.imported');
+      fillRows(focusMod, focusRows);
+      fillRows(importMod, importRows);
+      const updCard = (lane, r) => {
+        const card = sr.querySelector(`[data-nv-card="${lane}"]`);
+        if (!card || !r) return;
+        const sym = card.querySelector('.nv-c-sym'); if (sym) sym.textContent = r.baseAsset || r.symbol;
+        const meta = card.querySelector('.nv-c-meta');
+        if (meta) meta.innerHTML = `<i class="nv-stage ${stageClass(r.stage)}">${r.stage === 'entry' ? '开仓信号' : r.stage === 'watch' ? '重点候选' : '观察'}</i><b>${Number(r.score || 0).toFixed(1)}</b> · ${live.updatedAt} 数据`;
+        const score = card.querySelector('.nv-c-score'); if (score) score.textContent = Number(r.score || 0).toFixed(1);
+        card.dataset.liveSymbol = r.symbol;
+      };
+      updCard('focus', focusRows[0]);
+      updCard('imported', importRows[0]);
+      const f = focusRows[0], im = importRows[0];
+      const mk = (r) => r ? ({ v: [sign(r.change24h) + '%', sign(r.change5m) + '%', fmtQv(r.quoteVolume24h), fmtQv(r.oiNotional), Number(r.pullback || 0).toFixed(2) + '%', Number(r.score || 0).toFixed(1)], s: [`${r.baseAsset || r.symbol} · 24H`, `1m ${sign(r.change1m)}%`, `60s 成交`, `OI 5m ${sign(r.oi5m)}%`, `距高点 ${Number(r.pullback || 0).toFixed(2)}%`, r.stage === 'entry' ? 'ENTRY' : r.stage === 'watch' ? 'WATCH' : '观察'] }) : null;
+      window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
+      if (f) { data.focus.title = f.baseAsset || f.symbol; data.focus.stage = `${f.stage === 'entry' ? '开仓信号' : f.stage === 'watch' ? '重点候选' : '观察'} · ${Number(f.score || 0).toFixed(1)}`; data.focus.why = `${f.symbol} 现价 ${f.price}，24H ${sign(f.change24h)}%，5M ${sign(f.change5m)}%。`; }
+      if (im) { data.imported.title = im.baseAsset || im.symbol; data.imported.stage = `${im.stage === 'entry' ? '开仓信号' : im.stage === 'watch' ? '重点候选' : '观察'} · ${Number(im.score || 0).toFixed(1)}`; data.imported.why = `${im.symbol} 现价 ${im.price}，24H ${sign(im.change24h)}%，5M ${sign(im.change5m)}%。`; }
+      try { const k = sr.querySelector('.nv-k'); if (k) k.textContent = `MARKET REGIME · LIVE ${live.updatedAt}`; } catch (e) {}
+      const prev = window.__MOSS_STAGE || {};
+      [['focus', f, focusMod], ['imported', im, importMod]].forEach(([lane, r, mod]) => {
+        if (!r) return;
+        if (prev[r.symbol] && prev[r.symbol] !== r.stage) {
+          markHot(sr.querySelector(`[data-nv-card="${lane}"]`));
+          freshPanel(mod, lane); ping(lane);
+        }
+        prev[r.symbol] = r.stage;
+      });
+      window.__MOSS_STAGE = prev;
+    };
+    window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
+    if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
     const captureLog = [];
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
@@ -10769,8 +10834,8 @@ requestAnimationFrame(frame);
       ping('multi');
     }, 45000);
     let auto = 0;
-    setTimeout(() => fire('focus'), 6000);
-    setInterval(() => { auto = 1 - auto; fire(auto ? 'imported' : 'focus'); }, 180000);
+    setTimeout(() => { if (!window.__MOSS_LIVE_ACTIVE) fire('focus'); }, 30000);
+    setInterval(() => { if (!window.__MOSS_LIVE_ACTIVE) { auto = 1 - auto; fire(auto ? 'imported' : 'focus'); } }, 180000);
     const open = (key) => {
       const d = data[key] || data.focus;
       showTab('current');
