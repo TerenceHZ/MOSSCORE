@@ -210,7 +210,10 @@ internal sealed class MainForm : Form
                 "MossCore", "WebView2");
             Directory.CreateDirectory(userData);
 
-            var env = await CoreWebView2Environment.CreateAsync(null, userData);
+            var env = await CoreWebView2Environment.CreateAsync(
+                null,
+                userData,
+                new CoreWebView2EnvironmentOptions("--autoplay-policy=no-user-gesture-required"));
             await _web.EnsureCoreWebView2Async(env);
             _web.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
             _web.CoreWebView2.Settings.AreDevToolsEnabled = false;

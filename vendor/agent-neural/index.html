@@ -10620,14 +10620,24 @@ requestAnimationFrame(frame);
     };
     const ac = () => {
       if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
-      if (actx.state === 'suspended') actx.resume().catch(() => {});
       return actx;
     };
-    const ping = (kind) => {
+    const unlockAudio = () => {
+      try {
+        const a = ac();
+        if (a.state === 'suspended') a.resume().catch(() => {});
+      } catch (e) {}
+    };
+    const ping = async (kind) => {
       if (muted) return;
       try {
-        const a = ac(), t = a.currentTime;
-        const out = a.createGain(); out.connect(a.destination);
+        const a = ac();
+        if (a.state === 'suspended') await a.resume();
+        const t = a.currentTime;
+        const out = a.createGain();
+        const comp = a.createDynamicsCompressor();
+        comp.threshold.value = -12; comp.knee.value = 18; comp.ratio.value = 8; comp.attack.value = .002; comp.release.value = .18;
+        out.connect(comp); comp.connect(a.destination);
         const filter = a.createBiquadFilter(); filter.connect(out);
         const add = (type, f0, points, amp, start, dur) => {
           const o = a.createOscillator(), og = a.createGain();
@@ -10638,26 +10648,29 @@ requestAnimationFrame(frame);
           o.start(t + start); o.stop(t + start + dur);
         };
         if (kind === 'focus') {
-          filter.type = 'lowpass'; filter.frequency.value = 1350; filter.Q.value = .7;
-          out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.16, t + .035); out.gain.exponentialRampToValueAtTime(0.0001, t + .82);
-          add('sine', 98, [[.16, 78], [.30, 88], [.50, 72], [.72, 62]], .9, 0, .86);
-          add('triangle', 147, [[.20, 118], [.34, 132], [.54, 108]], .34, .02, .78);
-          add('sine', 49, [[.22, 42], [.45, 55], [.70, 40]], .42, 0, .82);
+          filter.type = 'lowpass'; filter.frequency.value = 1550; filter.Q.value = .8;
+          out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.34, t + .025); out.gain.exponentialRampToValueAtTime(0.0001, t + .92);
+          add('sine', 104, [[.14, 76], [.28, 92], [.48, 70], [.72, 58]], 1, 0, .96);
+          add('triangle', 156, [[.18, 112], [.32, 138], [.52, 104]], .42, .02, .86);
+          add('sine', 52, [[.20, 42], [.44, 58], [.70, 38]], .55, 0, .9);
+          add('sine', 312, [[.10, 270], [.22, 350], [.34, 290]], .18, .03, .55);
         } else if (kind === 'imported') {
-          filter.type = 'highpass'; filter.frequency.value = 360;
-          out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.045, t + .008); out.gain.exponentialRampToValueAtTime(0.0001, t + .24);
-          add('triangle', 1080, [[.05, 1320], [.10, 920], [.16, 1180]], .7, 0, .25);
-          add('sine', 2160, [[.04, 1880], [.12, 2360]], .2, .01, .2);
+          filter.type = 'highpass'; filter.frequency.value = 340;
+          out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.12, t + .006); out.gain.exponentialRampToValueAtTime(0.0001, t + .32);
+          add('triangle', 1080, [[.04, 1380], [.09, 920], [.15, 1240], [.23, 1040]], .85, 0, .33);
+          add('sine', 2160, [[.03, 1840], [.10, 2420], [.18, 2000]], .32, .01, .28);
         } else {
-          filter.type = 'lowpass'; filter.frequency.value = 4200; filter.Q.value = .5;
-          out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.095, t + .018); out.gain.exponentialRampToValueAtTime(0.0001, t + .62);
-          add('sine', 640, [[.10, 720], [.22, 590], [.38, 660], [.56, 520]], .6, 0, .64);
-          add('sine', 960, [[.12, 1120], [.26, 880], [.46, 1040]], .34, .015, .62);
-          add('sine', 1480, [[.08, 1320], [.24, 1560], [.42, 1380]], .2, .02, .58);
-          add('triangle', 320, [[.18, 280], [.36, 340]], .32, 0, .6);
+          filter.type = 'lowpass'; filter.frequency.value = 4600; filter.Q.value = .6;
+          out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.2, t + .012); out.gain.exponentialRampToValueAtTime(0.0001, t + .72);
+          add('sine', 640, [[.08, 760], [.20, 580], [.34, 700], [.56, 520]], .7, 0, .75);
+          add('sine', 960, [[.10, 1180], [.24, 860], [.42, 1120]], .42, .012, .7);
+          add('sine', 1480, [[.07, 1320], [.20, 1620], [.40, 1360]], .28, .018, .66);
+          add('triangle', 320, [[.16, 270], [.34, 360], [.5, 300]], .38, 0, .7);
         }
       } catch (e) {}
     };
+    window.addEventListener('pointerdown', unlockAudio, { once: true });
+    window.addEventListener('keydown', unlockAudio, { once: true });
     audioBtn && audioBtn.addEventListener('click', () => { muted = !muted; try { localStorage.setItem('moss-muted', muted ? '1' : '0'); } catch (e) {} syncAudio(); if (!muted) ping('imported'); });
     syncAudio();
     const nr = sr.querySelector('#nr');
@@ -10800,15 +10813,28 @@ requestAnimationFrame(frame);
       if (im) { data.imported.title = im.baseAsset || im.symbol; data.imported.stage = `${im.stage === 'entry' ? '开仓信号' : im.stage === 'watch' ? '重点候选' : '观察'} · ${Number(im.score || 0).toFixed(1)}`; data.imported.why = `${im.symbol} 现价 ${im.price}，24H ${sign(im.change24h)}%，5M ${sign(im.change5m)}%。`; }
       try { const k = sr.querySelector('.nv-k'); if (k) k.textContent = `MARKET REGIME · SNAPSHOT ${live.updatedAt}`; } catch (e) {}
       const prev = window.__MOSS_STAGE || {};
+      const lastTop = window.__MOSS_LAST_TOP || {};
+      const lastScore = window.__MOSS_LAST_SCORE || {};
+      const announce = (lane, r, mod) => {
+        const card = sr.querySelector(`[data-nv-card="${lane}"]`);
+        if (!card) return;
+        meteorTo(card, lane, lane === 'focus' ? 1150 : 700, () => {
+          markHot(card); freshPanel(mod, lane); ping(lane);
+        });
+      };
       [['focus', f, focusMod], ['imported', im, importMod]].forEach(([lane, r, mod]) => {
         if (!r) return;
-        if (prev[r.symbol] && prev[r.symbol] !== r.stage) {
-          markHot(sr.querySelector(`[data-nv-card="${lane}"]`));
-          freshPanel(mod, lane); ping(lane);
-        }
+        const stageChanged = prev[r.symbol] && prev[r.symbol] !== r.stage;
+        const topChanged = lastTop[lane] && lastTop[lane] !== r.symbol;
+        const scoreChanged = lastScore[lane] != null && Math.abs(lastScore[lane] - (r.score || 0)) >= 1.2;
+        if (stageChanged || topChanged || scoreChanged) announce(lane, r, mod);
         prev[r.symbol] = r.stage;
+        lastTop[lane] = r.symbol;
+        lastScore[lane] = r.score || 0;
       });
       window.__MOSS_STAGE = prev;
+      window.__MOSS_LAST_TOP = lastTop;
+      window.__MOSS_LAST_SCORE = lastScore;
     };
     window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
