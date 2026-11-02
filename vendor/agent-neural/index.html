@@ -605,9 +605,14 @@ body{background:var(--page);overflow:hidden}
 .pnl::before{left:-1px;top:-1px;border-width:1px 0 0 1px}
 .pnl::after{right:-1px;bottom:-1px;border-width:0 1px 1px 0}
 .p-heat{flex:none;height:340px}
-.nv-alertfeed{height:calc(100% - 34px);overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;padding:0 10px 6px;scrollbar-width:none;display:flex;flex-direction:column;justify-content:flex-end}
+.nv-alertfeed{height:calc(100% - 34px);overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;padding:0 10px 6px;scrollbar-width:none;display:flex;flex-direction:column;justify-content:flex-start}
 .nv-alertfeed::-webkit-scrollbar{display:none}
 .nv-alertitem{position:relative;flex:0 0 auto;min-height:124px;padding:10px 0 9px;border-bottom:1px solid rgba(232,160,32,.12);animation:nvalertin .4s ease-out}
+.nv-alertitem.fresh{background:linear-gradient(90deg,rgba(232,160,32,.16),transparent 82%);border-color:rgba(232,160,32,.42);box-shadow:inset 0 0 26px rgba(232,160,32,.08)}
+.nv-alertitem.fresh .nv-alert-top b{color:#ffe6a8;text-shadow:0 0 12px rgba(232,160,32,.55)}
+.nv-alertitem.fresh::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:linear-gradient(90deg,transparent,#e8a020,transparent);transform-origin:left;animation:nvline 900s linear forwards;opacity:.85}
+.nv-alertitem.flash{animation:nvalertflash .58s ease-out}
+@keyframes nvalertflash{0%{filter:contrast(2) brightness(2.2)}100%{filter:contrast(1) brightness(1)}}
 @keyframes nvalertin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .nv-alert-top{display:flex;justify-content:space-between;align-items:baseline}
 .nv-alert-top b{font:700 14px/1 var(--mono);color:#f5e7c4;letter-spacing:.02em}
@@ -10808,14 +10813,23 @@ requestAnimationFrame(frame);
 <div class="nv-alert-time">${a.time}</div></div>`;
     const renderAlertFeed = () => {
       if (!alertFeed) return;
-      alertFeed.innerHTML = alertLog.slice(0, 3).reverse().map(alertItemHtml).join('');
-      requestAnimationFrame(() => alertFeed.scrollTo({ top: alertFeed.scrollHeight, behavior: 'smooth' }));
+      alertFeed.innerHTML = alertLog.slice(0, 3).map(alertItemHtml).join('');
+      requestAnimationFrame(() => alertFeed.scrollTo({ top: 0, behavior: 'smooth' }));
+    };
+    const markAlertFresh = (el) => {
+      if (!el) return;
+      sr.querySelectorAll('.nv-alertitem.fresh').forEach(x => x.classList.remove('fresh'));
+      el.classList.remove('flash'); void el.offsetWidth;
+      el.classList.add('flash', 'fresh');
+      clearTimeout(el._freshT);
+      el._freshT = setTimeout(() => el.classList.remove('fresh'), 900000);
+      setTimeout(() => el.classList.remove('flash'), 650);
     };
     const renderAlertHistory = () => {
       if (!alertHistory) return;
       alertHistory.innerHTML = alertLog.slice(0, 500).map(a => `<div class="nv-alert-record"><div class="rt"><b>${a.time} · ${a.symbol}</b><em>${a.dir} ${Number(a.pct).toFixed(1)}%</em></div><div class="rl">价格 ${a.price} · 当前持仓 ${fmtWan(a.oi)} · 15m增量 ${fmtWan(a.delta)}</div></div>`).join('');
     };
-    const pushAlert = (r, liveTime) => {
+    const pushAlert = (r, liveTime, announce = true) => {
       if (!r) return;
       const pct = Number(r.oi15m || r.oi5m || 0);
       const dir = pct >= 0 ? '↑↑↑' : '↓↓↓';
@@ -10825,9 +10839,15 @@ requestAnimationFrame(frame);
       alertLog.unshift({ time, symbol: r.symbol || r.baseAsset, pct, oi: Number(r.oiNotional || 0), price: Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), dir, delta, ts: now });
       alertLog = alertLog.filter(a => now - a.ts < ALERT_TTL).slice(0, 500);
       saveAlerts(); renderAlertFeed(); renderAlertHistory();
+      const first = alertFeed && alertFeed.firstElementChild;
+      if (first) {
+        if (announce) meteorTo(first, 'focus', 950, () => { markAlertFresh(first); ping('focus'); });
+        else markAlertFresh(first);
+      }
     };
     renderAlertFeed();
     renderAlertHistory();
+    { const first = alertFeed && alertFeed.firstElementChild; if (first) markAlertFresh(first); }
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
       window.__MOSS_LIVE_ACTIVE = true;
@@ -10873,17 +10893,17 @@ requestAnimationFrame(frame);
       updCard('imported', importRows[0]);
       const f = focusRows[0], im = importRows[0];
       const alertPrev = window.__MOSS_ALERT_PREV || {};
-      const maybeAlert = (r) => {
+      const maybeAlert = (r, announce = true) => {
         if (!r) return;
         const pct = Math.abs(Number(r.oi15m || r.oi5m || 0));
         const p = alertPrev[r.symbol];
         if (!p || Math.abs(pct - p.pct) >= .5 || Math.abs((r.score || 0) - p.score) >= 1.2) {
-          pushAlert(r, live.updatedAt);
+          pushAlert(r, live.updatedAt, announce);
         }
         alertPrev[r.symbol] = { pct, score: r.score || 0 };
       };
       if (!window.__MOSS_ALERT_SEEDED) {
-        maybeAlert(f); maybeAlert(im);
+        maybeAlert(f, false); maybeAlert(im, false);
         window.__MOSS_ALERT_SEEDED = true;
       } else {
         maybeAlert(f); maybeAlert(im);
