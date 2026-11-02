@@ -604,10 +604,12 @@ body{background:var(--page);overflow:hidden}
 .pnl::before,.pnl::after{content:"";position:absolute;width:10px;height:10px;border-color:var(--hair2);border-style:solid;pointer-events:none}
 .pnl::before{left:-1px;top:-1px;border-width:1px 0 0 1px}
 .pnl::after{right:-1px;bottom:-1px;border-width:0 1px 1px 0}
-.p-heat{flex:none;height:340px}
-.nv-alertfeed{height:calc(100% - 34px);overflow:hidden;scroll-behavior:smooth;padding:0 10px 6px;scrollbar-width:none;display:flex;flex-direction:column;justify-content:flex-start}
+.p-heat{flex:none;height:350px}
+.nv-alertfeed{height:calc(100% - 34px);overflow:hidden;padding:0;scrollbar-width:none;display:flex;flex-direction:column;justify-content:flex-start}
 .nv-alertfeed::-webkit-scrollbar{display:none}
-.nv-alertitem{position:relative;flex:0 0 auto;min-height:150px;padding:10px 0 9px;border-bottom:1px solid rgba(232,160,32,.12);animation:nvalertin .4s ease-out}
+.nv-alertitem{position:relative;flex:0 0 auto;min-height:148px;box-sizing:border-box;padding:9px 10px;margin:0 0 4px;border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(8,7,4,.72),rgba(18,14,6,.56));animation:nvalertin .4s ease-out;overflow:hidden}
+.nv-alertitem.fresh{background:linear-gradient(115deg,rgba(232,160,32,.28),rgba(232,160,32,.04) 34%,rgba(255,192,67,.16) 54%,rgba(232,160,32,.03) 76%,rgba(232,160,32,.22));background-size:220% 220%;border-color:rgba(255,192,67,.7);box-shadow:inset 0 0 30px rgba(232,160,32,.1),0 0 14px rgba(232,160,32,.06);animation:nvalertflow 6s ease-in-out infinite}
+@keyframes nvalertflow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .nv-alertitem.fresh{background:linear-gradient(90deg,rgba(232,160,32,.16),transparent 82%);border-color:rgba(232,160,32,.42);box-shadow:inset 0 0 26px rgba(232,160,32,.08)}
 .nv-alertitem.fresh .nv-alert-top b{color:#ffe6a8;text-shadow:0 0 12px rgba(232,160,32,.55)}
 .nv-alertitem.fresh::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:linear-gradient(90deg,transparent,#e8a020,transparent);transform-origin:left;animation:nvline 900s linear forwards;opacity:.85}
