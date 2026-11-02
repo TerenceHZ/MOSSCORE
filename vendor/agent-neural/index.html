@@ -10798,7 +10798,7 @@ requestAnimationFrame(frame);
       window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       if (f) { data.focus.title = f.baseAsset || f.symbol; data.focus.stage = `${f.stage === 'entry' ? '开仓信号' : f.stage === 'watch' ? '重点候选' : '观察'} · ${Number(f.score || 0).toFixed(1)}`; data.focus.why = `${f.symbol} 现价 ${f.price}，24H ${sign(f.change24h)}%，5M ${sign(f.change5m)}%。`; }
       if (im) { data.imported.title = im.baseAsset || im.symbol; data.imported.stage = `${im.stage === 'entry' ? '开仓信号' : im.stage === 'watch' ? '重点候选' : '观察'} · ${Number(im.score || 0).toFixed(1)}`; data.imported.why = `${im.symbol} 现价 ${im.price}，24H ${sign(im.change24h)}%，5M ${sign(im.change5m)}%。`; }
-      try { const k = sr.querySelector('.nv-k'); if (k) k.textContent = `MARKET REGIME · LIVE ${live.updatedAt}`; } catch (e) {}
+      try { const k = sr.querySelector('.nv-k'); if (k) k.textContent = `MARKET REGIME · SNAPSHOT ${live.updatedAt}`; } catch (e) {}
       const prev = window.__MOSS_STAGE || {};
       [['focus', f, focusMod], ['imported', im, importMod]].forEach(([lane, r, mod]) => {
         if (!r) return;

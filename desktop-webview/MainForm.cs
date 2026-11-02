@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -88,7 +88,7 @@ internal sealed class MainForm : Form
 
     public MainForm()
     {
-        Text = "MOSS CORE · 异动监测";
+        Text = "MOSS CORE 路 寮傚姩鐩戞祴";
         Width = 1600;
         Height = 900;
         MinimumSize = new Size(1280, 720);
@@ -242,7 +242,7 @@ internal sealed class MainForm : Form
                 return;
             }
 
-            var uri = new Uri(page).AbsoluteUri + "?v=20261102-live#neural";
+            var uri = new Uri(page).AbsoluteUri + "?v=20261102-snapshot#neural";
             File.AppendAllText(log, $"[{DateTime.Now:O}] navigating {uri}\r\n");
             _web.CoreWebView2.Navigate(uri);
         }
@@ -264,7 +264,7 @@ internal sealed class MainForm : Form
     private void StartLiveBridge()
     {
         if (_liveTimer != null) return;
-        _liveTimer = new System.Windows.Forms.Timer { Interval = 20000 };
+        _liveTimer = new System.Windows.Forms.Timer { Interval = 60000 };
         _liveTimer.Tick += async (_, _) => await PullLiveAsync();
         _liveTimer.Start();
         _ = PullLiveAsync();
@@ -357,4 +357,5 @@ internal sealed class MainForm : Form
         }
     }
 }
+
 
