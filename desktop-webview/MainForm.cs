@@ -246,7 +246,7 @@ internal sealed class MainForm : Form
                 return;
             }
 
-            var uri = new Uri(page).AbsoluteUri + "?v=20261102-snapshot#neural";
+            var uri = new Uri(page).AbsoluteUri + "?v=20261102-alerts#neural";
             File.AppendAllText(log, $"[{DateTime.Now:O}] navigating {uri}\r\n");
             _web.CoreWebView2.Navigate(uri);
         }
@@ -282,8 +282,6 @@ internal sealed class MainForm : Form
         {
             await Task.Delay(1200);
             _web.ZoomFactor = 1.0;
-            var info = await _web.ExecuteScriptAsync("JSON.stringify({iw:innerWidth,ih:innerHeight,dpr:devicePixelRatio,z:document.documentElement.style.zoom,bz:document.body.style.zoom})");
-            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"), $"[{DateTime.Now:O}] viewport {info}\r\n");
         }
         catch { }
     }

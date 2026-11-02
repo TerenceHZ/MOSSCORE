@@ -605,19 +605,24 @@ body{background:var(--page);overflow:hidden}
 .pnl::before{left:-1px;top:-1px;border-width:1px 0 0 1px}
 .pnl::after{right:-1px;bottom:-1px;border-width:0 1px 1px 0}
 .p-heat{flex:none;height:300px}
-.nv-alertfeed{height:calc(100% - 34px);overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;padding:2px 10px 8px;scrollbar-width:none}
+.nv-alertfeed{height:calc(100% - 34px);overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;padding:0 10px 6px;scrollbar-width:none;display:flex;flex-direction:column;justify-content:flex-end}
 .nv-alertfeed::-webkit-scrollbar{display:none}
-.nv-alertitem{position:relative;padding:8px 0 9px;border-bottom:1px solid rgba(232,160,32,.1);animation:nvalertin .4s ease-out}
+.nv-alertitem{position:relative;flex:0 0 auto;min-height:124px;padding:10px 0 9px;border-bottom:1px solid rgba(232,160,32,.12);animation:nvalertin .4s ease-out}
 @keyframes nvalertin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .nv-alert-top{display:flex;justify-content:space-between;align-items:baseline}
-.nv-alert-top b{font:700 11px/1 var(--mono);color:#f5e7c4;letter-spacing:.02em}
-.nv-alert-top span{font-size:7px;color:#e8a020;letter-spacing:1px}
-.nv-alert-tag{margin-top:4px;font:600 8px/1 var(--cjk);color:#e8a020;letter-spacing:.05em}
-.nv-alert-price{margin-top:4px;font:600 10px/1 var(--mono);color:#ffc043}
-.nv-alert-line{margin-top:3px;font:500 7.5px/1.35 var(--cjk);color:#9c8d72}
+.nv-alert-top b{font:700 14px/1 var(--mono);color:#f5e7c4;letter-spacing:.02em}
+.nv-alert-top span{font-size:10px;color:#e8a020;letter-spacing:1px}
+.nv-alert-tag{margin-top:6px;font:600 10px/1 var(--cjk);color:#e8a020;letter-spacing:.05em}
+.nv-alert-price{margin-top:6px;font:600 14px/1 var(--mono);color:#ffc043}
+.nv-alert-line{margin-top:5px;font:500 9.5px/1.4 var(--cjk);color:#a99a7e}
 .nv-alert-line b{color:#e4d4a8;font-weight:600}
 .nv-alert-line em{font-style:normal;color:#e8a020}
-.nv-alert-time{margin-top:4px;font:500 7px/1 var(--mono);color:#6f6453}
+.nv-alert-time{margin-top:5px;font:500 8.5px/1 var(--mono);color:#7b6d58}
+.nv-alert-record{padding:9px 0;border-bottom:1px solid rgba(232,160,32,.1)}
+.nv-alert-record .rt{display:flex;justify-content:space-between;gap:8px;font:600 9px/1 var(--mono);color:#d8cdb8}
+.nv-alert-record .rt em{font-style:normal;color:#e8a020}
+.nv-alert-record .rl{margin-top:4px;font:500 8px/1.45 var(--cjk);color:#8f816b}
+.nv-alert-record .rl b{color:#d8cdb8}
 .p-feed{flex:1;min-height:0;display:flex;flex-direction:column}
 .p-crawl{flex:none;height:104px}
 .heat{position:relative;height:238px;background:repeating-linear-gradient(90deg,rgba(232,160,32,.10) 0 1px,transparent 1px 7.14%),repeating-linear-gradient(0deg,rgba(232,160,32,.08) 0 1px,transparent 1px 8.33%),rgba(232,160,32,.018)}
@@ -10779,36 +10784,47 @@ requestAnimationFrame(frame);
     const fmtQv = (v) => v >= 1e9 ? (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(1) + 'K' : String(Math.round(v || 0));
     const fmtWan = (v) => (v / 1e4).toFixed(1) + '万 USD';
     const sign = (v) => (v > 0 ? '+' : '') + Number(v || 0).toFixed(2);
-    const alertLog = [{ time: '17:00:15', symbol: 'ARIAUSDT', pct: 49.5, oi: 12990000, price: '0.12066', dir: '↑↑↑' }];
+    const ALERT_KEY = 'moss-alert-log-v1', ALERT_TTL = 24 * 60 * 60 * 1000;
+    let alertLog = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(ALERT_KEY) || '[]');
+      if (Array.isArray(saved)) alertLog = saved.filter(a => a && a.ts && Date.now() - a.ts < ALERT_TTL);
+    } catch (e) {}
+    if (!alertLog.length) {
+      alertLog = [{ time: '17:00:15', symbol: 'ARIAUSDT', pct: 49.5, oi: 12990000, price: '0.12066', dir: '↑↑↑', delta: 4302000, ts: Date.now() }];
+    }
     const alertFeed = sr.querySelector('#nvAlertFeed');
     const alertHistory = sr.querySelector('#nvAlertHistory');
+    const saveAlerts = () => { try { localStorage.setItem(ALERT_KEY, JSON.stringify(alertLog.slice(0, 500))); } catch (e) {} };
+    const alertItemHtml = (a) => `<div class="nv-alertitem">
+<div class="nv-alert-top"><b>${a.symbol}</b><span>${Math.abs(a.pct) >= 10 ? '🔥🔥🔥' : Math.abs(a.pct) >= 4 ? '🔥🔥' : '🔥'}</span></div>
+<div class="nv-alert-tag">合约持仓 ${a.dir}</div>
+<div class="nv-alert-price">${a.price}</div>
+<div class="nv-alert-line">15分钟持仓量${a.pct >= 0 ? '增加' : '减少'} <b>${fmtWan(a.delta)}</b> <em>(${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%)</em></div>
+<div class="nv-alert-line">当前持仓量 <b>${fmtWan(a.oi)}</b></div>
+<div class="nv-alert-time">${a.time}</div></div>`;
+    const renderAlertFeed = () => {
+      if (!alertFeed) return;
+      alertFeed.innerHTML = alertLog.slice(0, 3).reverse().map(alertItemHtml).join('');
+      requestAnimationFrame(() => alertFeed.scrollTo({ top: alertFeed.scrollHeight, behavior: 'smooth' }));
+    };
     const renderAlertHistory = () => {
       if (!alertHistory) return;
-      alertHistory.innerHTML = alertLog.slice(0, 30).map(a => `<div><span>${a.time} · ${a.symbol}</span><b>${a.dir} ${Number(a.pct).toFixed(1)}%</b></div>`).join('');
+      alertHistory.innerHTML = alertLog.slice(0, 500).map(a => `<div class="nv-alert-record"><div class="rt"><b>${a.time} · ${a.symbol}</b><em>${a.dir} ${Number(a.pct).toFixed(1)}%</em></div><div class="rl">价格 ${a.price} · 当前持仓 ${fmtWan(a.oi)} · 15m增量 ${fmtWan(a.delta)}</div></div>`).join('');
     };
     const pushAlert = (r, liveTime) => {
-      if (!alertFeed || !r) return;
+      if (!r) return;
       const pct = Number(r.oi15m || r.oi5m || 0);
       const dir = pct >= 0 ? '↑↑↑' : '↓↓↓';
-      const abs = Math.abs(pct);
-      const fire = abs >= 10 ? '🔥🔥🔥' : abs >= 4 ? '🔥🔥' : '🔥';
       const delta = Math.abs(Number(r.oiNotional || 0) * pct / (100 + pct));
       const time = liveTime || new Date().toLocaleTimeString('zh-CN', { hour12: false });
-      const item = document.createElement('div');
-      item.className = 'nv-alertitem';
-      item.innerHTML = `<div class="nv-alert-top"><b>${r.symbol || r.baseAsset}</b><span>${fire}</span></div>
-<div class="nv-alert-tag">合约持仓 ${dir}</div>
-<div class="nv-alert-price">${Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')}</div>
-<div class="nv-alert-line">15分钟持仓量${pct >= 0 ? '增加' : '减少'} <b>${fmtWan(delta)}</b> <em>(${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)</em></div>
-<div class="nv-alert-line">当前持仓量 <b>${fmtWan(r.oiNotional)}</b></div>
-<div class="nv-alert-time">${time}</div>`;
-      alertFeed.appendChild(item);
-      while (alertFeed.children.length > 30) alertFeed.firstElementChild.remove();
-      requestAnimationFrame(() => alertFeed.scrollTo({ top: alertFeed.scrollHeight, behavior: 'smooth' }));
-      alertLog.unshift({ time, symbol: r.symbol || r.baseAsset, pct, oi: r.oiNotional, price: r.price, dir });
-      if (alertLog.length > 40) alertLog.pop();
-      renderAlertHistory();
+      const now = Date.now();
+      alertLog.unshift({ time, symbol: r.symbol || r.baseAsset, pct, oi: Number(r.oiNotional || 0), price: Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), dir, delta, ts: now });
+      alertLog = alertLog.filter(a => now - a.ts < ALERT_TTL).slice(0, 500);
+      saveAlerts(); renderAlertFeed(); renderAlertHistory();
     };
+    renderAlertFeed();
+    renderAlertHistory();
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
       window.__MOSS_LIVE_ACTIVE = true;
