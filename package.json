@@ -1,0 +1,60 @@
+{
+  "name": "550c-market-terminal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "550C 控制终端风格的加密货币行情监控桌面端",
+  "author": "550C",
+  "license": "MIT",
+  "main": "electron/main.cjs",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "server": "node server/index.cjs",
+    "smoke": "node scripts/smoke.mjs",
+    "icon": "node scripts/gen-icon.mjs",
+    "dist": "npm run icon && electron-builder --win nsis",
+    "portable": "npm run icon && electron-builder --win portable"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.550c.market.terminal",
+    "productName": "550C Market Terminal",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "server/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "550C-Market-Terminal-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "550C Market Terminal"
+    }
+  }
+}

@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>550C // MOSS SINGULARITY PROOF</title>
+<style>
+  :root{
+    --gold:#e8a020; --gold2:#ffc043; --white:#f2f0e8; --red:#ff1a12;
+    --dim:#8a7b62; --faint:#3b3428;
+    --mono:"Cascadia Code","Consolas","SFMono-Regular",monospace;
+    --wide:"Bahnschrift Condensed","Arial Narrow",sans-serif;
+    --sans:"Microsoft YaHei","PingFang SC",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:#000;color:var(--white);font-family:var(--mono);overflow:hidden}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1}
+  .grain{position:fixed;inset:-20%;z-index:6;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='.75'/></svg>");
+    animation:grain 1.2s steps(2) infinite}
+  @keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-2%,1%)}50%{transform:translate(1%,-2%)}75%{transform:translate(2%,2%)}100%{transform:translate(0,0)}}
+  .scan{position:fixed;inset:0;z-index:5;pointer-events:none;opacity:.12;
+    background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(255,255,255,.06) 3px,transparent 4px);mix-blend-mode:overlay}
+  .vig{position:fixed;inset:0;z-index:4;pointer-events:none;background:radial-gradient(ellipse at 50% 48%,transparent 34%,rgba(0,0,0,.7) 100%)}
+  .frame{position:fixed;inset:16px;z-index:7;pointer-events:none;border:1px solid rgba(232,160,32,.14);clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+  .frame::before,.frame::after{content:"";position:absolute;width:26px;height:26px}
+  .frame::before{left:-1px;top:-1px;border-left:1px solid rgba(232,160,32,.65);border-top:1px solid rgba(232,160,32,.65)}
+  .frame::after{right:-1px;bottom:-1px;border-right:1px solid rgba(232,160,32,.65);border-bottom:1px solid rgba(232,160,32,.65)}
+
+  .title{position:fixed;left:36px;top:32px;z-index:8;pointer-events:none}
+  .title .k{font-size:7px;letter-spacing:.24em;color:var(--gold);margin-bottom:8px}
+  .title h1{margin:0;font-family:var(--wide);font-size:clamp(56px,7vw,104px);line-height:.82;letter-spacing:2px;color:var(--white);font-weight:500;text-shadow:0 0 32px rgba(232,160,32,.16)}
+  .title h1 span{color:var(--gold)}
+  .title .cn{font-family:var(--sans);font-size:clamp(16px,1.5vw,23px);letter-spacing:.38em;color:#b9ad9a;font-weight:300;margin-top:12px}
+  .title .sub{font-size:6.5px;letter-spacing:.16em;line-height:1.7;color:var(--faint);margin-top:9px}
+  .title .rule{width:240px;height:1px;margin-top:14px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.55}
+
+  .status{position:fixed;right:36px;top:34px;z-index:8;text-align:right;pointer-events:none}
+  .status b{display:block;font-size:7px;letter-spacing:.16em;color:var(--faint);font-weight:400}
+  .status span{display:block;font-size:9px;letter-spacing:.08em;color:var(--gold);margin-top:5px}
+  .status i{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--red);box-shadow:0 0 9px var(--red);margin-right:6px}
+
+  .phase{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:8;display:flex;gap:0;pointer-events:none}
+  .phase div{position:relative;min-width:92px;padding:0 12px;display:flex;flex-direction:column;gap:3px;border-left:1px solid rgba(232,160,32,.14)}
+  .phase div:last-child{border-right:1px solid rgba(232,160,32,.14)}
+  .phase b{font-size:7px;letter-spacing:.1em;color:var(--faint);font-weight:400;white-space:nowrap}
+  .phase span{font-size:5.8px;letter-spacing:.08em;color:#2e2921}
+  .phase div.on b{color:var(--gold)}
+  .phase div.on span{color:var(--dim)}
+  .phase div.on::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);box-shadow:0 0 9px rgba(232,160,32,.55)}
+
+  .progress{position:fixed;left:36px;right:36px;bottom:34px;z-index:8;height:1px;background:rgba(232,160,32,.12);pointer-events:none;overflow:hidden}
+  .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2));box-shadow:0 0 9px var(--gold);animation:run 10s linear infinite}
+  @keyframes run{from{width:0}to{width:100%}}
+
+  .foot{position:fixed;left:36px;right:36px;bottom:16px;z-index:8;display:flex;align-items:center;gap:16px;font-size:5.8px;letter-spacing:.1em;color:var(--faint);pointer-events:none;border-top:1px solid rgba(232,160,32,.08);padding-top:6px}
+  .foot .sp{flex:1}
+  .foot .g{color:var(--gold)}
+  .hint{position:fixed;left:50%;bottom:2px;transform:translateX(-50%);z-index:8;font-size:5px;letter-spacing:.2em;color:rgba(59,52,40,.65);pointer-events:none}
+
+  #fallback{position:fixed;inset:0;z-index:30;display:none;place-items:center;background:#000;text-align:center;font-size:11px;line-height:2;color:var(--dim);padding:24px}
+  #fallback b{color:var(--gold);font-weight:400}
+
+  @media(max-width:900px){
+    .phase{display:none}
+    .title h1{font-size:58px}
+    .status{right:24px;top:24px}
+    .title{left:24px;top:24px}
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="grain"></div>
+<div class="scan"></div>
+<div class="vig"></div>
+<div class="frame"></div>
+
+<div class="title">
+  <div class="k">550C // SINGULARITY PROOF</div>
+  <h1>MO<span>SS</span></h1>
+  <div class="cn">视 界 熔 炉</div>
+  <div class="sub">ACCRETION · FORMATION · DISASSEMBLY · FORGE · BROADCAST<br>NON-COMMERCIAL VISUAL PROOF</div>
+  <div class="rule"></div>
+</div>
+
+<div class="status"><b>MOSS // CORE ONLINE</b><span><i></i><span id="clock">00:00:00</span> · 10s LOOP</span></div>
+
+<div class="phase" id="phases">
+  <div class="on"><b>01 吸积</b><span>ACCRETION</span></div>
+  <div><b>02 成形</b><span>FORMATION</span></div>
+  <div><b>03 拆解</b><span>DISASSEMBLY</span></div>
+  <div><b>04 锻造</b><span>FORGE</span></div>
+  <div><b>05 播报</b><span>BROADCAST</span></div>
+</div>
+
+<div class="progress"><i></i></div>
+<div class="foot"><span class="g">550C // MOSS SINGULARITY</span><span>WEBGL // PROCEDURAL</span><span class="sp"></span><span>BLACK / GOLD / WHITE / RED EYE</span><span>NON-COMMERCIAL</span></div>
+<div class="hint">MOVE MOUSE TO DRIFT</div>
+
+<div id="fallback">WebGL 或 CDN 加载失败。<br><b>请用 Chrome / Edge 打开，并确认能访问 cdn.jsdelivr.net</b><br>这是 10 秒 WebGL 视觉 Proof，不是完整应用。</div>
+
+<script>
+  window.__MOSS_BOOTED = false;
+  setTimeout(() => {
+    if (!window.__MOSS_BOOTED) document.getElementById('fallback').style.display = 'grid';
+  }, 12000);
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+window.__MOSS_BOOTED = true;
+document.getElementById('fallback').style.display = 'none';
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000, 1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.25;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000000, 0.018);
+
+const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 2.3, 8.2);
+
+const clock = new THREE.Clock();
+
+// ---------------------------------------------------------------------------
+// textures
+// ---------------------------------------------------------------------------
+function radialTexture(inner, outer) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, inner);
+  g.addColorStop(0.18, inner);
+  g.addColorStop(0.5, outer);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+// ---------------------------------------------------------------------------
+// black hole + red eye
+// ---------------------------------------------------------------------------
+const hole = new THREE.Mesh(
+  new THREE.SphereGeometry(0.72, 64, 64),
+  new THREE.MeshBasicMaterial({ color: 0x000000 })
+);
+scene.add(hole);
+
+const photon = new THREE.Mesh(
+  new THREE.TorusGeometry(0.755, 0.006, 8, 180),
+  new THREE.MeshBasicMaterial({ color: 0xffd28a, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })
+);
+photon.rotation.x = Math.PI / 2;
+scene.add(photon);
+
+const photon2 = new THREE.Mesh(
+  new THREE.TorusGeometry(0.86, 0.018, 8, 180),
+  new THREE.MeshBasicMaterial({ color: 0xe8a020, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })
+);
+photon2.rotation.x = Math.PI / 2;
+scene.add(photon2);
+
+const eye = new THREE.Mesh(
+  new THREE.SphereGeometry(0.13, 32, 32),
+  new THREE.MeshBasicMaterial({ color: 0xff1a12 })
+);
+eye.position.set(0, 0, 0.78);
+scene.add(eye);
+
+const eyeGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: radialTexture('rgba(255,220,200,1)', 'rgba(255,20,8,.55)'),
+  color: 0xff2a18,
+  transparent: true,
+  opacity: 0.9,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+}));
+eyeGlow.position.copy(eye.position);
+eyeGlow.scale.set(1.7, 1.7, 1);
+scene.add(eyeGlow);
+
+const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: radialTexture('rgba(255,180,90,.65)', 'rgba(232,120,20,.18)'),
+  color: 0xffa23a,
+  transparent: true,
+  opacity: 0.55,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+}));
+halo.position.set(0, 0, -0.4);
+halo.scale.set(5.2, 5.2, 1);
+scene.add(halo);
+
+// ---------------------------------------------------------------------------
+// accretion disk particles
+// ---------------------------------------------------------------------------
+const COUNT = 15000;
+const diskGeo = new THREE.BufferGeometry();
+const positions = new Float32Array(COUNT * 3);
+const colors = new Float32Array(COUNT * 3);
+const radii = new Float32Array(COUNT);
+const angles = new Float32Array(COUNT);
+const sizes = new Float32Array(COUNT);
+
+const cGold = new THREE.Color(0xe8a020);
+const cGold2 = new THREE.Color(0xffc043);
+const cWhite = new THREE.Color(0xf2f0e8);
+
+for (let i = 0; i < COUNT; i++) {
+  const t = Math.pow(Math.random(), 1.7);
+  const r = 1.02 + t * 3.1;
+  const a = Math.random() * Math.PI * 2;
+  const y = (Math.random() - 0.5) * 0.12 * (1.2 - t * 0.55);
+  radii[i] = r;
+  angles[i] = a;
+  positions[i * 3] = Math.cos(a) * r;
+  positions[i * 3 + 1] = y;
+  positions[i * 3 + 2] = Math.sin(a) * r;
+
+  const c = new THREE.Color().copy(r < 1.9 ? cWhite : (Math.random() > 0.45 ? cGold2 : cGold));
+  c.multiplyScalar(0.55 + Math.random() * 0.6);
+  colors[i * 3] = c.r;
+  colors[i * 3 + 1] = c.g;
+  colors[i * 3 + 2] = c.b;
+  sizes[i] = 0.6 + Math.random() * 1.8;
+}
+diskGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+diskGeo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+diskGeo.setAttribute('aRadius', new THREE.BufferAttribute(radii, 1));
+diskGeo.setAttribute('aAngle', new THREE.BufferAttribute(angles, 1));
+diskGeo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+
+const diskMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uPixelRatio: { value: Math.min(2, window.devicePixelRatio || 1) }
+  },
+  vertexShader: `
+    uniform float uTime;
+    uniform float uPixelRatio;
+    attribute float aRadius;
+    attribute float aAngle;
+    attribute float aSize;
+    attribute vec3 aColor;
+    varying vec3 vColor;
+    varying float vAlpha;
+    void main() {
+      float speed = 0.12 + 0.62 / (aRadius + 0.55);
+      float angle = aAngle + uTime * speed;
+      float y = sin(angle * 2.0 + aRadius * 4.0) * 0.018 * (1.0 - aRadius / 5.0);
+      vec3 p = vec3(cos(angle) * aRadius, y, sin(angle) * aRadius);
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      gl_PointSize = aSize * uPixelRatio * (190.0 / max(1.0, -mv.z));
+      gl_PointSize = min(gl_PointSize, 26.0);
+      vColor = aColor;
+      vAlpha = clamp(1.3 - aRadius * 0.24, 0.16, 1.0);
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vColor;
+    varying float vAlpha;
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float d = length(uv);
+      if (d > 0.5) discard;
+      float a = smoothstep(0.5, 0.0, d);
+      gl_FragColor = vec4(vColor, a * a * vAlpha);
+    }
+  `,
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending
+});
+
+const disk = new THREE.Points(diskGeo, diskMat);
+disk.frustumCulled = false;
+scene.add(disk);
+
+// faint outer dust
+const DUST = 5000;
+const dustGeo = new THREE.BufferGeometry();
+const dpos = new Float32Array(DUST * 3);
+const dcol = new Float32Array(DUST * 3);
+const drad = new Float32Array(DUST);
+const dang = new Float32Array(DUST);
+const dsize = new Float32Array(DUST);
+for (let i = 0; i < DUST; i++) {
+  const r = 3.4 + Math.random() * 2.4;
+  const a = Math.random() * Math.PI * 2;
+  drad[i] = r; dang[i] = a;
+  dpos[i * 3] = Math.cos(a) * r;
+  dpos[i * 3 + 1] = (Math.random() - 0.5) * 0.35;
+  dpos[i * 3 + 2] = Math.sin(a) * r;
+  const c = new THREE.Color(0x8a7b62).multiplyScalar(0.5);
+  dcol[i * 3] = c.r; dcol[i * 3 + 1] = c.g; dcol[i * 3 + 2] = c.b;
+  dsize[i] = 0.4 + Math.random() * 1.2;
+}
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
+dustGeo.setAttribute('aColor', new THREE.BufferAttribute(dcol, 3));
+dustGeo.setAttribute('aRadius', new THREE.BufferAttribute(drad, 1));
+dustGeo.setAttribute('aAngle', new THREE.BufferAttribute(dang, 1));
+dustGeo.setAttribute('aSize', new THREE.BufferAttribute(dsize, 1));
+const dust = new THREE.Points(dustGeo, diskMat.clone());
+dust.material.uniforms = diskMat.uniforms;
+dust.frustumCulled = false;
+scene.add(dust);
+
+// ---------------------------------------------------------------------------
+// orbital rings + ticks
+// ---------------------------------------------------------------------------
+const ringGroup = new THREE.Group();
+scene.add(ringGroup);
+
+function makeRing(radius, color, opacity, tiltX, tiltZ, y = 0) {
+  const pts = [];
+  for (let i = 0; i <= 160; i++) {
+    const a = (i / 160) * Math.PI * 2;
+    pts.push(new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius));
+  }
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineBasicMaterial({
+    color, transparent: true, opacity,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const line = new THREE.Line(geo, mat);
+  line.rotation.x = tiltX;
+  line.rotation.z = tiltZ;
+  line.position.y = y;
+  ringGroup.add(line);
+  return line;
+}
+
+makeRing(1.55, 0xe8a020, 0.35, 0.18, 0.05);
+makeRing(2.05, 0xf2f0e8, 0.16, 0.32, -0.16);
+makeRing(2.65, 0xe8a020, 0.22, 0.55, 0.28);
+makeRing(3.35, 0xf2f0e8, 0.09, 0.9, -0.4);
+
+// tick ring
+const tickPts = [];
+for (let i = 0; i < 72; i++) {
+  const a = (i / 72) * Math.PI * 2;
+  const r1 = 2.62;
+  const r2 = i % 6 === 0 ? 2.72 : 2.66;
+  tickPts.push(new THREE.Vector3(Math.cos(a) * r1, 0, Math.sin(a) * r1));
+  tickPts.push(new THREE.Vector3(Math.cos(a) * r2, 0, Math.sin(a) * r2));
+}
+const tickGeo = new THREE.BufferGeometry().setFromPoints(tickPts);
+const ticks = new THREE.LineSegments(tickGeo, new THREE.LineBasicMaterial({
+  color: 0xe8a020, transparent: true, opacity: 0.25,
+  blending: THREE.AdditiveBlending, depthWrite: false
+}));
+ticks.rotation.x = 0.55;
+ticks.rotation.z = 0.28;
+ringGroup.add(ticks);
+
+// ---------------------------------------------------------------------------
+// incoming data streams
+// ---------------------------------------------------------------------------
+const streams = [];
+const dotGeo = new THREE.SphereGeometry(0.022, 8, 8);
+const dotGold = new THREE.MeshBasicMaterial({ color: 0xffc043, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+const dotWhite = new THREE.MeshBasicMaterial({ color: 0xf2f0e8, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+
+for (let i = 0; i < 8; i++) {
+  const side = i % 2 ? 1 : -1;
+  const z = -2.4 + (i % 4) * 1.4;
+  const y = -1.4 + Math.floor(i / 4) * 1.3;
+  const start = new THREE.Vector3(side * 5.2, y, z);
+  const mid1 = new THREE.Vector3(side * 3.1, y * 0.55, z * 0.45);
+  const mid2 = new THREE.Vector3(side * 1.4, y * 0.15, z * 0.1);
+  const end = new THREE.Vector3(0, 0, 0);
+  const curve = new THREE.CatmullRomCurve3([start, mid1, mid2, end]);
+  const pts = curve.getPoints(90);
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineBasicMaterial({
+    color: i % 2 ? 0xf2f0e8 : 0xe8a020,
+    transparent: true, opacity: 0.1,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  scene.add(new THREE.Line(geo, mat));
+
+  const dots = [];
+  for (let k = 0; k < 4; k++) {
+    const d = new THREE.Mesh(dotGeo, k % 2 ? dotWhite : dotGold);
+    d.userData.offset = k / 4 + Math.random() * 0.15;
+    d.userData.speed = 0.045 + Math.random() * 0.03;
+    scene.add(d);
+    dots.push(d);
+  }
+  streams.push({ curve, dots });
+}
+
+// ---------------------------------------------------------------------------
+// starfield
+// ---------------------------------------------------------------------------
+const STARS = 1100;
+const starGeo = new THREE.BufferGeometry();
+const starPos = new Float32Array(STARS * 3);
+for (let i = 0; i < STARS; i++) {
+  const r = 12 + Math.random() * 18;
+  const t = Math.random() * Math.PI * 2;
+  const p = Math.acos(2 * Math.random() - 1);
+  starPos[i * 3] = r * Math.sin(p) * Math.cos(t);
+  starPos[i * 3 + 1] = r * Math.cos(p);
+  starPos[i * 3 + 2] = r * Math.sin(p) * Math.sin(t);
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const starMat = new THREE.PointsMaterial({
+  color: 0xd8cbb5, size: 0.03, transparent: true, opacity: 0.45,
+  depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true
+});
+scene.add(new THREE.Points(starGeo, starMat));
+
+// ---------------------------------------------------------------------------
+// post
+// ---------------------------------------------------------------------------
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  0.92, 0.62, 0.18
+);
+composer.addPass(bloom);
+
+// ---------------------------------------------------------------------------
+// mouse drift
+// ---------------------------------------------------------------------------
+let mx = 0, my = 0, tx = 0, ty = 0;
+window.addEventListener('pointermove', (e) => {
+  tx = (e.clientX / window.innerWidth - 0.5) * 2;
+  ty = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+// ---------------------------------------------------------------------------
+// animation
+// ---------------------------------------------------------------------------
+const phaseEls = [...document.querySelectorAll('.phase div')];
+let phaseIndex = -1;
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  mx += (tx - mx) * 0.025;
+  my += (ty - my) * 0.025;
+
+  camera.position.x = Math.sin(t * 0.11) * 0.35 + mx * 0.35;
+  camera.position.y = 2.3 + Math.sin(t * 0.19) * 0.08 - my * 0.18;
+  camera.position.z = 8.2 + Math.sin(t * 0.08) * 0.22;
+  camera.lookAt(0, 0, 0);
+
+  diskMat.uniforms.uTime.value = t;
+  diskMat.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+  dust.rotation.y = t * 0.018;
+
+  ringGroup.rotation.y = t * 0.035;
+  ringGroup.rotation.x = Math.sin(t * 0.08) * 0.03;
+
+  const pulse = 1 + Math.sin(t * 2.4) * 0.07;
+  eye.scale.setScalar(pulse);
+  eyeGlow.scale.setScalar(1.7 * (1 + Math.sin(t * 2.4) * 0.06));
+  eyeGlow.material.opacity = 0.78 + Math.sin(t * 2.4) * 0.12;
+  halo.material.opacity = 0.45 + Math.sin(t * 0.7) * 0.08;
+
+  for (const s of streams) {
+    for (const d of s.dots) {
+      const p = (t * d.userData.speed + d.userData.offset) % 1;
+      d.position.copy(s.curve.getPointAt(p));
+      d.scale.setScalar(0.7 + p * 0.7);
+    }
+  }
+
+  const phase = Math.floor((t % 10) / 2);
+  if (phase !== phaseIndex) {
+    phaseIndex = phase;
+    phaseEls.forEach((el, i) => el.classList.toggle('on', i <= phase));
+  }
+
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('clock').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+  composer.render();
+}
+
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  bloom.resolution.set(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

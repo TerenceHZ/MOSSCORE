@@ -1,0 +1,7 @@
+{
+  "name": "moss-core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MOSS CORE 异动监测 · 550C 神经星环桌面端",
+  "main": "main.cjs"
+}

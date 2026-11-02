@@ -1,0 +1,464 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#04070b"/>
+      <stop offset="0.55" stop-color="#04060a"/>
+      <stop offset="1" stop-color="#020407"/>
+    </linearGradient>
+    <radialGradient id="eye" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffe0a0"/>
+      <stop offset="0.22" stop-color="#ffc043"/>
+      <stop offset="0.5" stop-color="#e8a020"/>
+      <stop offset="0.78" stop-color="#7a4a10"/>
+      <stop offset="1" stop-color="#140b03"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="46%" r="62%">
+      <stop offset="0.4" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.72"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a0f18" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#05080d" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="amberline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e8a020" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ffc043" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#e8a020" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#e8a020" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+    <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="1" fill="#000000" opacity="0.18"/>
+    </pattern>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <style>
+      text { font-family: "Cascadia Code", "Consolas", monospace; fill: #c8d4e2; }
+      .cn { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+      .dim { fill: #5f6d80; }
+      .faint { fill: #333d4d; }
+      .amber { fill: #e8a020; }
+      .bright { fill: #ffc043; }
+      .cyan { fill: #4fd1c5; }
+      .green { fill: #7fd18a; }
+      .red { fill: #f0654a; }
+      .white { fill: #e8eef5; }
+      .micro { font-size: 9px; letter-spacing: 1.4px; }
+      .tiny { font-size: 8px; letter-spacing: 1px; }
+      .label { font-size: 10px; letter-spacing: 1.4px; }
+      .title { font-family: "Bahnschrift Condensed", "Arial Narrow", sans-serif; font-size: 74px; letter-spacing: 2px; fill: #e8eef5; }
+      .subtitle { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; font-size: 26px; letter-spacing: 8px; fill: #c8d4e2; }
+      .num { font-size: 38px; fill: #ffc043; }
+    </style>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#grid)"/>
+
+  <!-- Header -->
+  <g>
+    <rect x="0" y="0" width="1920" height="64" fill="#05080d" opacity="0.82"/>
+    <line x1="0" y1="64" x2="1920" y2="64" stroke="#e8a020" stroke-opacity="0.22"/>
+    <text x="40" y="27" class="label amber">550C // COMMAND CORE</text>
+    <text x="40" y="47" class="micro dim cn">全平台合约异动指挥系统</text>
+
+    <g transform="translate(690 17)">
+      <line x1="0" y1="14" x2="540" y2="14" stroke="#e8a020" stroke-opacity="0.22"/>
+      <g>
+        <circle cx="10" cy="14" r="3" fill="#4fd1c5"/>
+        <text x="22" y="10" class="tiny cyan">01 采集</text>
+        <text x="22" y="24" class="tiny faint">INGEST</text>
+      </g>
+      <g transform="translate(135 0)">
+        <circle cx="10" cy="14" r="3" fill="#e8a020"/>
+        <text x="22" y="10" class="tiny amber">02 指标</text>
+        <text x="22" y="24" class="tiny faint">SCORE</text>
+      </g>
+      <g transform="translate(270 0)">
+        <circle cx="10" cy="14" r="3" fill="#e8a020" filter="url(#soft)"/>
+        <text x="22" y="10" class="tiny amber">03 证据</text>
+        <text x="22" y="24" class="tiny faint">VERIFY</text>
+      </g>
+      <g transform="translate(405 0)">
+        <circle cx="10" cy="14" r="3" fill="#333d4d"/>
+        <text x="22" y="10" class="tiny dim">04 播报</text>
+        <text x="22" y="24" class="tiny faint">BROADCAST</text>
+      </g>
+    </g>
+
+    <text x="1880" y="26" class="tiny dim" text-anchor="end">OBSERVE / DISPATCH / VERIFY</text>
+    <text x="1880" y="46" class="micro amber" text-anchor="end">12:04:31 · LIVE</text>
+    <circle cx="1855" cy="42" r="3" fill="#4fd1c5" filter="url(#soft)"/>
+  </g>
+
+  <!-- Stage title -->
+  <g>
+    <text x="40" y="120" class="tiny amber">550C // MOSS CORE</text>
+    <text x="38" y="188" class="title">MOSS</text>
+    <text x="42" y="222" class="subtitle">指 挥 核 心</text>
+    <text x="42" y="242" class="tiny faint">CONTRACT ANOMALY COMMAND CORE</text>
+  </g>
+
+  <!-- Stage counters -->
+  <g>
+    <text x="1880" y="110" class="tiny dim" text-anchor="end">SCAN 1,247 CONTRACTS</text>
+    <text x="1880" y="128" class="tiny dim" text-anchor="end">HITS 12 · DELAY 1.2s · SSE 1</text>
+    <line x1="1540" y1="140" x2="1880" y2="140" stroke="#e8a020" stroke-opacity="0.15"/>
+  </g>
+
+  <!-- Data field -->
+  <g opacity="0.8">
+    <ellipse cx="980" cy="330" rx="360" ry="150" fill="none" stroke="#4fd1c5" stroke-opacity="0.12" stroke-dasharray="2 7" transform="rotate(-14 980 330)"/>
+    <ellipse cx="980" cy="330" rx="300" ry="118" fill="none" stroke="#e8a020" stroke-opacity="0.12" stroke-dasharray="1 8" transform="rotate(18 980 330)"/>
+    <ellipse cx="980" cy="330" rx="250" ry="80" fill="none" stroke="#4fd1c5" stroke-opacity="0.09" stroke-dasharray="1 10" transform="rotate(-32 980 330)"/>
+
+    <path d="M360 250 C 560 220, 700 280, 810 320" fill="none" stroke="#4fd1c5" stroke-opacity="0.3" stroke-width="1"/>
+    <path d="M360 460 C 600 470, 720 390, 820 350" fill="none" stroke="#e8a020" stroke-opacity="0.26" stroke-width="1"/>
+    <path d="M1600 240 C 1420 240, 1270 290, 1160 320" fill="none" stroke="#4fd1c5" stroke-opacity="0.28" stroke-width="1"/>
+    <path d="M1600 450 C 1400 470, 1260 390, 1160 350" fill="none" stroke="#e8a020" stroke-opacity="0.24" stroke-width="1"/>
+    <path d="M850 560 C 880 500, 930 440, 960 380" fill="none" stroke="#7fd18a" stroke-opacity="0.24" stroke-width="1"/>
+    <path d="M1120 555 C 1080 490, 1040 430, 1000 380" fill="none" stroke="#f0654a" stroke-opacity="0.22" stroke-width="1"/>
+
+    <!-- data capsules -->
+    <g>
+      <rect x="590" y="258" width="62" height="17" rx="2" fill="#061419" stroke="#4fd1c5" stroke-opacity="0.4"/>
+      <text x="598" y="270" class="tiny cyan">OI +8.2</text>
+      <rect x="1180" y="280" width="62" height="17" rx="2" fill="#0d0b05" stroke="#e8a020" stroke-opacity="0.4"/>
+      <text x="1188" y="292" class="tiny amber">VOL 4.1x</text>
+      <rect x="900" y="470" width="58" height="17" rx="2" fill="#06100a" stroke="#7fd18a" stroke-opacity="0.36"/>
+      <text x="908" y="482" class="tiny green">P +2.4</text>
+    </g>
+  </g>
+
+  <!-- MOSS core -->
+  <g transform="translate(980 330)">
+    <circle r="205" fill="none" stroke="#e8a020" stroke-opacity="0.1"/>
+    <circle r="190" fill="none" stroke="#e8a020" stroke-opacity="0.28" stroke-dasharray="1 5"/>
+    <circle r="172" fill="none" stroke="#4fd1c5" stroke-opacity="0.16" stroke-dasharray="18 6"/>
+    <circle r="150" fill="none" stroke="#e8a020" stroke-opacity="0.3"/>
+
+    <!-- 12 iris blades -->
+    <g fill="#e8a020" fill-opacity="0.045" stroke="#e8a020" stroke-opacity="0.26" stroke-width="1">
+      <path d="M0,-62 L25,-138 L0,-166 Z"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(30)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(60)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(90)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(120)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(150)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(180)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(210)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(240)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(270)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(300)"/>
+      <path d="M0,-62 L25,-138 L0,-166 Z" transform="rotate(330)"/>
+    </g>
+
+    <!-- ring ticks -->
+    <g stroke="#e8a020" stroke-opacity="0.4">
+      <line x1="0" y1="-190" x2="0" y2="-200"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(30)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(60)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(90)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(120)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(150)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(180)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(210)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(240)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(270)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(300)"/>
+      <line x1="0" y1="-190" x2="0" y2="-200" transform="rotate(330)"/>
+    </g>
+
+    <circle r="92" fill="#05080d" stroke="#e8a020" stroke-opacity="0.5"/>
+    <circle r="70" fill="url(#eye)" filter="url(#glow)"/>
+    <circle r="70" fill="none" stroke="#ffc043" stroke-opacity="0.65"/>
+    <circle r="38" fill="#080502" stroke="#ffc043" stroke-opacity="0.3"/>
+    <circle r="9" fill="#ffe0a0" filter="url(#soft)"/>
+
+    <text x="0" y="235" class="tiny dim" text-anchor="middle">MOSS // 550C</text>
+    <text x="0" y="250" class="tiny faint" text-anchor="middle">OBSERVE · DISPATCH · VERIFY</text>
+  </g>
+
+  <!-- Units -->
+  <!-- unit helper look: x,y -->
+  <g transform="translate(520 150)">
+    <path d="M0 0 H112 L124 12 V46 H0 Z" fill="#061419" stroke="#4fd1c5" stroke-opacity="0.42"/>
+    <text x="9" y="17" class="tiny cyan">01</text>
+    <text x="34" y="17" class="label cyan">▼</text>
+    <text x="55" y="17" class="tiny">采集</text>
+    <text x="9" y="34" class="tiny faint">INGEST · ACTIVE</text>
+    <line x1="9" y1="40" x2="78" y2="40" stroke="#4fd1c5" stroke-opacity="0.4"/>
+  </g>
+  <g transform="translate(500 318)">
+    <path d="M0 0 H112 L124 12 V46 H0 Z" fill="#0d0b05" stroke="#e8a020" stroke-opacity="0.45"/>
+    <text x="9" y="17" class="tiny amber">02</text>
+    <text x="34" y="17" class="label amber">▤</text>
+    <text x="55" y="17" class="tiny">持仓</text>
+    <text x="9" y="34" class="tiny faint">OI · +8.2%</text>
+    <line x1="9" y1="40" x2="92" y2="40" stroke="#e8a020" stroke-opacity="0.5"/>
+  </g>
+  <g transform="translate(610 478)">
+    <path d="M0 0 H112 L124 12 V46 H0 Z" fill="#06100a" stroke="#7fd18a" stroke-opacity="0.38"/>
+    <text x="9" y="17" class="tiny green">03</text>
+    <text x="34" y="17" class="label green">↕</text>
+    <text x="55" y="17" class="tiny">价格</text>
+    <text x="9" y="34" class="tiny faint">PRICE · +2.4%</text>
+    <line x1="9" y1="40" x2="68" y2="40" stroke="#7fd18a" stroke-opacity="0.45"/>
+  </g>
+  <g transform="translate(845 512)">
+    <path d="M0 0 H112 L124 12 V46 H0 Z" fill="#0b0d10" stroke="#e8eef5" stroke-opacity="0.3"/>
+    <text x="9" y="17" class="tiny white">04</text>
+    <text x="34" y="17" class="label white">◉</text>
+    <text x="55" y="17" class="tiny">放量</text>
+    <text x="9" y="34" class="tiny faint">VOL · 4.1x</text>
+    <line x1="9" y1="40" x2="102" y2="40" stroke="#e8eef5" stroke-opacity="0.4"/>
+  </g>
+  <g transform="translate(1118 500)">
+    <path d="M0 0 H112 L124 12 V46 H0 Z" fill="#061419" stroke="#4fd1c5" stroke-opacity="0.35"/>
+    <text x="9" y="17" class="tiny cyan">05</text>
+    <text x="34" y="17" class="label cyan">⌗</text>
+    <text x="55" y="17" class="tiny">证据</text>
+    <text x="9" y="34" class="tiny faint">VERIFY · WAIT</text>
+    <line x1="9" y1="40" x2="74" y2="40" stroke="#4fd1c5" stroke-opacity="0.4"/>
+  </g>
+  <g transform="translate(1300 350)">
+    <path d="M0 0 H112 L124 12 V46 H0 Z" fill="#140807" stroke="#f0654a" stroke-opacity="0.38"/>
+    <text x="9" y="17" class="tiny red">06</text>
+    <text x="34" y="17" class="label red">△</text>
+    <text x="55" y="17" class="tiny">风险</text>
+    <text x="9" y="34" class="tiny faint">RISK · 2 FLAGS</text>
+    <line x1="9" y1="40" x2="58" y2="40" stroke="#f0654a" stroke-opacity="0.45"/>
+  </g>
+  <g transform="translate(1280 160)">
+    <path d="M0 0 H112 L124 12 V46 H0 Z" fill="#0d0b05" stroke="#e8a020" stroke-opacity="0.42"/>
+    <text x="9" y="17" class="tiny amber">07</text>
+    <text x="34" y="17" class="label amber">↗</text>
+    <text x="55" y="17" class="tiny">播报</text>
+    <text x="9" y="34" class="tiny faint">BROADCAST · READY</text>
+    <line x1="9" y1="40" x2="88" y2="40" stroke="#e8a020" stroke-opacity="0.45"/>
+  </g>
+
+  <!-- command lines from MOSS to units -->
+  <g fill="none" stroke="#e8a020" stroke-opacity="0.24" stroke-width="1">
+    <path d="M870 270 C 760 250, 650 210, 620 196"/>
+    <path d="M870 350 C 760 350, 650 340, 624 340"/>
+    <path d="M900 460 C 800 490, 720 500, 710 500"/>
+    <path d="M1090 270 C 1180 240, 1250 210, 1280 198"/>
+    <path d="M1090 410 C 1170 400, 1230 390, 1300 386"/>
+  </g>
+  <g fill="none" stroke="#4fd1c5" stroke-opacity="0.18" stroke-width="1">
+    <path d="M640 196 C 730 210, 830 260, 900 300"/>
+    <path d="M708 500 C 760 490, 820 460, 910 410"/>
+    <path d="M1300 386 C 1220 400, 1140 420, 1060 430"/>
+  </g>
+
+  <!-- Bottom windows -->
+  <!-- Main result window -->
+  <g>
+    <rect x="40" y="580" width="1200" height="460" fill="url(#panel)" stroke="#e8a020" stroke-opacity="0.18"/>
+    <path d="M40 580 H1120 L1140 600 V600" fill="none" stroke="#e8a020" stroke-opacity="0.4"/>
+    <rect x="40" y="580" width="1200" height="48" fill="#080d14" opacity="0.9"/>
+    <line x1="40" y1="628" x2="1240" y2="628" stroke="#e8a020" stroke-opacity="0.16"/>
+    <text x="58" y="609" class="tiny amber">ANOMALY FEED // 异动播报</text>
+
+    <g transform="translate(320 592)">
+      <rect width="74" height="26" fill="#e8a020" fill-opacity="0.12" stroke="#e8a020" stroke-opacity="0.3"/>
+      <text x="37" y="17" class="tiny amber" text-anchor="middle">全平台</text>
+    </g>
+    <g transform="translate(400 592)">
+      <rect width="62" height="26" fill="none" stroke="#e8a020" stroke-opacity="0.12"/>
+      <text x="31" y="17" class="tiny dim" text-anchor="middle">自选</text>
+    </g>
+
+    <text x="1204" y="609" class="tiny dim" text-anchor="end">1,247 SCANNED · 12 HITS · 1.2s</text>
+
+    <!-- column headers -->
+    <text x="60" y="652" class="tiny faint">PAIR / TYPE</text>
+    <text x="390" y="652" class="tiny faint">OI</text>
+    <text x="560" y="652" class="tiny faint">VOL</text>
+    <text x="700" y="652" class="tiny faint">PRICE</text>
+    <text x="900" y="652" class="tiny faint">SCORE</text>
+    <text x="1040" y="652" class="tiny faint">STATE</text>
+
+    <!-- row 1 -->
+    <g>
+      <rect x="52" y="664" width="3" height="62" fill="#e8a020"/>
+      <text x="68" y="686" class="label white">ANIMEUSDT</text>
+      <text x="68" y="704" class="tiny amber">增仓上涨 · OI + VOL</text>
+      <text x="68" y="718" class="tiny faint">主动买盘占优，盘口滑点偏高</text>
+      <text x="390" y="690" class="label amber">+8.2%</text>
+      <text x="390" y="706" class="tiny faint">5m</text>
+      <text x="560" y="690" class="label white">4.1x</text>
+      <text x="560" y="706" class="tiny faint">量比</text>
+      <text x="700" y="690" class="label green">+2.4%</text>
+      <text x="700" y="706" class="tiny faint">5m</text>
+      <text x="900" y="690" class="label bright">87</text>
+      <text x="900" y="706" class="tiny faint">强度</text>
+      <text x="1040" y="690" class="tiny amber">LOCKED</text>
+      <text x="1040" y="706" class="tiny faint">12:04:31</text>
+    </g>
+    <line x1="58" y1="742" x2="1222" y2="742" stroke="#e8a020" stroke-opacity="0.08"/>
+
+    <!-- row 2 -->
+    <g>
+      <rect x="52" y="754" width="3" height="62" fill="#4fd1c5"/>
+      <text x="68" y="776" class="label white">SOLUSDT</text>
+      <text x="68" y="794" class="tiny cyan">空头回补 · OI ↓ + PRICE ↑</text>
+      <text x="68" y="808" class="tiny faint">价格推进但增仓不足，持续性待确认</text>
+      <text x="390" y="780" class="label cyan">-3.6%</text>
+      <text x="390" y="796" class="tiny faint">15m</text>
+      <text x="560" y="780" class="label white">2.8x</text>
+      <text x="560" y="796" class="tiny faint">量比</text>
+      <text x="700" y="780" class="label green">+1.1%</text>
+      <text x="700" y="796" class="tiny faint">5m</text>
+      <text x="900" y="780" class="label bright">74</text>
+      <text x="900" y="796" class="tiny faint">强度</text>
+      <text x="1040" y="780" class="tiny cyan">VERIFY</text>
+      <text x="1040" y="796" class="tiny faint">12:04:28</text>
+    </g>
+    <line x1="58" y1="832" x2="1222" y2="832" stroke="#e8a020" stroke-opacity="0.08"/>
+
+    <!-- row 3 -->
+    <g>
+      <rect x="52" y="844" width="3" height="62" fill="#e8eef5"/>
+      <text x="68" y="866" class="label white">IOUSDT</text>
+      <text x="68" y="884" class="tiny white">放量异动 · VOL SPIKE</text>
+      <text x="68" y="898" class="tiny faint">短周期成交放大，OI 尚未同步</text>
+      <text x="390" y="870" class="label white">+1.2%</text>
+      <text x="390" y="886" class="tiny faint">5m</text>
+      <text x="560" y="870" class="label white">5.7x</text>
+      <text x="560" y="886" class="tiny faint">量比</text>
+      <text x="700" y="870" class="label green">+0.6%</text>
+      <text x="700" y="886" class="tiny faint">5m</text>
+      <text x="900" y="870" class="label bright">61</text>
+      <text x="900" y="886" class="tiny faint">强度</text>
+      <text x="1040" y="870" class="tiny dim">WATCH</text>
+      <text x="1040" y="886" class="tiny faint">12:04:22</text>
+    </g>
+    <line x1="58" y1="922" x2="1222" y2="922" stroke="#e8a020" stroke-opacity="0.08"/>
+
+    <!-- row 4 -->
+    <g>
+      <rect x="52" y="934" width="3" height="62" fill="#f0654a"/>
+      <text x="68" y="956" class="label white">ARXUSDT</text>
+      <text x="68" y="974" class="tiny red">增仓下跌 · OI ↑ + PRICE ↓</text>
+      <text x="68" y="988" class="tiny faint">新增空头迹象，盘口承接偏弱</text>
+      <text x="390" y="960" class="label red">+6.4%</text>
+      <text x="390" y="976" class="tiny faint">15m</text>
+      <text x="560" y="960" class="label white">3.2x</text>
+      <text x="560" y="976" class="tiny faint">量比</text>
+      <text x="700" y="960" class="label red">-1.8%</text>
+      <text x="700" y="976" class="tiny faint">5m</text>
+      <text x="900" y="960" class="label bright">69</text>
+      <text x="900" y="976" class="tiny faint">强度</text>
+      <text x="1040" y="960" class="tiny red">RISK</text>
+      <text x="1040" y="976" class="tiny faint">12:04:18</text>
+    </g>
+
+    <text x="58" y="1022" class="tiny faint">AUTO-SCROLL · HOVER TO PAUSE · CLICK TO INSPECT</text>
+    <text x="1222" y="1022" class="tiny amber" text-anchor="end">MOCK DATA</text>
+  </g>
+
+  <!-- Evidence window -->
+  <g>
+    <rect x="1260" y="580" width="620" height="280" fill="url(#panel)" stroke="#e8a020" stroke-opacity="0.18"/>
+    <rect x="1260" y="580" width="620" height="40" fill="#080d14" opacity="0.9"/>
+    <text x="1278" y="605" class="tiny amber">EVIDENCE // 证据</text>
+    <text x="1862" y="605" class="tiny dim" text-anchor="end">SELECTED</text>
+    <line x1="1260" y1="620" x2="1880" y2="620" stroke="#e8a020" stroke-opacity="0.16"/>
+
+    <text x="1278" y="654" class="label white">ANIMEUSDT</text>
+    <text x="1278" y="672" class="tiny amber">增仓上涨 · LOCKED · 12:04:31</text>
+    <text x="1278" y="722" class="num">+8.2%</text>
+    <text x="1430" y="722" class="tiny faint">OI 5m</text>
+
+    <g transform="translate(1278 744)">
+      <text x="0" y="9" class="tiny dim">OI</text>
+      <rect x="42" y="0" width="430" height="4" fill="#1a1710"/>
+      <rect x="42" y="0" width="352" height="4" fill="#e8a020" opacity="0.75"/>
+      <text x="480" y="9" class="tiny amber" text-anchor="end">82</text>
+    </g>
+    <g transform="translate(1278 766)">
+      <text x="0" y="9" class="tiny dim">VOL</text>
+      <rect x="42" y="0" width="430" height="4" fill="#1a1710"/>
+      <rect x="42" y="0" width="390" height="4" fill="#e8eef5" opacity="0.7"/>
+      <text x="480" y="9" class="tiny white" text-anchor="end">91</text>
+    </g>
+    <g transform="translate(1278 788)">
+      <text x="0" y="9" class="tiny dim">PRICE</text>
+      <rect x="42" y="0" width="430" height="4" fill="#1a1710"/>
+      <rect x="42" y="0" width="275" height="4" fill="#7fd18a" opacity="0.7"/>
+      <text x="480" y="9" class="tiny green" text-anchor="end">64</text>
+    </g>
+
+    <g transform="translate(1278 810)">
+      <rect width="82" height="18" fill="#06100a" stroke="#7fd18a" stroke-opacity="0.35"/>
+      <text x="41" y="13" class="tiny green" text-anchor="middle">SUPPORT 3</text>
+      <rect x="90" width="76" height="18" fill="#140807" stroke="#f0654a" stroke-opacity="0.35"/>
+      <text x="128" y="13" class="tiny red" text-anchor="middle">MISSING 1</text>
+      <rect x="174" width="62" height="18" fill="#0d0b05" stroke="#e8a020" stroke-opacity="0.3"/>
+      <text x="205" y="13" class="tiny amber" text-anchor="middle">RISK 2</text>
+    </g>
+
+    <text x="1278" y="846" class="tiny faint">主动买盘占优，但盘口滑点偏高 → 等回踩确认</text>
+    <text x="1862" y="846" class="tiny amber" text-anchor="end">VIEW DETAIL →</text>
+  </g>
+
+  <!-- Trace window -->
+  <g>
+    <rect x="1260" y="880" width="620" height="160" fill="url(#panel)" stroke="#e8a020" stroke-opacity="0.18"/>
+    <rect x="1260" y="880" width="620" height="34" fill="#080d14" opacity="0.9"/>
+    <text x="1278" y="902" class="tiny amber">TRACE // 运行轨迹</text>
+    <text x="1862" y="902" class="tiny cyan" text-anchor="end">LIVE</text>
+    <line x1="1260" y1="914" x2="1880" y2="914" stroke="#e8a020" stroke-opacity="0.16"/>
+
+    <g class="tiny">
+      <text x="1278" y="934" fill="#5f6d80">12:04:31.208</text>
+      <text x="1390" y="934" class="cyan">INGEST</text>
+      <text x="1460" y="934" fill="#94a3b8">scan 1,247 contracts</text>
+      <text x="1856" y="934" fill="#5f6d80" text-anchor="end">142ms</text>
+
+      <text x="1278" y="954" fill="#5f6d80">12:04:31.412</text>
+      <text x="1390" y="954" class="amber">OI</text>
+      <text x="1428" y="954" fill="#c8d4e2">ANIMEUSDT +8.2% 5m</text>
+      <text x="1856" y="954" class="green" text-anchor="end">OK</text>
+
+      <text x="1278" y="974" fill="#5f6d80">12:04:31.518</text>
+      <text x="1390" y="974" class="green">PRICE</text>
+      <text x="1446" y="974" fill="#c8d4e2">ANIMEUSDT +2.4% 5m</text>
+      <text x="1856" y="974" class="green" text-anchor="end">OK</text>
+
+      <text x="1278" y="994" fill="#5f6d80">12:04:31.604</text>
+      <text x="1390" y="994" class="cyan">EVIDENCE</text>
+      <text x="1476" y="994" fill="#c8d4e2">3 support / 1 missing</text>
+      <text x="1856" y="994" class="amber" text-anchor="end">WAIT</text>
+
+      <text x="1278" y="1014" fill="#5f6d80">12:04:31.702</text>
+      <text x="1390" y="1014" class="amber">MOSS</text>
+      <text x="1440" y="1014" fill="#c8d4e2">LOCK ANIMEUSDT</text>
+      <text x="1856" y="1014" class="bright" text-anchor="end">DONE</text>
+    </g>
+  </g>
+
+  <!-- tiny corner brackets -->
+  <g stroke="#e8a020" stroke-opacity="0.45">
+    <path d="M40 580 V568 H52" fill="none"/>
+    <path d="M1240 580 V568 H1228" fill="none"/>
+    <path d="M40 1040 V1052 H52" fill="none"/>
+    <path d="M1240 1040 V1052 H1228" fill="none"/>
+    <path d="M1260 580 V568 H1272" fill="none"/>
+    <path d="M1880 580 V568 H1868" fill="none"/>
+    <path d="M1260 1040 V1052 H1272" fill="none"/>
+    <path d="M1880 1040 V1052 H1868" fill="none"/>
+  </g>
+
+  <rect width="1920" height="1080" fill="url(#scan)" opacity="0.5"/>
+  <rect width="1920" height="1080" fill="url(#vig)"/>
+</svg>

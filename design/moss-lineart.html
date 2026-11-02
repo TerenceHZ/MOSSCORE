@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>550C // MOSS HOLOGRAPHIC CORE</title>
+<style>
+  :root{
+    --bg:#000;
+    --gold:#e8a020;
+    --gold2:#ffc043;
+    --white:#f2f0e8;
+    --dim:#8a7b62;
+    --faint:#3b3428;
+    --red:#ff1a12;
+    --mono:"Cascadia Code","Consolas","SFMono-Regular",monospace;
+    --sans:"Microsoft YaHei","PingFang SC",sans-serif;
+    --wide:"Bahnschrift Condensed","Arial Narrow",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:#000;color:var(--white);font-family:var(--mono);
+    overflow:hidden;cursor:crosshair;
+  }
+  #stage{position:fixed;inset:0;overflow:hidden;background:
+    radial-gradient(ellipse at 52% 44%, rgba(232,160,32,.035), transparent 34%),
+    radial-gradient(ellipse at 50% 50%, #060504 0%, #000 62%);
+  }
+  canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+  .grain{
+    position:fixed;inset:-20%;z-index:8;pointer-events:none;opacity:.055;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/></svg>");
+    animation:grain 1.2s steps(2) infinite;
+  }
+  @keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-2%,1%)}50%{transform:translate(1%,-2%)}75%{transform:translate(2%,2%)}100%{transform:translate(0,0)}}
+  .scan{
+    position:fixed;inset:0;z-index:7;pointer-events:none;opacity:.18;
+    background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(255,255,255,.06) 3px,transparent 4px);
+    mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed;inset:0;z-index:6;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 46%, transparent 34%, rgba(0,0,0,.72) 100%);
+  }
+  .frame{
+    position:fixed;inset:14px;z-index:5;pointer-events:none;
+    border:1px solid rgba(232,160,32,.12);
+    clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));
+  }
+  .frame::before,.frame::after{
+    content:"";position:absolute;width:26px;height:26px;
+  }
+  .frame::before{left:-1px;top:-1px;border-left:1px solid rgba(232,160,32,.65);border-top:1px solid rgba(232,160,32,.65)}
+  .frame::after{right:-1px;bottom:-1px;border-right:1px solid rgba(232,160,32,.65);border-bottom:1px solid rgba(232,160,32,.65)}
+
+  .title{position:fixed;left:34px;top:30px;z-index:10;pointer-events:none}
+  .title .k{font-size:7px;letter-spacing:.22em;color:var(--gold);margin-bottom:8px}
+  .title h1{
+    margin:0;font-family:var(--wide);font-size:clamp(54px,6.6vw,96px);
+    line-height:.82;letter-spacing:2px;color:var(--white);font-weight:500;
+    text-shadow:0 0 30px rgba(232,160,32,.12);
+  }
+  .title h1 span{color:var(--gold)}
+  .title .cn{font-family:var(--sans);font-size:clamp(15px,1.4vw,21px);letter-spacing:.38em;color:#b7ad9c;font-weight:300;margin-top:11px}
+  .title .sub{font-size:6.5px;letter-spacing:.15em;color:var(--faint);margin-top:8px;line-height:1.7}
+  .title .rule{width:210px;height:1px;margin-top:12px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.55}
+
+  .phase{
+    position:fixed;left:50%;top:30px;transform:translateX(-50%);z-index:10;
+    display:flex;height:34px;pointer-events:none;
+  }
+  .phase div{
+    position:relative;display:flex;flex-direction:column;gap:3px;padding:0 13px;
+    border-left:1px solid rgba(232,160,32,.13);min-width:92px;
+  }
+  .phase div:last-child{border-right:1px solid rgba(232,160,32,.13)}
+  .phase b{font-size:7px;letter-spacing:.1em;color:var(--faint);font-weight:400;white-space:nowrap}
+  .phase span{font-size:5.8px;letter-spacing:.08em;color:#2f2a22}
+  .phase div.on b{color:var(--gold)}
+  .phase div.on::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);box-shadow:0 0 9px rgba(232,160,32,.5)}
+
+  .status{position:fixed;right:34px;top:32px;z-index:10;text-align:right;pointer-events:none}
+  .status b{display:block;font-size:7px;letter-spacing:.14em;color:var(--faint);font-weight:400}
+  .status span{display:block;font-size:9px;letter-spacing:.06em;color:var(--gold);margin-top:4px}
+  .status i{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);margin-right:6px}
+
+  .callout{
+    position:fixed;z-index:10;width:154px;pointer-events:none;
+    border:1px solid rgba(232,160,32,.16);
+    background:linear-gradient(180deg,rgba(12,10,7,.42),rgba(0,0,0,.16));
+    backdrop-filter:blur(6px);
+    padding:7px 8px 6px;
+    clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+  }
+  .callout::before{content:"";position:absolute;left:0;top:0;width:42%;height:1px;background:linear-gradient(90deg,rgba(232,160,32,.7),transparent)}
+  .callout .no{font-size:6px;letter-spacing:.1em;color:var(--gold)}
+  .callout .nm{font-family:var(--sans);font-size:9px;letter-spacing:.14em;color:var(--white);margin-top:3px}
+  .callout .st{font-size:5.8px;letter-spacing:.08em;color:var(--faint);margin-top:3px;display:flex;justify-content:space-between}
+  .callout .st em{font-style:normal;color:var(--gold)}
+  .callout .line{position:absolute;top:50%;width:52px;height:1px;background:linear-gradient(90deg,rgba(232,160,32,.45),transparent)}
+  .callout.left{left:32px}
+  .callout.right{right:32px}
+  .callout.left .line{right:-52px}
+  .callout.right .line{left:-52px;transform:scaleX(-1)}
+  .c1{top:22%}.c2{top:37%}.c3{top:52%}.c4{top:67%}
+  .cr1{top:26%}.cr2{top:41%}.cr3{top:56%}.cr4{top:71%}
+
+  .footer{
+    position:fixed;left:34px;right:34px;bottom:22px;z-index:10;
+    display:flex;align-items:center;gap:18px;pointer-events:none;
+    font-size:6.2px;letter-spacing:.08em;color:var(--faint);
+    border-top:1px solid rgba(232,160,32,.12);padding-top:8px;
+  }
+  .footer b{color:var(--dim);font-weight:400}
+  .footer .gold{color:var(--gold)}
+  .footer .sp{flex:1}
+  .footer .dot{width:4px;height:4px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold)}
+  .hint{position:fixed;left:50%;bottom:6px;transform:translateX(-50%);z-index:10;font-size:5.5px;letter-spacing:.18em;color:rgba(59,52,40,.8);pointer-events:none}
+
+  @media (max-width:1100px){
+    .phase{display:none}
+    .callout{width:126px}
+    .title h1{font-size:58px}
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="grain"></div>
+  <div class="scan"></div>
+  <div class="vignette"></div>
+  <div class="frame"></div>
+
+  <div class="title">
+    <div class="k">550C // MOSS CORE</div>
+    <h1>MO<span>SS</span></h1>
+    <div class="cn">全 息 指 挥 核 心</div>
+    <div class="sub">HOLOGRAPHIC COMMAND ENTITY<br>BLACK / GOLD / WHITE / RED EYE</div>
+    <div class="rule"></div>
+  </div>
+
+  <div class="phase">
+    <div class="on"><b>01 采集</b><span>INGEST</span></div>
+    <div><b>02 指标</b><span>SCORE</span></div>
+    <div><b>03 证据</b><span>VERIFY</span></div>
+    <div><b>04 播报</b><span>BROADCAST</span></div>
+  </div>
+
+  <div class="status"><b>OBSERVE / DISPATCH / VERIFY</b><span><i></i><span id="clock">12:04:31</span> · LIVE</span></div>
+
+  <div class="callout left c1"><div class="line"></div><div class="no">01 / INGEST</div><div class="nm">采集</div><div class="st"><span>1,247 CONTRACTS</span><em>ACT</em></div></div>
+  <div class="callout left c2"><div class="line"></div><div class="no">02 / OI</div><div class="nm">持仓</div><div class="st"><span>+8.2% 5M</span><em>ACT</em></div></div>
+  <div class="callout left c3"><div class="line"></div><div class="no">03 / PRICE</div><div class="nm">价格</div><div class="st"><span>+2.4% 5M</span><em>ACT</em></div></div>
+  <div class="callout left c4"><div class="line"></div><div class="no">04 / VOLUME</div><div class="nm">放量</div><div class="st"><span>4.1x RATIO</span><em>ACT</em></div></div>
+
+  <div class="callout right cr1"><div class="line"></div><div class="no">05 / EVIDENCE</div><div class="nm">证据</div><div class="st"><span>3 SUPPORT</span><em>RUN</em></div></div>
+  <div class="callout right cr2"><div class="line"></div><div class="no">06 / RISK</div><div class="nm">风险</div><div class="st"><span>2 FLAGS</span><em>WARN</em></div></div>
+  <div class="callout right cr3"><div class="line"></div><div class="no">07 / BROADCAST</div><div class="nm">播报</div><div class="st"><span>READY</span><em>OK</em></div></div>
+  <div class="callout right cr4"><div class="line"></div><div class="no">CORE / EYE</div><div class="nm">光瞳</div><div class="st"><span>LOCKED</span><em>RED</em></div></div>
+
+  <div class="footer">
+    <span class="dot"></span><span class="gold">550C // MOSS HOLOGRAM</span>
+    <span>FEED <b>BINANCE FUTURES</b></span>
+    <span>POLL <b>5s</b></span>
+    <span>HITS <b>12</b></span>
+    <span class="sp"></span>
+    <span>MOTION SAMPLE · MOCK DATA</span>
+  </div>
+  <div class="hint">MOVE MOUSE TO PARALLAX</div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const stage = document.getElementById('stage');
+  let W = 0, H = 0, dpr = 1, cx = 0, cy = 0, scale = 1;
+  let mouseX = 0, mouseY = 0;
+  let mx = 0, my = 0;
+
+  const GOLD = '232,160,32';
+  const GOLD2 = '255,192,67';
+  const WHITE = '242,240,232';
+  const RED = '255,26,18';
+
+  const LINES = [];
+  const groups = {
+    body: { axis: 'y', a: 0, s: 0.045 },
+    iris: { axis: 'z', a: 0, s: 0.22 },
+    cage: { axis: 'y', a: 0, s: -0.025 },
+    orbitA: { axis: 'y', a: 0, s: 0.055 },
+    orbitB: { axis: 'x', a: 0, s: -0.035 },
+    orbitC: { axis: 'z', a: 0, s: 0.028 },
+    gimbal: { axis: 'y', a: 0, s: -0.018 },
+  };
+
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx = W * 0.52;
+    cy = H * 0.47;
+    scale = Math.min(W, H) * 0.176;
+  }
+
+  function rotX(p, a) {
+    const c = Math.cos(a), s = Math.sin(a);
+    return { x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c };
+  }
+  function rotY(p, a) {
+    const c = Math.cos(a), s = Math.sin(a);
+    return { x: p.x * c + p.z * s, y: p.y, z: -p.x * s + p.z * c };
+  }
+  function rotZ(p, a) {
+    const c = Math.cos(a), s = Math.sin(a);
+    return { x: p.x * c - p.y * s, y: p.x * s + p.y * c, z: p.z };
+  }
+  function rotAxis(p, axis, a) {
+    if (axis === 'x') return rotX(p, a);
+    if (axis === 'y') return rotY(p, a);
+    return rotZ(p, a);
+  }
+
+  function add(a, b, color = 'gold', alpha = 0.5, width = 0.8, group = 'static') {
+    LINES.push({ a, b, color, alpha, width, group });
+  }
+
+  function circle(radius, opts = {}) {
+    const {
+      axis = 'y', x = 0, y = 0, z = 0, color = 'gold', alpha = 0.45,
+      width = 0.8, group = 'static', seg = 72, dash = null,
+    } = opts;
+    let prev = null;
+    for (let i = 0; i <= seg; i++) {
+      const t = (i / seg) * Math.PI * 2;
+      let p;
+      if (axis === 'y') p = { x: x + Math.cos(t) * radius, y, z: z + Math.sin(t) * radius };
+      else if (axis === 'z') p = { x: x + Math.cos(t) * radius, y: y + Math.sin(t) * radius, z };
+      else p = { x, y: y + Math.cos(t) * radius, z: z + Math.sin(t) * radius };
+      if (prev) LINES.push({ a: prev, b: p, color, alpha, width, group, dash });
+      prev = p;
+    }
+  }
+
+  function tiltedCircle(radius, rx, rz, opts = {}) {
+    const { color = 'white', alpha = 0.16, width = 0.6, group = 'static', seg = 84 } = opts;
+    let prev = null;
+    for (let i = 0; i <= seg; i++) {
+      const t = (i / seg) * Math.PI * 2;
+      let p = { x: Math.cos(t) * radius, y: Math.sin(t) * radius, z: 0 };
+      p = rotX(p, rx); p = rotZ(p, rz);
+      if (prev) LINES.push({ a: prev, b: p, color, alpha, width, group });
+      prev = p;
+    }
+  }
+
+  function strut(a, b, color = 'gold', alpha = 0.4, width = 0.8, group = 'body') {
+    add(a, b, color, alpha, width, group);
+  }
+
+  function poly(points, color, alpha, width, group) {
+    for (let i = 0; i < points.length - 1; i++) add(points[i], points[i + 1], color, alpha, width, group);
+  }
+
+  function bezier(p0, p1, p2, p3, color, alpha, width, group, n = 18) {
+    let prev = p0;
+    for (let i = 1; i <= n; i++) {
+      const t = i / n, u = 1 - t;
+      const p = {
+        x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+        y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y,
+        z: u*u*u*p0.z + 3*u*u*t*p1.z + 3*u*t*t*p2.z + t*t*t*p3.z,
+      };
+      add(prev, p, color, alpha, width, group);
+      prev = p;
+    }
+  }
+
+  function build() {
+    // eye / lens rings
+    [0.50, 0.58, 0.66].forEach((r, i) => circle(r, { axis: 'z', z: 0.12 + i * 0.02, color: i === 1 ? 'white' : 'gold', alpha: 0.5 - i * 0.08, width: 0.7, group: 'iris', seg: 72 }));
+    circle(0.78, { axis: 'z', z: 0.1, color: 'white', alpha: 0.24, width: 0.55, group: 'iris', seg: 84 });
+    circle(0.9, { axis: 'z', z: 0.12, color: 'gold', alpha: 0.4, width: 0.8, group: 'iris', seg: 84 });
+
+    // iris blades
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      const r1 = 0.2, r2 = 0.58;
+      add(
+        { x: Math.cos(a) * r1, y: Math.sin(a) * r1, z: 0.18 },
+        { x: Math.cos(a + 0.18) * r2, y: Math.sin(a + 0.18) * r2, z: 0.18 },
+        'white', 0.2, 0.45, 'iris'
+      );
+    }
+
+    // lens housing
+    [0.98, 1.08, 1.18].forEach((r, i) => circle(r, { axis: 'z', z: 0.14 + i * 0.05, color: 'gold', alpha: 0.45, width: 0.8 }));
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      const p1 = { x: Math.cos(a) * 0.98, y: Math.sin(a) * 0.98, z: 0.14 };
+      const p2 = { x: Math.cos(a) * 1.18, y: Math.sin(a) * 1.18, z: 0.24 };
+      strut(p1, p2, 'white', 0.18, 0.5, 'static');
+    }
+
+    // body: tapered cage below eye
+    const levels = [
+      { y: -0.42, r: 1.00 },
+      { y: -0.78, r: 1.08 },
+      { y: -1.14, r: 1.18 },
+      { y: -1.50, r: 1.28 },
+      { y: -1.86, r: 1.38 },
+      { y: -2.22, r: 1.48 },
+    ];
+    levels.forEach((lv, i) => {
+      circle(lv.r, { axis: 'y', y: lv.y, color: i % 2 ? 'gold' : 'white', alpha: i % 2 ? 0.42 : 0.26, width: 0.7, group: 'body', seg: 64 });
+    });
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      for (let j = 0; j < levels.length - 1; j++) {
+        const p1 = { x: Math.cos(a) * levels[j].r, y: levels[j].y, z: Math.sin(a) * levels[j].r };
+        const p2 = { x: Math.cos(a) * levels[j + 1].r, y: levels[j + 1].y, z: Math.sin(a) * levels[j + 1].r };
+        strut(p1, p2, j % 2 ? 'white' : 'gold', 0.24, 0.55, 'body');
+      }
+    }
+
+    // shoulder ring
+    circle(1.38, { axis: 'y', y: -0.4, color: 'gold', alpha: 0.4, width: 1.0, group: 'body', seg: 80 });
+    circle(1.5, { axis: 'y', y: -0.34, color: 'white', alpha: 0.18, width: 0.6, group: 'body', seg: 80 });
+
+    // side pods
+    for (const sx of [-1, 1]) {
+      const x = sx * 1.62;
+      for (let k = 0; k < 3; k++) {
+        const pk = { x: x, y: -1.05 + k * 0.22, z: 0 };
+        circle(0.28 - k * 0.02, { axis: 'x', x, y: pk.y, z: 0, color: 'white', alpha: 0.2, width: 0.5, group: 'body', seg: 32 });
+      }
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        strut(
+          { x, y: -1.05 + Math.cos(a) * 0.28, z: Math.sin(a) * 0.28 },
+          { x, y: -0.61 + Math.cos(a) * 0.24, z: Math.sin(a) * 0.24 },
+          'gold', 0.22, 0.5, 'body'
+        );
+      }
+    }
+
+    // top yoke / suspension
+    bezier({ x: -1.5, y: -0.2, z: 0 }, { x: -1.6, y: 1.2, z: 0.1 }, { x: -0.5, y: 2.2, z: 0.1 }, { x: 0, y: 2.55, z: 0 }, 'gold', 0.42, 0.9, 'gimbal');
+    bezier({ x: 1.5, y: -0.2, z: 0 }, { x: 1.6, y: 1.2, z: 0.1 }, { x: 0.5, y: 2.2, z: 0.1 }, { x: 0, y: 2.55, z: 0 }, 'gold', 0.42, 0.9, 'gimbal');
+    circle(0.46, { axis: 'z', y: 2.58, z: 0, color: 'white', alpha: 0.3, width: 0.6, group: 'gimbal', seg: 40 });
+    circle(0.6, { axis: 'y', y: 2.7, color: 'gold', alpha: 0.35, width: 0.7, group: 'gimbal', seg: 48 });
+
+    // suspension cables
+    for (const sx of [-1, 1]) {
+      bezier(
+        { x: sx * 0.5, y: 2.55, z: 0 },
+        { x: sx * 0.9, y: 2.1, z: 0.1 },
+        { x: sx * 1.05, y: 0.8, z: 0.15 },
+        { x: sx * 1.18, y: -0.25, z: 0 },
+        'white', 0.17, 0.45, 'gimbal', 22
+      );
+    }
+
+    // large gimbal rings
+    tiltedCircle(1.95, 0.28, 0.18, { color: 'gold', alpha: 0.28, width: 0.8, group: 'gimbal' });
+    tiltedCircle(2.12, 0.28, 0.18, { color: 'white', alpha: 0.12, width: 0.5, group: 'gimbal' });
+    tiltedCircle(2.05, Math.PI / 2.5, 0.0, { color: 'white', alpha: 0.12, width: 0.5, group: 'gimbal' });
+
+    // outer cage / orbits
+    tiltedCircle(2.25, 0.9, 0.3, { color: 'white', alpha: 0.07, width: 0.45, group: 'cage' });
+    tiltedCircle(2.35, 1.25, -0.2, { color: 'white', alpha: 0.06, width: 0.4, group: 'cage' });
+    tiltedCircle(2.45, 0.2, 1.05, { color: 'white', alpha: 0.055, width: 0.4, group: 'cage' });
+
+    tiltedCircle(2.62, 0.45, 0.1, { color: 'gold', alpha: 0.22, width: 0.7, group: 'orbitA' });
+    tiltedCircle(2.78, 1.15, 0.5, { color: 'white', alpha: 0.14, width: 0.5, group: 'orbitB' });
+    tiltedCircle(2.9, 0.5, 1.3, { color: 'gold', alpha: 0.13, width: 0.45, group: 'orbitC' });
+
+    // ticks on outer orbit
+    for (let i = 0; i < 48; i++) {
+      const a = (i / 48) * Math.PI * 2;
+      const r1 = 2.6, r2 = i % 4 === 0 ? 2.7 : 2.64;
+      const p1 = rotZ(rotX({ x: Math.cos(a) * r1, y: Math.sin(a) * r1, z: 0 }, 0.45), 0.1);
+      const p2 = rotZ(rotX({ x: Math.cos(a) * r2, y: Math.sin(a) * r2, z: 0 }, 0.45), 0.1);
+      add(p1, p2, 'gold', 0.25, 0.6, 'orbitA');
+    }
+  }
+
+  build();
+
+  // dust
+  const dust = Array.from({ length: 130 }, () => ({
+    x: (Math.random() - 0.5) * 6.4,
+    y: (Math.random() - 0.5) * 6.4,
+    z: (Math.random() - 0.5) * 5.0,
+    s: 0.4 + Math.random() * 1.2,
+    p: Math.random() * Math.PI * 2,
+  }));
+
+  function project(p, gy, gx) {
+    let q = rotY(p, gy);
+    q = rotX(q, gx);
+    const persp = 1 / (1 + q.z / 8.5);
+    return {
+      x: cx + q.x * scale * persp,
+      y: cy - q.y * scale * persp,
+      z: q.z,
+      s: persp,
+    };
+  }
+
+  function drawEye(t) {
+    const p = project({ x: 0, y: 0, z: 0 }, 0, 0);
+    const base = scale * 0.52;
+    const pulse = 0.92 + 0.08 * Math.sin(t * 2.1);
+    const r = base * pulse;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 2.8);
+    g.addColorStop(0, 'rgba(255,40,24,.9)');
+    g.addColorStop(0.08, 'rgba(255,26,18,.75)');
+    g.addColorStop(0.28, 'rgba(180,0,0,.18)');
+    g.addColorStop(1, 'rgba(120,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r * 2.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // dark socket
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0,0,0,.78)';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r * 1.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    // red core
+    ctx.globalCompositeOperation = 'lighter';
+    const core = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 0.95);
+    core.addColorStop(0, 'rgba(255,220,200,1)');
+    core.addColorStop(0.08, 'rgba(255,60,30,1)');
+    core.addColorStop(0.34, 'rgba(235,8,4,.95)');
+    core.addColorStop(0.7, 'rgba(80,0,0,.8)');
+    core.addColorStop(1, 'rgba(20,0,0,.2)');
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r * 0.95, 0, Math.PI * 2);
+    ctx.fill();
+
+    // chrome ring
+    ctx.strokeStyle = 'rgba(255,200,160,.45)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r * 1.03, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+
+    // global camera drift
+    const gy = 0.32 + Math.sin(t * 0.13) * 0.13 + mx * 0.22;
+    const gx = -0.06 + Math.sin(t * 0.09) * 0.04 + my * 0.1;
+
+    for (const k in groups) {
+      groups[k].a += groups[k].s * 0.016;
+    }
+
+    // background dust
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const d of dust) {
+      const p = project(d, gy, gx);
+      if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) continue;
+      const a = 0.06 + 0.1 * (0.5 + 0.5 * Math.sin(t * 1.3 + d.p));
+      ctx.fillStyle = `rgba(${WHITE},${a})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, d.s * p.s, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // eye socket behind lines
+    drawEye(t);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let li = 0; li < LINES.length; li++) {
+      const l = LINES[li];
+      const grp = l.group !== 'static' ? groups[l.group] : null;
+      let a = l.a, b = l.b;
+      if (grp) {
+        a = rotAxis(a, grp.axis, grp.a);
+        b = rotAxis(b, grp.axis, grp.a);
+      }
+      const pa = project(a, gy, gx);
+      const pb = project(b, gy, gx);
+      // hand-drawn micro jitter
+      const jx = Math.sin(t * 0.9 + li * 1.7) * 0.55;
+      const jy = Math.cos(t * 0.7 + li * 2.3) * 0.4;
+      pa.x += jx; pa.y += jy;
+      pb.x += jx * 0.65; pb.y += jy * 0.65;
+      if ((pa.x < -80 && pb.x < -80) || (pa.x > W + 80 && pb.x > W + 80)) continue;
+      if ((pa.y < -80 && pb.y < -80) || (pa.y > H + 80 && pb.y > H + 80)) continue;
+
+      const depth = Math.max(0.05, Math.min(1, 1 - ((pa.z + pb.z) / 2 + 3) / 6.5));
+      const alpha = l.alpha * (0.3 + depth * 0.8) * (0.86 + 0.14 * Math.sin(t * 1.7 + pa.x * 0.01));
+      const col = l.color === 'white' ? WHITE : GOLD2;
+      const width = l.width * (0.65 + depth * 0.8) * Math.min(1.4, pa.s);
+
+      // glow
+      ctx.strokeStyle = `rgba(${col},${alpha * 0.14})`;
+      ctx.lineWidth = Math.max(1, width * 4.5);
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.stroke();
+
+      // core line
+      ctx.strokeStyle = `rgba(${col},${alpha})`;
+      ctx.lineWidth = Math.max(0.35, width);
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.stroke();
+    }
+
+    // red eye pulse ring
+    const e = project({ x: 0, y: 0, z: 0 }, 0, 0);
+    const er = scale * 0.52;
+    ctx.strokeStyle = `rgba(${RED},${0.12 + 0.08 * Math.sin(t * 2.1)})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, er * (1.3 + 0.12 * Math.sin(t * 2.1)), 0, Math.PI * 2);
+    ctx.stroke();
+
+    // scan sweep
+    const sy = Math.sin(t * 0.7) * 1.6;
+    const scanA = project({ x: -2.2, y: sy, z: 0 }, gy, gx);
+    const scanB = project({ x: 2.2, y: sy, z: 0 }, gy, gx);
+    ctx.strokeStyle = `rgba(${GOLD},${0.08 + 0.04 * Math.sin(t * 2)})`;
+    ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(scanA.x, scanA.y);
+    ctx.lineTo(scanB.x, scanB.y);
+    ctx.stroke();
+
+    ctx.restore();
+
+    // clock
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('clock').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+    requestAnimationFrame(draw);
+  }
+
+  document.addEventListener('pointermove', (e) => {
+    mouseX = (e.clientX / W - 0.5) * 2;
+    mouseY = (e.clientY / H - 0.5) * 2;
+    mx += (mouseX - mx) * 0.04;
+    my += (mouseY - my) * 0.04;
+  });
+
+  window.addEventListener('resize', resize, { passive: true });
+  resize();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

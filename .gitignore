@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+vendor/**/node_modules/
+
+# build output
+build/
+release/
+dist/
+out/
+
+# runtime data
+data/
+.runtime/
+backups/
+*.log
+
+# screenshots / debug captures
+_screenshots/
+*.png
+
+# temp
+.chrome-*/
+.chrome-tmp*/
+*.tmp
+Thumbs.db
+desktop.ini

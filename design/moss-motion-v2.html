@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>550C // MOSS COMMAND CORE</title>
+<style>
+  :root{
+    --bg:#04060a;
+    --bg2:#070b12;
+    --win:#0a0f18;
+    --amber:#e8a020;
+    --amber2:#ffc043;
+    --cyan:#4fd1c5;
+    --green:#7fd18a;
+    --red:#f0654a;
+    --text:#c8d4e2;
+    --dim:#5f6d80;
+    --faint:#333d4d;
+    --line:rgba(232,160,32,.14);
+    --line2:rgba(232,160,32,.28);
+    --mono:"Cascadia Code","Consolas","SFMono-Regular",monospace;
+    --sans:"Microsoft YaHei","PingFang SC",sans-serif;
+    --wide:"Bahnschrift Condensed","Arial Narrow",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);
+    overflow:hidden;
+    background:
+      radial-gradient(ellipse at 52% 35%, rgba(232,160,32,.07), transparent 34%),
+      radial-gradient(ellipse at 20% 80%, rgba(79,209,197,.035), transparent 42%),
+      linear-gradient(180deg,#04070b,#020407);
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+    background:
+      linear-gradient(rgba(232,160,32,.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,160,32,.022) 1px, transparent 1px);
+    background-size:56px 56px;
+    mask-image:radial-gradient(ellipse at 50% 42%, #000 0 45%, transparent 78%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:2;
+    background:
+      repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.22) 3px, rgba(0,0,0,0) 4px),
+      radial-gradient(ellipse at 50% 44%, transparent 42%, rgba(0,0,0,.7) 100%);
+    opacity:.5;mix-blend-mode:multiply;
+  }
+  .grain{
+    position:fixed;inset:-20%;z-index:2;pointer-events:none;opacity:.045;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/></svg>");
+    animation:grain 1.1s steps(2) infinite;
+  }
+  @keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-2%,1%)}50%{transform:translate(1%,-2%)}75%{transform:translate(2%,2%)}100%{transform:translate(0,0)}}
+
+  .app{
+    position:relative;z-index:3;height:100vh;
+    display:grid;grid-template-columns:300px minmax(0,1fr) 380px;
+    grid-template-rows:64px minmax(0,1fr) 30px;
+    gap:12px;padding:12px 18px 10px;
+  }
+  header{
+    grid-column:1/-1;display:flex;align-items:center;gap:20px;
+    border-bottom:1px solid var(--line);padding:0 4px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;min-width:250px}
+  .brand-mark{width:24px;height:24px;border:1px solid var(--line2);position:relative;transform:rotate(45deg);box-shadow:0 0 18px rgba(232,160,32,.18),inset 0 0 14px rgba(232,160,32,.08)}
+  .brand-mark::after{content:"";position:absolute;inset:6px;border:1px solid rgba(232,160,32,.7)}
+  .brand-copy{display:flex;flex-direction:column;gap:2px}
+  .brand-copy b{font-size:11px;letter-spacing:.18em;color:var(--amber);font-weight:500}
+  .brand-copy span{font-size:7px;letter-spacing:.16em;color:var(--dim);font-family:var(--sans)}
+  .phases{display:flex;align-items:center;height:42px;margin:0 auto}
+  .phase{position:relative;min-width:104px;padding:0 12px;display:flex;flex-direction:column;gap:3px;border-left:1px solid rgba(232,160,32,.12)}
+  .phase:last-child{border-right:1px solid rgba(232,160,32,.12)}
+  .phase b{font-size:8px;letter-spacing:.1em;color:var(--faint);font-weight:400;white-space:nowrap}
+  .phase span{font-size:6.5px;letter-spacing:.08em;color:var(--faint)}
+  .phase.on b{color:var(--amber)}
+  .phase.on span{color:var(--dim)}
+  .phase.on::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:linear-gradient(90deg,transparent,var(--amber),transparent);box-shadow:0 0 10px rgba(232,160,32,.7)}
+  .hstatus{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:230px}
+  .hstatus b{font-size:7.5px;letter-spacing:.12em;color:var(--dim);font-weight:400}
+  .hstatus span{font-size:9px;letter-spacing:.06em;color:var(--amber)}
+  .hstatus i{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);margin-right:6px}
+
+  .left{grid-column:1;grid-row:2;min-height:0;display:flex;flex-direction:column;gap:12px}
+  .title-block{padding:8px 2px 0;flex:0 0 auto}
+  .kicker{font-size:7px;letter-spacing:.2em;color:var(--amber);margin-bottom:7px}
+  .title-block h1{margin:0;font-family:var(--wide);font-size:66px;line-height:.82;letter-spacing:1px;color:#e8eef5;font-weight:500;text-shadow:0 0 28px rgba(232,160,32,.12)}
+  .title-block h1 span{color:var(--amber)}
+  .title-block .cn{font-family:var(--sans);font-size:18px;letter-spacing:.36em;color:#b9c6d4;font-weight:300;margin-top:9px}
+  .title-block .desc{font-size:6.5px;line-height:1.7;letter-spacing:.12em;color:var(--faint);margin-top:8px}
+  .queue{flex:1;min-height:0;display:grid;grid-template-rows:repeat(7,1fr);gap:5px}
+  .qrow{
+    position:relative;display:grid;grid-template-columns:18px 20px 1fr auto;align-items:center;gap:7px;
+    padding:0 9px;border:1px solid rgba(232,160,32,.08);background:rgba(7,12,19,.42);
+    border-left:2px solid rgba(232,160,32,.16);transition:background .25s,border-color .25s;
+  }
+  .qrow .idx{font-size:6.5px;color:var(--faint)}
+  .qrow .glyph{font-size:11px;color:var(--c,var(--amber));text-shadow:0 0 9px currentColor}
+  .qrow > span:nth-child(3){display:flex;flex-direction:column;gap:2px;min-width:0}
+  .qrow .name{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.12em;color:var(--text)}
+  .qrow .sub{display:block;font-size:6px;letter-spacing:.08em;color:var(--faint)}
+  .qrow .state{font-size:6.5px;letter-spacing:.08em;color:var(--dim);text-align:right}
+  .qrow .bar{position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(232,160,32,.06)}
+  .qrow .bar i{display:block;height:100%;width:var(--w,30%);background:var(--c,var(--amber));opacity:.45}
+  .qrow.active{border-color:var(--c,var(--amber));background:rgba(232,160,32,.055);box-shadow:inset 0 0 24px rgba(232,160,32,.035)}
+  .qrow.active .state{color:var(--c,var(--amber))}
+
+  .center{grid-column:2;grid-row:2;min-height:0;display:flex;flex-direction:column;gap:12px}
+  .stage{
+    position:relative;flex:1 1 auto;min-height:0;overflow:hidden;
+    border:1px solid rgba(232,160,32,.14);
+    background:
+      radial-gradient(ellipse at 50% 45%, rgba(232,160,32,.06), transparent 38%),
+      radial-gradient(ellipse at 50% 50%, #070b12 0%, #04060a 62%, #020407 100%);
+    clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);
+  }
+  .stage::before,.stage::after{content:"";position:absolute;width:14px;height:14px;pointer-events:none;z-index:6;opacity:.65}
+  .stage::before{left:8px;top:8px;border-left:1px solid var(--amber);border-top:1px solid var(--amber)}
+  .stage::after{right:8px;bottom:8px;border-right:1px solid var(--amber);border-bottom:1px solid var(--amber)}
+  #field{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+  .stage-hud{position:absolute;z-index:5;pointer-events:none}
+  .stage-hud.left{left:18px;top:16px}
+  .stage-hud.right{right:18px;top:16px;text-align:right}
+  .stage-hud b{display:block;font-size:7px;letter-spacing:.16em;color:var(--dim);font-weight:400;margin-bottom:4px}
+  .stage-hud span{font-size:6.5px;letter-spacing:.08em;color:var(--faint)}
+  .stage-hud .big{font-size:15px;letter-spacing:.02em;color:var(--amber2);margin-top:4px}
+  .stage-hud .big small{font-size:6px;color:var(--faint);letter-spacing:.08em;margin-left:6px}
+  .state-read{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:5;font-size:6.5px;letter-spacing:.22em;color:var(--dim);pointer-events:none}
+  .state-read b{color:var(--amber);font-weight:400}
+
+  .core{
+    position:absolute;left:50%;top:47%;width:min(36vw,440px);aspect-ratio:1;transform:translate(-50%,-50%);
+    z-index:3;pointer-events:none;opacity:0;animation:coreIn 1.6s .1s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  @keyframes coreIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.85);filter:blur(8px)}100%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:blur(0)}}
+  .halo{position:absolute;inset:-38%;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(232,160,32,.17),rgba(232,160,32,.045) 34%,transparent 66%);filter:blur(42px);animation:breathe 6s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.5;transform:scale(.97)}50%{opacity:.9;transform:scale(1.04)}}
+  .ring{position:absolute;border-radius:50%;pointer-events:none}
+  .ring.a{inset:0;border:1px solid rgba(232,160,32,.22);border-style:dashed;animation:spin 52s linear infinite}
+  .ring.b{inset:6%;border:1px solid rgba(79,209,197,.14);animation:spinrev 34s linear infinite}
+  .ring.c{inset:12%;border:1px solid rgba(232,160,32,.2);animation:spin 24s linear infinite}
+  .ticks{position:absolute;inset:2%;border-radius:50%;pointer-events:none;background:repeating-conic-gradient(from 0deg,rgba(232,160,32,.55) 0 .55deg,transparent .55deg 6deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 1px),#000 calc(100% - 1px));mask:radial-gradient(farthest-side,transparent calc(100% - 1px),#000 calc(100% - 1px));animation:spin 84s linear infinite;opacity:.5}
+  .iris{position:absolute;inset:19%;border-radius:50%;pointer-events:none;background:repeating-conic-gradient(from 0deg,transparent 0deg 5deg,rgba(232,160,32,.24) 5deg 6deg,transparent 6deg 13deg);-webkit-mask:radial-gradient(circle,transparent 0 27%,#000 28% 71%,transparent 72%);mask:radial-gradient(circle,transparent 0 27%,#000 28% 71%,transparent 72%);animation:spin 20s linear infinite;filter:drop-shadow(0 0 14px rgba(232,160,32,.12))}
+  .lens{position:absolute;inset:26%;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 37% 29%,rgba(255,214,140,.17),transparent 17%),radial-gradient(circle at 50% 52%,#211507 0,#0a0602 46%,#020101 72%);border:1px solid rgba(232,160,32,.38);box-shadow:inset 0 0 60px rgba(232,160,32,.2),inset 0 0 18px rgba(255,192,67,.12),0 0 50px rgba(232,160,32,.2),0 0 120px rgba(232,160,32,.08)}
+  .lens::before{content:"";position:absolute;inset:5%;border-radius:50%;background:conic-gradient(from 210deg,transparent,rgba(255,192,67,.11),transparent 35%,rgba(79,209,197,.05),transparent 70%);filter:blur(6px)}
+  .pupil{position:absolute;left:50%;top:50%;width:31%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 38% 32%,#fff0c8,#ffc043 10%,#e8a020 28%,#6a3e0b 48%,#090401 72%);box-shadow:0 0 30px rgba(255,192,67,.85),0 0 80px rgba(232,160,32,.38),inset 0 0 18px rgba(0,0,0,.7);animation:pupil 5.2s ease-in-out infinite}
+  .pupil::after{content:"";position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 42% 38%,#1c1206,#020101 68%);box-shadow:0 0 12px rgba(0,0,0,.9),inset 0 0 8px rgba(232,160,32,.18)}
+  @keyframes pupil{0%,100%{transform:translate(-50%,-50%) scale(.94);filter:brightness(.95)}50%{transform:translate(-50%,-50%) scale(1.04);filter:brightness(1.18)}}
+  .scan{position:absolute;left:8%;right:8%;top:0;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,224,160,.7),transparent);box-shadow:0 0 12px rgba(255,192,67,.5);animation:scan 4s linear infinite}
+  @keyframes scan{0%{top:12%;opacity:0}12%{opacity:.8}88%{opacity:.8}100%{top:88%;opacity:0}}
+  .glint{position:absolute;left:34%;top:25%;width:16%;height:8%;border-radius:50%;background:rgba(255,255,255,.16);filter:blur(5px);transform:rotate(-26deg);animation:glint 7s ease-in-out infinite}
+  @keyframes glint{0%,100%{opacity:.18;transform:rotate(-26deg) translateY(0)}50%{opacity:.42;transform:rotate(-26deg) translateY(8px)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes spinrev{to{transform:rotate(-360deg)}}
+
+  body[data-state="scan"] .halo{background:radial-gradient(circle,rgba(79,209,197,.14),rgba(232,160,32,.04) 36%,transparent 66%)}
+  body[data-state="lock"] .pupil{animation-duration:2.1s;filter:brightness(1.35) saturate(1.1)}
+  body[data-state="lock"] .ring.a{animation-duration:12s;border-color:rgba(255,192,67,.45)}
+  body[data-state="lock"] .ring.b{animation-duration:9s}
+  body[data-state="broadcast"] .halo{opacity:.9;background:radial-gradient(circle,rgba(255,192,67,.2),rgba(79,209,197,.05) 40%,transparent 68%)}
+  body[data-state="broadcast"] .ring.a{animation-duration:7s}
+
+  .callout{position:absolute;z-index:4;pointer-events:none;font-size:6px;letter-spacing:.06em;color:var(--faint);opacity:.8;transition:opacity .4s}
+  .callout b{display:block;color:var(--dim);font-weight:400;font-size:6.5px}
+  .callout i{display:block;width:36px;height:1px;margin-top:4px;background:linear-gradient(90deg,var(--line2),transparent)}
+  .callout.c1{left:9%;top:20%}
+  .callout.c2{left:7%;top:45%}
+  .callout.c3{left:18%;top:70%}
+  .callout.c4{right:20%;top:70%;text-align:right}
+  .callout.c5{right:7%;top:45%;text-align:right}
+  .callout.c6{right:9%;top:20%;text-align:right}
+  .callout.c7{left:50%;top:5%;transform:translateX(-50%);text-align:center}
+
+  .result{
+    flex:0 0 38%;min-height:250px;position:relative;overflow:hidden;
+    background:rgba(7,12,19,.58);border:1px solid rgba(232,160,32,.15);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+    box-shadow:0 24px 60px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.02);
+  }
+  .result::before{content:"";position:absolute;left:0;top:0;width:36%;height:1px;background:linear-gradient(90deg,rgba(232,160,32,.7),transparent)}
+  .win-head{height:36px;display:flex;align-items:center;gap:12px;padding:0 13px;border-bottom:1px solid rgba(232,160,32,.1);background:linear-gradient(180deg,rgba(10,15,23,.55),transparent)}
+  .win-head .eyebrow{font-size:7px;letter-spacing:.14em;color:var(--amber);white-space:nowrap}
+  .tabs{display:flex;align-items:stretch;height:100%;gap:14px;margin-left:12px}
+  .tab{display:flex;align-items:center;font-size:7px;letter-spacing:.1em;color:var(--dim);position:relative;cursor:pointer}
+  .tab.on{color:var(--amber)}
+  .tab.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--amber);box-shadow:0 0 8px rgba(232,160,32,.6)}
+  .win-head .meta{margin-left:auto;font-size:6.5px;letter-spacing:.08em;color:var(--dim);white-space:nowrap}
+  .rows{height:calc(100% - 36px);display:grid;grid-template-rows:repeat(4,1fr);padding-bottom:18px}
+  .row{display:grid;grid-template-columns:3px 1.25fr .7fr .65fr .7fr .55fr .78fr;gap:10px;align-items:center;padding:0 13px;border-bottom:1px solid rgba(232,160,32,.055);transition:background .3s}
+  .row:hover{background:rgba(232,160,32,.03)}
+  .row.hot{background:linear-gradient(90deg,rgba(232,160,32,.07),transparent 45%)}
+  .stripe{width:2px;height:60%;background:var(--c,var(--amber));box-shadow:0 0 9px currentColor;opacity:.8}
+  .sym{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .sym b{font-size:10px;letter-spacing:.03em;color:var(--text);font-weight:400;white-space:nowrap}
+  .sym span{font-size:6.5px;letter-spacing:.04em;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cell{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .cell b{font-size:12px;font-weight:400;letter-spacing:-.01em;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .cell span{font-size:6px;letter-spacing:.06em;color:var(--faint);white-space:nowrap}
+  .state{font-size:6.8px;letter-spacing:.07em;white-space:nowrap}
+  .time{font-size:6px;color:var(--faint);white-space:nowrap}
+  .result-foot{position:absolute;left:0;right:0;bottom:0;height:18px;display:flex;align-items:center;padding:0 13px;font-size:6px;letter-spacing:.07em;color:var(--faint);border-top:1px solid rgba(232,160,32,.06);background:rgba(4,7,11,.4)}
+  .result-foot span:last-child{margin-left:auto;color:rgba(232,160,32,.5)}
+  .mock{position:absolute;right:13px;top:13px;font-size:5.5px;letter-spacing:.12em;color:rgba(232,160,32,.35);pointer-events:none}
+
+  .right{grid-column:3;grid-row:2;min-height:0;display:flex;flex-direction:column;gap:12px}
+  .panel{
+    position:relative;overflow:hidden;background:rgba(7,12,19,.55);border:1px solid rgba(232,160,32,.14);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+    box-shadow:0 24px 60px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.02);
+  }
+  .panel::before{content:"";position:absolute;left:0;top:0;width:40%;height:1px;background:linear-gradient(90deg,rgba(232,160,32,.65),transparent)}
+  .evidence{flex:1.05;display:flex;flex-direction:column;min-height:0}
+  .ev-body{padding:12px 14px 10px;display:flex;flex-direction:column;gap:9px;min-height:0}
+  .ev-top{display:flex;align-items:flex-end;gap:10px}
+  .ev-sym{font-size:13px;letter-spacing:.02em;color:var(--text);line-height:1.1}
+  .ev-type{font-size:6.5px;letter-spacing:.08em;color:var(--amber);margin-top:5px}
+  .ev-big{margin-left:auto;text-align:right;font-size:31px;color:var(--amber2);letter-spacing:-.03em;line-height:1;text-shadow:0 0 24px rgba(232,160,32,.28)}
+  .ev-big small{display:block;font-size:6px;letter-spacing:.08em;color:var(--faint);margin-top:4px}
+  .bars{display:flex;flex-direction:column;gap:6px}
+  .bline{display:grid;grid-template-columns:30px 1fr 24px;align-items:center;gap:8px;font-size:6.2px;color:var(--dim)}
+  .bline .track{height:2px;background:rgba(232,160,32,.09);overflow:hidden}
+  .bline .track i{display:block;height:100%;background:var(--c,var(--amber));box-shadow:0 0 8px currentColor;opacity:.85;transition:width .5s}
+  .tags{display:flex;gap:5px;flex-wrap:wrap}
+  .tag{font-size:5.8px;letter-spacing:.07em;padding:3px 5px;border:1px solid rgba(127,209,138,.25);color:var(--green);background:rgba(127,209,138,.035)}
+  .tag.warn{border-color:rgba(240,101,74,.26);color:var(--red);background:rgba(240,101,74,.035)}
+  .tag.dim{border-color:rgba(232,160,32,.16);color:var(--dim);background:transparent}
+  .ev-note{font-size:6.8px;line-height:1.55;color:var(--dim);border-top:1px solid rgba(232,160,32,.07);padding-top:7px;margin-top:auto}
+  .trace{flex:.95;display:flex;flex-direction:column;min-height:0}
+  .trace-body{padding:8px 14px;display:flex;flex-direction:column;gap:5px;min-height:0;justify-content:space-between}
+  .tline{display:flex;gap:8px;font-size:6.4px;letter-spacing:.01em;color:var(--dim);white-space:nowrap;overflow:hidden}
+  .tline .t{color:var(--faint);width:62px;flex:0 0 auto}
+  .tline .u{width:48px;flex:0 0 auto;color:var(--cyan)}
+  .tline .m{flex:1;overflow:hidden;text-overflow:ellipsis;color:#8fa0b2}
+  .tline .s{flex:0 0 auto;color:var(--green)}
+  .tline .s.warn{color:var(--amber)}
+  .trace-foot{height:20px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-top:1px solid rgba(232,160,32,.06);font-size:6px;color:var(--faint);letter-spacing:.06em}
+
+  footer{grid-column:1/-1;grid-row:3;display:flex;align-items:center;gap:14px;border-top:1px solid var(--line);font-size:6.2px;letter-spacing:.07em;color:var(--faint);padding:0 4px}
+  footer b{color:var(--dim);font-weight:400}
+  footer .sp{flex:1}
+  footer .amber{color:rgba(232,160,32,.7)}
+  .replay{position:fixed;right:20px;bottom:42px;z-index:50;background:rgba(7,12,19,.7);border:1px solid var(--line2);color:var(--amber);font-family:var(--mono);font-size:6.5px;letter-spacing:.12em;padding:6px 9px;cursor:pointer;backdrop-filter:blur(10px)}
+  .replay:hover{background:rgba(232,160,32,.1)}
+  .caption{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:50;font-size:6px;letter-spacing:.18em;color:rgba(95,109,128,.55);pointer-events:none}
+
+  @media (max-width:1500px){
+    .app{grid-template-columns:250px minmax(0,1fr) 330px;gap:10px;padding:10px 12px 8px}
+    .title-block h1{font-size:54px}
+    .queue{gap:4px}
+    .core{width:min(38vw,390px)}
+  }
+  @media (max-width:1180px){
+    .app{grid-template-columns:210px minmax(0,1fr) 290px}
+    .phases{display:none}
+    .brand{min-width:190px}
+    .title-block h1{font-size:46px}
+    .qrow .sub{display:none}
+    .core{width:min(40vw,330px)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms!important;animation-iteration-count:1!important}
+  }
+</style>
+</head>
+<body data-state="idle">
+  <div class="grain"></div>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div class="brand-copy"><b>550C // COMMAND CORE</b><span>全平台合约异动指挥系统</span></div>
+      </div>
+      <div class="phases">
+        <div class="phase on" data-phase="0"><b>01 采集</b><span>INGEST</span></div>
+        <div class="phase" data-phase="1"><b>02 指标</b><span>SCORE</span></div>
+        <div class="phase" data-phase="2"><b>03 证据</b><span>VERIFY</span></div>
+        <div class="phase" data-phase="3"><b>04 播报</b><span>BROADCAST</span></div>
+      </div>
+      <div class="hstatus"><b>OBSERVE / DISPATCH / VERIFY</b><span><i></i><span id="clock">12:04:31</span> · LIVE</span></div>
+    </header>
+
+    <aside class="left">
+      <div class="title-block">
+        <div class="kicker">550C // MOSS CORE</div>
+        <h1>MO<span>SS</span></h1>
+        <div class="cn">指 挥 核 心</div>
+        <div class="desc">CONTRACT ANOMALY COMMAND CORE<br>OBSERVE · DISPATCH · VERIFY</div>
+      </div>
+      <div class="queue" id="queue">
+        <div class="qrow" style="--c:var(--cyan);--w:64%" data-unit="0"><span class="idx">01</span><span class="glyph">▼</span><span><span class="name">采集</span><span class="sub">INGEST</span></span><span class="state">ACTIVE</span><span class="bar"><i></i></span></div>
+        <div class="qrow" style="--c:var(--amber);--w:78%" data-unit="1"><span class="idx">02</span><span class="glyph">▤</span><span><span class="name">持仓</span><span class="sub">OI</span></span><span class="state">ACTIVE</span><span class="bar"><i></i></span></div>
+        <div class="qrow" style="--c:var(--green);--w:56%" data-unit="2"><span class="idx">03</span><span class="glyph">↕</span><span><span class="name">价格</span><span class="sub">PRICE</span></span><span class="state">WAIT</span><span class="bar"><i></i></span></div>
+        <div class="qrow" style="--c:var(--text);--w:88%" data-unit="3"><span class="idx">04</span><span class="glyph">◉</span><span><span class="name">放量</span><span class="sub">VOLUME</span></span><span class="state">ACTIVE</span><span class="bar"><i></i></span></div>
+        <div class="qrow" style="--c:var(--cyan);--w:60%" data-unit="4"><span class="idx">05</span><span class="glyph">⌗</span><span><span class="name">证据</span><span class="sub">EVIDENCE</span></span><span class="state">RUN</span><span class="bar"><i></i></span></div>
+        <div class="qrow" style="--c:var(--red);--w:44%" data-unit="5"><span class="idx">06</span><span class="glyph">△</span><span><span class="name">风险</span><span class="sub">RISK</span></span><span class="state">IDLE</span><span class="bar"><i></i></span></div>
+        <div class="qrow" style="--c:var(--amber);--w:72%" data-unit="6"><span class="idx">07</span><span class="glyph">↗</span><span><span class="name">播报</span><span class="sub">BROADCAST</span></span><span class="state">READY</span><span class="bar"><i></i></span></div>
+      </div>
+    </aside>
+
+    <main class="center">
+      <section class="stage" id="stage">
+        <canvas id="field"></canvas>
+        <div class="core" id="core">
+          <div class="halo"></div>
+          <div class="ring a"></div>
+          <div class="ring b"></div>
+          <div class="ring c"></div>
+          <div class="ticks"></div>
+          <div class="iris"></div>
+          <div class="lens"><div class="scan"></div><div class="glint"></div></div>
+          <div class="pupil"></div>
+        </div>
+
+        <div class="stage-hud left"><b>SCAN</b><span>1,247 CONTRACTS</span><div class="big" id="hitCount">12 <small>HITS</small></div></div>
+        <div class="stage-hud right"><b>DATA CLOCK</b><span id="dataClock">15:56:59</span><div class="big" id="latency">1.2s <small>DELAY</small></div></div>
+        <div class="state-read"><b id="stateRead">OBSERVE</b> // MOSS COMMAND CORE</div>
+
+        <div class="callout c1"><b>01 INGEST</b>1,247 contracts<i></i></div>
+        <div class="callout c2"><b>02 OI</b>+8.2% / 5m<i></i></div>
+        <div class="callout c3"><b>03 PRICE</b>+2.4% / 5m<i></i></div>
+        <div class="callout c4"><b>04 VOLUME</b>4.1x<i></i></div>
+        <div class="callout c5"><b>05 EVIDENCE</b>3 / 4<i></i></div>
+        <div class="callout c6"><b>06 RISK</b>2 flags<i></i></div>
+        <div class="callout c7"><b>07 BROADCAST</b>READY<i></i></div>
+      </section>
+
+      <section class="result">
+        <div class="win-head">
+          <div class="eyebrow">ANOMALY FEED // 异动播报</div>
+          <div class="tabs"><div class="tab on">全平台</div><div class="tab">自选</div></div>
+          <div class="meta">1,247 SCANNED · 12 HITS · 1.2s</div>
+        </div>
+        <div class="rows" id="rows">
+          <div class="row hot" style="--c:var(--amber)"><span class="stripe"></span><span class="sym"><b>ANIMEUSDT</b><span>增仓上涨 · OI + VOL</span></span><span class="cell"><b class="amber" id="r1oi">+8.2%</b><span>OI 5M</span></span><span class="cell"><b>4.1x</b><span>VOL RATIO</span></span><span class="cell"><b class="green">+2.4%</b><span>PRICE 5M</span></span><span class="cell"><b>87</b><span>SCORE</span></span><span class="cell"><b class="amber" id="r1state">LOCKED</b><span class="time">12:04:31</span></span></div>
+          <div class="row" style="--c:var(--cyan)"><span class="stripe"></span><span class="sym"><b>SOLUSDT</b><span>空头回补 · OI ↓ + PRICE ↑</span></span><span class="cell"><b class="cyan">-3.6%</b><span>OI 15M</span></span><span class="cell"><b>2.8x</b><span>VOL RATIO</span></span><span class="cell"><b class="green">+1.1%</b><span>PRICE 5M</span></span><span class="cell"><b>74</b><span>SCORE</span></span><span class="cell"><b class="cyan">VERIFY</b><span class="time">12:04:28</span></span></div>
+          <div class="row" style="--c:var(--text)"><span class="stripe"></span><span class="sym"><b>IOUSDT</b><span>放量异动 · VOL SPIKE</span></span><span class="cell"><b>+1.2%</b><span>OI 5M</span></span><span class="cell"><b>5.7x</b><span>VOL RATIO</span></span><span class="cell"><b class="green">+0.6%</b><span>PRICE 5M</span></span><span class="cell"><b>61</b><span>SCORE</span></span><span class="cell"><b class="dim">WATCH</b><span class="time">12:04:22</span></span></div>
+          <div class="row" style="--c:var(--red)"><span class="stripe"></span><span class="sym"><b>ARXUSDT</b><span>增仓下跌 · OI ↑ + PRICE ↓</span></span><span class="cell"><b class="red">+6.4%</b><span>OI 15M</span></span><span class="cell"><b>3.2x</b><span>VOL RATIO</span></span><span class="cell"><b class="red">-1.8%</b><span>PRICE 5M</span></span><span class="cell"><b>69</b><span>SCORE</span></span><span class="cell"><b class="red">RISK</b><span class="time">12:04:18</span></span></div>
+        </div>
+        <div class="result-foot"><span>AUTO-SCROLL · CLICK TO INSPECT</span><span>MOCK DATA</span></div>
+        <div class="mock">15s MOTION LOOP</div>
+      </section>
+    </main>
+
+    <aside class="right">
+      <section class="panel evidence">
+        <div class="win-head"><div class="eyebrow">EVIDENCE // 证据工位</div><div class="meta" id="evMeta">SELECTED</div></div>
+        <div class="ev-body">
+          <div class="ev-top">
+            <div><div class="ev-sym" id="evSym">ANIMEUSDT</div><div class="ev-type" id="evType">增仓上涨 · LOCKED</div></div>
+            <div class="ev-big"><span id="evBig">+8.2%</span><small id="evUnit">OI 5M</small></div>
+          </div>
+          <div class="bars">
+            <div class="bline"><span>OI</span><div class="track"><i id="barOi" style="width:82%;--c:var(--amber)"></i></div><span id="numOi">82</span></div>
+            <div class="bline"><span>VOL</span><div class="track"><i id="barVol" style="width:91%;--c:var(--text)"></i></div><span id="numVol">91</span></div>
+            <div class="bline"><span>PRICE</span><div class="track"><i id="barPrice" style="width:64%;--c:var(--green)"></i></div><span id="numPrice">64</span></div>
+          </div>
+          <div class="tags"><span class="tag" id="tagSup">SUPPORT 3</span><span class="tag warn" id="tagMiss">MISSING 1</span><span class="tag dim" id="tagRisk">RISK 2</span></div>
+          <div class="ev-note" id="evNote">主动买盘占优，但盘口滑点偏高 → 等回踩确认</div>
+        </div>
+      </section>
+
+      <section class="panel trace">
+        <div class="win-head"><div class="eyebrow">TRACE // 运行轨迹</div><div class="meta" id="traceMeta">LIVE</div></div>
+        <div class="trace-body" id="traceBody"></div>
+        <div class="trace-foot"><span id="traceLeft">CONTRACTS 1,247</span><span id="traceRight">DELAY 1.2s</span></div>
+      </section>
+    </aside>
+
+    <footer>
+      <span class="amber">550C // MOSS COMMAND CORE</span>
+      <span>FEED <b>BINANCE FUTURES</b></span>
+      <span>POLL <b>5s</b></span>
+      <span>HITS <b id="footHits">12</b></span>
+      <span class="sp"></span>
+      <span>MOTION PROTOTYPE · MOCK DATA</span>
+    </footer>
+  </div>
+
+  <button class="replay" id="replay">REPLAY 15s</button>
+  <div class="caption">550C // MOSS // VISUAL SYSTEM SAMPLE</div>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('field');
+  const ctx = canvas.getContext('2d');
+  const core = document.getElementById('core');
+  const queueRows = [...document.querySelectorAll('.qrow')];
+  const phaseEls = [...document.querySelectorAll('.phase')];
+  const traceBody = document.getElementById('traceBody');
+  const rows = [...document.querySelectorAll('.row')];
+  const clockEl = document.getElementById('clock');
+  const dataClockEl = document.getElementById('dataClock');
+  const stateRead = document.getElementById('stateRead');
+  const evSym = document.getElementById('evSym');
+  const evType = document.getElementById('evType');
+  const evBig = document.getElementById('evBig');
+  const evUnit = document.getElementById('evUnit');
+  const evMeta = document.getElementById('evMeta');
+  const evNote = document.getElementById('evNote');
+  const barOi = document.getElementById('barOi');
+  const barVol = document.getElementById('barVol');
+  const barPrice = document.getElementById('barPrice');
+  const numOi = document.getElementById('numOi');
+  const numVol = document.getElementById('numVol');
+  const numPrice = document.getElementById('numPrice');
+  const tagSup = document.getElementById('tagSup');
+  const tagMiss = document.getElementById('tagMiss');
+  const tagRisk = document.getElementById('tagRisk');
+  const traceLeft = document.getElementById('traceLeft');
+  const traceRight = document.getElementById('traceRight');
+
+  let W = 0, H = 0, dpr = 1, cx = 0, cy = 0;
+  let state = 'idle';
+  let started = performance.now();
+  let stateIndex = 0;
+  let lastFrame = 0;
+  const LOOP = 16;
+
+  const seq = [
+    { t: 0.0, s: 'idle' },
+    { t: 1.8, s: 'scan' },
+    { t: 5.2, s: 'lock' },
+    { t: 8.2, s: 'assembly' },
+    { t: 11.2, s: 'broadcast' },
+    { t: 14.2, s: 'idle' },
+  ];
+
+  const ui = {
+    idle: {
+      phase: 0, unit: -1, stateRead: 'OBSERVE', meta: 'AWAITING',
+      sym: 'AWAITING TARGET', type: 'MOSS // OBSERVE', big: '--', unitLabel: 'NO TARGET',
+      note: 'MOSS 正在扫视全平台合约，等待第一个值得关注的异动',
+      bars: [18, 12, 8], su: 'STANDBY', mi: '--', ri: '--',
+      trace: [
+        ['12:04:30.902', 'MOSS', 'observe 1,247 contracts', 'LIVE'],
+        ['12:04:30.914', 'INGEST', 'ticker snapshot', 'OK'],
+        ['12:04:30.938', 'OI', 'frozen baseline loaded', 'OK'],
+        ['12:04:30.951', 'PRICE', 'micro cache warm', 'OK'],
+        ['12:04:30.967', 'MOSS', 'waiting for threshold', 'IDLE'],
+      ],
+      left: 'CONTRACTS 1,247', right: 'DELAY 1.2s',
+    },
+    scan: {
+      phase: 1, unit: 0, stateRead: 'SCAN', meta: 'SCANNING',
+      sym: 'SCANNING', type: '1,247 CONTRACTS // FULL MARKET', big: '1,247', unitLabel: 'CONTRACTS',
+      note: '数据场正在汇聚：OI、价格、成交量三路数据进入 MOSS',
+      bars: [42, 28, 35], su: 'DATA IN', mi: '--', ri: '--',
+      trace: [
+        ['12:04:31.012', 'INGEST', 'scan full market', '142ms'],
+        ['12:04:31.104', 'OI', '521 symbols frozen', 'OK'],
+        ['12:04:31.188', 'PRICE', 'multi-window update', 'OK'],
+        ['12:04:31.244', 'VOLUME', 'relative volume calc', 'OK'],
+        ['12:04:31.301', 'MOSS', 'ranking candidates', 'RUN'],
+      ],
+      left: 'CONTRACTS 1,247', right: 'DELAY 1.2s',
+    },
+    lock: {
+      phase: 2, unit: 1, stateRead: 'LOCK', meta: 'TARGET LOCKED',
+      sym: 'ANIMEUSDT', type: '增仓上涨 · OI + VOL', big: '+8.2%', unitLabel: 'OI 5M',
+      note: '主动买盘占优，但盘口滑点偏高 → 等回踩确认，不追高',
+      bars: [82, 91, 64], su: 'SUPPORT 3', mi: 'MISSING 1', ri: 'RISK 2',
+      trace: [
+        ['12:04:31.412', 'OI', 'ANIMEUSDT +8.2% 5m', 'OK'],
+        ['12:04:31.518', 'PRICE', 'ANIMEUSDT +2.4% 5m', 'OK'],
+        ['12:04:31.604', 'EVIDENCE', '3 support / 1 missing', 'WAIT'],
+        ['12:04:31.702', 'MOSS', 'LOCK ANIMEUSDT', 'DONE'],
+        ['12:04:31.744', 'RISK', 'slippage elevated', 'FLAG'],
+      ],
+      left: 'TARGET 1', right: 'DELAY 0.8s',
+    },
+    assembly: {
+      phase: 2, unit: 4, stateRead: 'VERIFY', meta: 'EVIDENCE',
+      sym: 'ANIMEUSDT', type: '证据装配 · 3 SUPPORT / 1 MISSING', big: '3/4', unitLabel: 'EVIDENCE',
+      note: '证据链正在合拢：OI、价格、主动买盘支持；盘口滑点仍是反证',
+      bars: [86, 93, 71], su: 'SUPPORT 3', mi: 'MISSING 1', ri: 'RISK 2',
+      trace: [
+        ['12:04:31.812', 'EVIDENCE', 'assemble support set', 'RUN'],
+        ['12:04:31.906', 'EVIDENCE', 'OI + PRICE aligned', 'OK'],
+        ['12:04:31.988', 'EVIDENCE', 'orderbook divergence', 'WARN'],
+        ['12:04:32.104', 'RISK', 'slippage above preset', 'FLAG'],
+        ['12:04:32.188', 'MOSS', 'verdict: wait for pullback', 'HOLD'],
+      ],
+      left: 'TARGET 1', right: 'DELAY 0.8s',
+    },
+    broadcast: {
+      phase: 3, unit: 6, stateRead: 'BROADCAST', meta: 'DELIVERED',
+      sym: 'ANIMEUSDT', type: '播报交付 · LOCKED', big: '12', unitLabel: 'HITS',
+      note: '本轮已交付 12 条异动；ANIMEUSDT 标记为优先观察',
+      bars: [94, 96, 78], su: 'DELIVERED', mi: '--', ri: 'RISK 2',
+      trace: [
+        ['12:04:32.204', 'BROADCAST', 'emit feed item', 'OK'],
+        ['12:04:32.238', 'BROADCAST', 'write trace record', 'OK'],
+        ['12:04:32.301', 'MOSS', 'update priority queue', 'OK'],
+        ['12:04:32.414', 'INGEST', 'next scan in 5s', 'WAIT'],
+        ['12:04:32.502', 'MOSS', 'return to observe', 'OK'],
+      ],
+      left: 'DELIVERED 12', right: 'DELAY 1.2s',
+    },
+  };
+
+  const palette = {
+    idle: ['232,160,32', '255,192,67'],
+    scan: ['79,209,197', '232,160,32'],
+    lock: ['255,192,67', '240,101,74'],
+    assembly: ['79,209,197', '200,212,226'],
+    broadcast: ['255,224,160', '79,209,197'],
+  };
+
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const r = stage.getBoundingClientRect();
+    W = Math.max(1, r.width); H = Math.max(1, r.height);
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx = W / 2; cy = H * 0.47;
+  }
+
+  const COUNT = 760;
+  const particles = Array.from({ length: COUNT }, (_, i) => {
+    const a = Math.random() * Math.PI * 2;
+    const u = Math.random();
+    const v = Math.random();
+    const s = 0.55 + Math.random() * 1.7;
+    const d = Math.random();
+    return { a, u, v, s, d, x: 0, y: 0, z: 0, from: null, to: null, t0: 0, dur: 1, px: 0, py: 0, pz: 0 };
+  });
+
+  function targetFor(st, p) {
+    const a = p.a;
+    const u = p.u;
+    const v = p.v;
+    if (st === 'idle') {
+      const r = 290 + p.d * 34;
+      return { x: Math.cos(a) * r, y: (v - 0.5) * 26, z: Math.sin(a) * r * 0.72 };
+    }
+    if (st === 'scan') {
+      const theta = a;
+      const phi = Math.acos(2 * u - 1);
+      const r = 300 + p.d * 34;
+      return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.cos(phi), z: r * Math.sin(phi) * Math.sin(theta) };
+    }
+    if (st === 'lock') {
+      const theta = a;
+      const phi = u * Math.PI * 2;
+      const R = 270;
+      const tube = 50 + p.d * 14;
+      return { x: (R + tube * Math.cos(phi)) * Math.cos(theta), y: tube * Math.sin(phi) * 0.72 + (v - 0.5) * 8, z: (R + tube * Math.cos(phi)) * Math.sin(theta) };
+    }
+    if (st === 'assembly') {
+      const y = (v - 0.5) * 410;
+      const r = 190 + p.d * 42;
+      const angle = a + y * 0.008;
+      return { x: Math.cos(angle) * r, y, z: Math.sin(angle) * r };
+    }
+    const theta = a;
+    const phi = Math.acos(2 * u - 1);
+    const r = 360 + p.d * 130;
+    return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.cos(phi), z: r * Math.sin(phi) * Math.sin(theta) };
+  }
+
+  function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+  function initParticles() {
+    for (const p of particles) {
+      const t = targetFor('idle', p);
+      p.x = t.x; p.y = t.y; p.z = t.z;
+      p.from = t; p.to = t; p.t0 = 0; p.dur = 1;
+    }
+  }
+
+  function setState(next, force = false) {
+    if (!force && next === state) return;
+    state = next;
+    document.body.dataset.state = next;
+    const cfg = ui[next];
+    stateRead.textContent = cfg.stateRead;
+    evMeta.textContent = cfg.meta;
+    evSym.textContent = cfg.sym;
+    evType.textContent = cfg.type;
+    evBig.textContent = cfg.big;
+    evUnit.textContent = cfg.unitLabel;
+    evNote.textContent = cfg.note;
+    barOi.style.width = cfg.bars[0] + '%';
+    barVol.style.width = cfg.bars[1] + '%';
+    barPrice.style.width = cfg.bars[2] + '%';
+    numOi.textContent = cfg.bars[0];
+    numVol.textContent = cfg.bars[1];
+    numPrice.textContent = cfg.bars[2];
+    tagSup.textContent = cfg.su;
+    tagMiss.textContent = cfg.mi;
+    tagRisk.textContent = cfg.ri;
+    traceLeft.textContent = cfg.left;
+    traceRight.textContent = cfg.right;
+
+    queueRows.forEach((r, i) => r.classList.toggle('active', i === cfg.unit));
+    phaseEls.forEach((p) => p.classList.toggle('on', Number(p.dataset.phase) <= cfg.phase));
+    rows.forEach((r, i) => r.classList.toggle('hot', next === 'lock' && i === 0));
+
+    traceBody.replaceChildren();
+    cfg.trace.forEach((line) => {
+      const row = document.createElement('div');
+      row.className = 'tline';
+      const t = document.createElement('span'); t.className = 't'; t.textContent = line[0];
+      const u = document.createElement('span'); u.className = 'u'; u.textContent = line[1];
+      const m = document.createElement('span'); m.className = 'm'; m.textContent = line[2];
+      const s = document.createElement('span'); s.className = 's' + (line[3] === 'WAIT' || line[3] === 'HOLD' || line[3] === 'FLAG' || line[3] === 'WARN' ? ' warn' : ''); s.textContent = line[3];
+      row.append(t, u, m, s);
+      traceBody.appendChild(row);
+    });
+
+    const now = performance.now();
+    for (const p of particles) {
+      const to = targetFor(next, p);
+      p.from = { x: p.x, y: p.y, z: p.z };
+      p.to = to;
+      p.t0 = now + p.d * 90;
+      p.dur = 900 + p.d * 700;
+    }
+  }
+
+  function draw(now) {
+    ctx.clearRect(0, 0, W, H);
+    const cfg = palette[state] || palette.idle;
+    const rotSpeed = state === 'lock' ? 0.00016 : state === 'broadcast' ? 0.00012 : 0.000045;
+    const rot = now * rotSpeed;
+    const cosR = Math.cos(rot), sinR = Math.sin(rot);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    // soft orbital haze
+    const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, Math.min(W, H) * 0.48);
+    g.addColorStop(0, `rgba(${cfg[0]},.05)`);
+    g.addColorStop(0.45, `rgba(${cfg[1]},.02)`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // particles
+    for (const p of particles) {
+      const k = Math.min(1, Math.max(0, (now - p.t0) / p.dur));
+      const e = ease(k);
+      p.x = p.from.x + (p.to.x - p.from.x) * e;
+      p.y = p.from.y + (p.to.y - p.from.y) * e;
+      p.z = p.from.z + (p.to.z - p.from.z) * e;
+
+      const wobble = Math.sin(now * 0.0007 + p.d * 6.28) * 2.2;
+      const xr = p.x * cosR - p.z * sinR + wobble;
+      const zr = p.x * sinR + p.z * cosR;
+      const persp = 620 / (620 + zr + 320);
+      const sx = cx + xr * persp;
+      const sy = cy + p.y * persp;
+      if (sx < -20 || sx > W + 20 || sy < -20 || sy > H + 20) {
+        p.px = sx; p.py = sy; continue;
+      }
+      const depth = Math.max(0, Math.min(1, (zr + 300) / 600));
+      const alpha = (0.08 + (1 - depth) * 0.5) * (0.45 + 0.55 * Math.sin(p.d * 6.28 + now * 0.001) ** 2);
+      const col = (p.d > 0.72 ? cfg[1] : cfg[0]);
+      const size = p.s * persp;
+
+      if (p.px && Math.abs(sx - p.px) < 80) {
+        ctx.beginPath();
+        ctx.moveTo(p.px, p.py);
+        ctx.lineTo(sx, sy);
+        ctx.strokeStyle = `rgba(${col},${alpha * 0.22})`;
+        ctx.lineWidth = Math.max(0.4, size * 0.7);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(sx, sy, Math.max(0.45, size), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${col},${alpha})`;
+      ctx.fill();
+      p.px = sx; p.py = sy; p.pz = zr;
+    }
+
+    // sparse connective tissue
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 42; i += 1) {
+      const a = particles[(i * 17) % COUNT];
+      const b = particles[(i * 31 + 7) % COUNT];
+      if (!a.px || !b.px) continue;
+      const dx = a.px - b.px, dy = a.py - b.py;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 120) continue;
+      ctx.beginPath();
+      ctx.moveTo(a.px, a.py);
+      ctx.lineTo(b.px, b.py);
+      ctx.strokeStyle = `rgba(${cfg[0]},${0.035 * (1 - dist / 120)})`;
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    }
+
+    // command arcs
+    const arcAngles = [-2.5, -2.0, -1.25, -0.8, 0.8, 1.25, 2.0, 2.5];
+    arcAngles.forEach((ang, i) => {
+      const rr = 230;
+      const sx = cx + Math.cos(ang) * rr;
+      const sy = cy + Math.sin(ang) * rr * 0.55;
+      const ex = cx + Math.cos(ang) * (rr + 110);
+      const ey = cy + Math.sin(ang) * (rr + 110) * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.quadraticCurveTo((sx + ex) / 2 + 18, (sy + ey) / 2 - 10, ex, ey);
+      ctx.strokeStyle = `rgba(232,160,32,${0.05 + (i === 1 ? 0.06 : 0)})`;
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    });
+
+    ctx.restore();
+
+    // loop state machine
+    const elapsed = ((now - started) / 1000) % LOOP;
+    let nextIndex = 0;
+    for (let i = 0; i < seq.length; i += 1) if (elapsed >= seq[i].t) nextIndex = i;
+    if (nextIndex !== stateIndex) {
+      stateIndex = nextIndex;
+      setState(seq[nextIndex].s);
+    }
+    requestAnimationFrame(draw);
+  }
+
+  function tickClock() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    clockEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    dataClockEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  document.getElementById('replay').addEventListener('click', () => {
+    started = performance.now();
+    stateIndex = 0;
+    state = 'idle';
+    initParticles();
+    setState('idle', true);
+  });
+
+  window.addEventListener('resize', resize, { passive: true });
+  resize();
+  initParticles();
+  setState('idle', true);
+  tickClock();
+  setInterval(tickClock, 1000);
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="amber" data-scanlines="on" data-vignette="on" data-glow="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#04060a">
+  <title>550C // MARKET TERMINAL</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="crt" aria-hidden="true">
+    <span class="crt__scan"></span>
+    <span class="crt__vignette"></span>
+    <span class="crt__glow"></span>
+  </div>
+
+  <div class="boot" id="boot">
+    <div class="boot__grid" aria-hidden="true"></div>
+    <div class="boot__inner">
+      <div class="logo logo--xl" id="bootLogo" aria-hidden="true"></div>
+      <div class="boot__title">MARKET TERMINAL</div>
+      <div class="boot__sub">CRYPTO SURVEILLANCE CONSOLE</div>
+      <div class="boot__bar"><i></i></div>
+      <div class="boot__log" id="bootLog">INITIALIZING FEED ...</div>
+    </div>
+    <div class="boot__corner boot__corner--tl"></div>
+    <div class="boot__corner boot__corner--br"></div>
+  </div>
+
+  <div class="shell" id="shell" hidden>
+    <header class="titlebar">
+      <div class="titlebar__brand">
+        <div class="logo" id="headerLogo" aria-hidden="true"></div>
+        <div class="brand-copy">
+          <span class="brand-copy__name">550C</span>
+          <span class="brand-copy__sub">MARKET TERMINAL</span>
+        </div>
+      </div>
+
+      <div class="titlebar__readout">
+        <span class="conn" id="conn"><i class="conn__dot"></i><span id="connLabel">CONNECTING</span></span>
+        <span class="readout-sep">/</span>
+        <span class="readout" id="sourceLabel">--</span>
+        <span class="readout-sep">/</span>
+        <span class="readout" id="latencyLabel">-- MS</span>
+        <span class="readout-sep">/</span>
+        <span class="readout readout--dim" id="clock">--:--:--</span>
+      </div>
+
+      <div class="titlebar__actions">
+        <button class="icon-btn" id="btnScan" title="立即扫描信号" aria-label="立即扫描信号">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2"/><path d="M12 12l6-6"/></svg>
+        </button>
+        <button class="icon-btn" id="btnSettings" title="设置" aria-label="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="7" cy="17" r="2"/></svg>
+        </button>
+        <div class="win-controls" id="winControls" hidden>
+          <button class="win-btn" id="winMin" title="最小化" aria-label="最小化">&#8212;</button>
+          <button class="win-btn" id="winMax" title="最大化" aria-label="最大化">&#9633;</button>
+          <button class="win-btn win-btn--close" id="winClose" title="关闭" aria-label="关闭">&#10005;</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="feed-alert" id="feedAlert" hidden>
+      <span class="feed-alert__tag">FEED OFFLINE</span>
+      <span class="feed-alert__text" id="feedAlertText"></span>
+      <button class="btn btn--primary btn--xs" id="btnFeedDemo">USE DEMO</button>
+      <button class="btn btn--ghost btn--xs" id="btnFeedSettings">CONFIGURE</button>
+    </div>
+
+    <div class="workspace">
+      <aside class="panel watch-panel">
+        <div class="panel-head">
+          <span class="eyebrow">01 / WATCHLIST</span>
+          <span class="panel-head__meta"><b id="watchCount">00</b> PAIRS</span>
+        </div>
+
+        <div class="search">
+          <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+          <input id="searchInput" autocomplete="off" spellcheck="false" placeholder="搜索币种 / 输入交易对">
+          <kbd>CTRL K</kbd>
+          <div class="search__results" id="searchResults" hidden></div>
+        </div>
+
+        <div class="watch-list" id="watchList"></div>
+
+        <div class="watch-actions">
+          <button class="btn btn--ghost btn--sm" id="btnAddFocus">+ ADD PAIR</button>
+          <span class="micro" id="watchHint">USDT SPOT</span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="panel quote-panel">
+          <div class="quote-top">
+            <div class="quote-id">
+              <div class="quote-symbol"><span id="symbolBase">--</span><span class="quote-symbol__q">/USDT</span></div>
+              <div class="quote-tag">
+                <span class="tag">SPOT</span>
+                <span class="tag tag--dim" id="quoteSource">--</span>
+              </div>
+            </div>
+            <div class="quote-price-wrap">
+              <div class="quote-price" id="lastPrice">--</div>
+              <div class="quote-change" id="priceChange">--</div>
+            </div>
+            <div class="quote-meta">
+              <div class="meta"><span>24H HIGH</span><b id="highPrice">--</b></div>
+              <div class="meta"><span>24H LOW</span><b id="lowPrice">--</b></div>
+              <div class="meta"><span>24H VOL</span><b id="volume">--</b></div>
+              <div class="meta"><span>TURNOVER</span><b id="quoteVolume">--</b></div>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div class="seg" id="tfGroup">
+              <button data-tf="1m">1M</button>
+              <button data-tf="5m">5M</button>
+              <button data-tf="15m" class="is-active">15M</button>
+              <button data-tf="1h">1H</button>
+              <button data-tf="4h">4H</button>
+              <button data-tf="1d">1D</button>
+            </div>
+            <div class="toolbar__right">
+              <div class="ind" id="indGroup">
+                <button data-ind="ma" class="is-on">MA</button>
+                <button data-ind="boll">BOLL</button>
+                <button data-ind="macd">MACD</button>
+                <button data-ind="rsi">RSI</button>
+              </div>
+              <button class="icon-btn icon-btn--sm" id="btnResetChart" title="重置图表视图" aria-label="重置图表视图">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3"/><path d="M3 4v5h5"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="chart-wrap" id="chartWrap">
+            <canvas id="chart"></canvas>
+            <div class="chart-badge" id="chartBadge">15M</div>
+            <div class="chart-tooltip" id="chartTip" hidden></div>
+            <div class="chart-loading" id="chartLoading">LOADING CANDLES ...</div>
+            <div class="chart-empty" id="chartEmpty" hidden>NO DATA // CHECK FEED</div>
+          </div>
+
+          <div class="quote-foot">
+            <span>OPEN <b id="openPrice">--</b></span>
+            <span>RANGE <b id="rangeText">--</b></span>
+            <span>TRADES <b id="trades">--</b></span>
+            <span class="quote-foot__spacer"></span>
+            <span id="updatedAt">AWAITING FEED</span>
+          </div>
+        </section>
+
+        <section class="panel tape-panel">
+          <div class="panel-head panel-head--tight">
+            <span class="eyebrow">02 / MARKET PULSE</span>
+            <span class="panel-head__meta" id="tapeMeta">LIVE</span>
+          </div>
+          <div class="tape" id="tape"></div>
+        </section>
+      </main>
+
+      <aside class="panel intel-panel" id="intelPanel">
+        <div class="intel-tabs" id="intelTabs">
+          <button data-tab="signals" class="is-active">SIGNALS <b id="signalCount">0</b></button>
+          <button data-tab="alerts">ALERTS <b id="alertCount">0</b></button>
+          <button data-tab="news">INTEL <b id="newsCount">0</b></button>
+        </div>
+
+        <div class="intel-body">
+          <section class="tab-panel" data-panel="signals">
+            <div class="panel-head panel-head--tight">
+              <span class="eyebrow">SCANNER / 15M + 1H</span>
+              <button class="btn btn--ghost btn--xs" id="btnScanInline">SCAN</button>
+            </div>
+            <div class="signal-list" id="signalList"></div>
+          </section>
+
+          <section class="tab-panel" data-panel="alerts" hidden>
+            <div class="panel-head panel-head--tight">
+              <span class="eyebrow">ALERT RULES</span>
+              <button class="btn btn--ghost btn--xs" id="btnNewAlert">+ NEW</button>
+            </div>
+
+            <form class="alert-form" id="alertForm" hidden>
+              <label>PAIR<select id="alertSymbol"></select></label>
+              <label>CONDITION
+                <select id="alertType">
+                  <option value="price_above">价格上穿</option>
+                  <option value="price_below">价格下穿</option>
+                  <option value="change_above">24H 涨幅达到</option>
+                  <option value="change_below">24H 跌幅达到</option>
+                </select>
+              </label>
+              <label>THRESHOLD<input id="alertThreshold" type="number" min="0" step="any" placeholder="0.00" required></label>
+              <label>COOLDOWN
+                <select id="alertCooldown">
+                  <option value="300">5 MIN</option>
+                  <option value="900" selected>15 MIN</option>
+                  <option value="3600">1 HOUR</option>
+                  <option value="14400">4 HOURS</option>
+                </select>
+              </label>
+              <div class="alert-form__actions">
+                <button type="button" class="btn btn--ghost btn--sm" id="btnCancelAlert">CANCEL</button>
+                <button type="submit" class="btn btn--primary btn--sm">ARM</button>
+              </div>
+            </form>
+
+            <div class="alert-list" id="alertList"></div>
+
+            <div class="event-log">
+              <div class="panel-head panel-head--tight">
+                <span class="eyebrow">EVENT LOG</span>
+                <button class="btn btn--ghost btn--xs" id="btnClearLog">CLEAR</button>
+              </div>
+              <div id="eventLog"></div>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="news" hidden>
+            <div class="panel-head panel-head--tight">
+              <span class="eyebrow">INTEL FEED</span>
+              <span class="panel-head__meta" id="newsStatus">RSS</span>
+            </div>
+            <div class="news-filter" id="newsFilter">
+              <button data-filter="all" class="is-active">ALL</button>
+              <button data-filter="active">THIS PAIR</button>
+            </div>
+            <div class="news-list" id="newsList"></div>
+          </section>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="statusbar">
+      <span class="statusbar__brand">550C // MARKET TERMINAL</span>
+      <span class="statusbar__cell">FEED <b id="statusFeed">--</b></span>
+      <span class="statusbar__cell">POLL <b id="statusPoll">--</b></span>
+      <span class="statusbar__cell">SSE <b id="statusClients">--</b></span>
+      <span class="statusbar__cell">MEM <b id="statusMem">--</b></span>
+      <span class="statusbar__spacer"></span>
+      <span class="statusbar__cell statusbar__error" id="statusError"></span>
+      <span class="statusbar__cell">BUILD <b id="statusVersion">0.1.0</b></span>
+    </footer>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <div class="modal-root" id="modalRoot" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal panel" role="dialog" aria-modal="true" aria-label="设置">
+      <div class="modal__head">
+        <span class="eyebrow">SYSTEM / SETTINGS</span>
+        <button class="icon-btn" data-close-modal aria-label="关闭设置">&#10005;</button>
+      </div>
+      <div class="modal__body" id="settingsBody"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
