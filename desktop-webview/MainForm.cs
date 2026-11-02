@@ -112,7 +112,11 @@ internal sealed class MainForm : Form
         Load += OnLoad;
         Shown += (_, _) =>
         {
-            if (WindowState == FormWindowState.Normal) CenterToScreen();
+            if (WindowState == FormWindowState.Normal)
+            {
+                Left = 40;
+                Top = 40;
+            }
         };
     }
 
@@ -137,11 +141,8 @@ internal sealed class MainForm : Form
 
             if (_savedW >= 1280 && _savedH >= 720)
             {
-                var screenW = GetSystemMetrics(0);
-                var screenH = GetSystemMetrics(1);
-                var x = Math.Max(0, (screenW - _savedW) / 2);
-                var y = Math.Max(0, (screenH - _savedH) / 2);
-                SetWindowPos(Handle, IntPtr.Zero, x, y, _savedW, _savedH, 0x0004 | 0x0010);
+                SetWindowPos(Handle, IntPtr.Zero, 0, 0, _savedW, _savedH, 0x0002 | 0x0004 | 0x0010);
+                CenterToScreen();
             }
         }
         catch
@@ -190,7 +191,7 @@ internal sealed class MainForm : Form
                 return;
             }
 
-            var uri = new Uri(page).AbsoluteUri + "#neural";
+            var uri = new Uri(page).AbsoluteUri + "?v=20261102b#neural";
             File.AppendAllText(log, $"[{DateTime.Now:O}] navigating {uri}\r\n");
             _web.CoreWebView2.Navigate(uri);
         }
