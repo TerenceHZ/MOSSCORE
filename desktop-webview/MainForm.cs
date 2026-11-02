@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -88,7 +88,7 @@ internal sealed class MainForm : Form
 
     public MainForm()
     {
-        Text = "MOSS CORE 路 寮傚姩鐩戞祴";
+        Text = "MOSS CORE · 异动监测";
         Width = 1600;
         Height = 900;
         MinimumSize = new Size(1280, 720);
@@ -267,7 +267,28 @@ internal sealed class MainForm : Form
         _liveTimer = new System.Windows.Forms.Timer { Interval = 60000 };
         _liveTimer.Tick += async (_, _) => await PullLiveAsync();
         _liveTimer.Start();
+        _ = LoadCachedLiveAsync();
         _ = PullLiveAsync();
+    }
+
+    private static string LiveCachePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "MossCore", "live-snapshot.json");
+
+    private async Task LoadCachedLiveAsync()
+    {
+        try
+        {
+            var cache = LiveCachePath;
+            var file = File.Exists(cache) ? cache : Path.Combine(AppContext.BaseDirectory, "live-seed.json");
+            if (!File.Exists(file)) return;
+            var json = await File.ReadAllTextAsync(file);
+            await _web.ExecuteScriptAsync("window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));");
+        }
+        catch
+        {
+            // The seed is optional; live fetch continues.
+        }
     }
 
     private static string S(JsonElement e, string name)
@@ -345,6 +366,12 @@ internal sealed class MainForm : Form
 
             var payload = new { updatedAt = DateTime.Now.ToString("HH:mm:ss"), rows };
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(LiveCachePath)!);
+                await File.WriteAllTextAsync(LiveCachePath, json);
+            }
+            catch { }
             await _web.ExecuteScriptAsync("window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));");
         }
         catch (Exception ex)
