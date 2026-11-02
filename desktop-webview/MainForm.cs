@@ -73,6 +73,12 @@ internal sealed class MainForm : Form
             var state = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "MossCore", "window.txt");
+            var packagedDefault = Path.Combine(AppContext.BaseDirectory, "window-default.txt");
+            if (!File.Exists(state) && File.Exists(packagedDefault))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(state)!);
+                File.Copy(packagedDefault, state);
+            }
             if (File.Exists(state))
             {
                 var parts = File.ReadAllText(state).Trim().Split('x');
