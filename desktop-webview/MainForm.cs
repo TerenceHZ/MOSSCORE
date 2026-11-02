@@ -93,7 +93,23 @@ internal sealed class MainForm : Form
 
         FormClosing += (_, _) =>
         {
-            // Keep the configured default stable across DPI/non-client rounding.
+            try
+            {
+                if (WindowState != FormWindowState.Normal) return;
+                if (!GetWindowRect(Handle, out var r)) return;
+                var w = r.Right - r.Left;
+                var h = r.Bottom - r.Top;
+                if (w < 1280 || h < 720) return;
+                var state = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "MossCore", "window.txt");
+                Directory.CreateDirectory(Path.GetDirectoryName(state)!);
+                File.WriteAllText(state, $"{w}x{h}");
+            }
+            catch
+            {
+                // Size persistence must never block closing.
+            }
         };
 
         try
