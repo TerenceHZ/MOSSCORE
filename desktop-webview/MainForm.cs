@@ -229,6 +229,7 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.NavigationCompleted += (_, args) =>
             {
                 try { File.AppendAllText(log, $"[{DateTime.Now:O}] nav done ok={args.IsSuccess} err={args.WebErrorStatus}\r\n"); } catch { }
+                try { _web.ZoomFactor = 1.0; } catch { }
                 if (args.IsSuccess) StartLiveBridge();
             };
             _web.CoreWebView2.ProcessFailed += (_, args) =>
@@ -270,8 +271,21 @@ internal sealed class MainForm : Form
         _liveTimer = new System.Windows.Forms.Timer { Interval = 60000 };
         _liveTimer.Tick += async (_, _) => await PullLiveAsync();
         _liveTimer.Start();
+        _ = ResetZoomAsync();
         _ = LoadCachedLiveAsync();
         _ = PullLiveAsync();
+    }
+
+    private async Task ResetZoomAsync()
+    {
+        try
+        {
+            await Task.Delay(1200);
+            _web.ZoomFactor = 1.0;
+            var info = await _web.ExecuteScriptAsync("JSON.stringify({iw:innerWidth,ih:innerHeight,dpr:devicePixelRatio,z:document.documentElement.style.zoom,bz:document.body.style.zoom})");
+            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"), $"[{DateTime.Now:O}] viewport {info}\r\n");
+        }
+        catch { }
     }
 
     private static string LiveCachePath => Path.Combine(
@@ -387,5 +401,7 @@ internal sealed class MainForm : Form
         }
     }
 }
+
+
 
 

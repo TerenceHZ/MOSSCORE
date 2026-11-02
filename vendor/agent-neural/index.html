@@ -605,6 +605,19 @@ body{background:var(--page);overflow:hidden}
 .pnl::before{left:-1px;top:-1px;border-width:1px 0 0 1px}
 .pnl::after{right:-1px;bottom:-1px;border-width:0 1px 1px 0}
 .p-heat{flex:none;height:300px}
+.nv-alertfeed{height:calc(100% - 34px);overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;padding:2px 10px 8px;scrollbar-width:none}
+.nv-alertfeed::-webkit-scrollbar{display:none}
+.nv-alertitem{position:relative;padding:8px 0 9px;border-bottom:1px solid rgba(232,160,32,.1);animation:nvalertin .4s ease-out}
+@keyframes nvalertin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.nv-alert-top{display:flex;justify-content:space-between;align-items:baseline}
+.nv-alert-top b{font:700 11px/1 var(--mono);color:#f5e7c4;letter-spacing:.02em}
+.nv-alert-top span{font-size:7px;color:#e8a020;letter-spacing:1px}
+.nv-alert-tag{margin-top:4px;font:600 8px/1 var(--cjk);color:#e8a020;letter-spacing:.05em}
+.nv-alert-price{margin-top:4px;font:600 10px/1 var(--mono);color:#ffc043}
+.nv-alert-line{margin-top:3px;font:500 7.5px/1.35 var(--cjk);color:#9c8d72}
+.nv-alert-line b{color:#e4d4a8;font-weight:600}
+.nv-alert-line em{font-style:normal;color:#e8a020}
+.nv-alert-time{margin-top:4px;font:500 7px/1 var(--mono);color:#6f6453}
 .p-feed{flex:1;min-height:0;display:flex;flex-direction:column}
 .p-crawl{flex:none;height:104px}
 .heat{position:relative;height:238px;background:repeating-linear-gradient(90deg,rgba(232,160,32,.10) 0 1px,transparent 1px 7.14%),repeating-linear-gradient(0deg,rgba(232,160,32,.08) 0 1px,transparent 1px 8.33%),rgba(232,160,32,.018)}
@@ -1018,14 +1031,16 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 
   <div class="rc">
   <article class="pnl p-heat nv-fx">
-   <div class="sec-h"><h2>MULTISIG<i>多签额度</i></h2><span>累计 · 只加不减</span></div>
-   <div class="nv-mslist">
-    <div class="nv-mshead"><span>TOKEN</span><span></span><span>累计</span><span>笔数</span></div>
-    <div class="nv-msrow"><span class="nv-msname">BLESS</span><span class="nv-msbar"><i style="width:100%"></i></span><b>1.2M</b><em>2</em></div>
-    <div class="nv-msrow"><span class="nv-msname">WIF</span><span class="nv-msbar"><i style="width:18%"></i></span><b>0.2M</b><em>1</em></div>
-    <div class="nv-msrow"><span class="nv-msname">SOPH</span><span class="nv-msbar"><i style="width:18%"></i></span><b>0.2M</b><em>1</em></div>
-    <div class="nv-msrow"><span class="nv-msname">ARX</span><span class="nv-msbar"><i style="width:9%"></i></span><b>0.1M</b><em>1</em></div>
-    <div class="nv-msrow"><span class="nv-msname">OGN</span><span class="nv-msbar"><i style="width:0%"></i></span><b>—</b><em>待核验</em></div>
+   <div class="sec-h"><h2>POSITION ALERTS<i>持仓异动</i></h2><span>滚屏 · 点击查看历史</span></div>
+   <div class="nv-alertfeed" id="nvAlertFeed">
+    <div class="nv-alertitem">
+     <div class="nv-alert-top"><b>ARIAUSDT</b><span>🔥🔥🔥</span></div>
+     <div class="nv-alert-tag">合约持仓 ↑↑↑</div>
+     <div class="nv-alert-price">0.12066</div>
+     <div class="nv-alert-line">15分钟持仓量增加 <b>430.2万 USD</b> <em>(+49.5%)</em></div>
+     <div class="nv-alert-line">当前持仓量 <b>1299万 USD</b></div>
+     <div class="nv-alert-time">17:00:15</div>
+    </div>
    </div>
    <div class="heat" hidden><canvas id="heat" aria-label="token 热力格"></canvas></div>
   </article>
@@ -1113,7 +1128,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div><div class="nv-d-k" id="nvDKind">★ FOCUS · 自选主监控</div><div class="nv-d-title" id="nvDTitle">BLESS</div><div class="nv-d-stage" id="nvDStage">开仓信号 · 97.0</div></div>
   <button class="nv-d-x" type="button" data-nv-close>×</button>
  </div>
- <div class="nv-tabs"><button class="on" type="button" data-nv-tab="current">当前详情</button><button type="button" data-nv-tab="history">历史监控</button><button type="button" data-nv-tab="multi">多签历史</button></div>
+ <div class="nv-tabs"><button class="on" type="button" data-nv-tab="current">当前详情</button><button type="button" data-nv-tab="history">历史监控</button><button type="button" data-nv-tab="alerts">异动历史</button></div>
  <div class="nv-d-body">
   <div class="nv-pane" data-pane="current">
   <div class="nv-d-sec"><h4>结论</h4><p id="nvDWhy">3 分钟动量 +1.73%，成交额 15.96M，短线未回撤。</p></div>
@@ -1127,9 +1142,9 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="nv-d-sec"><h4>近 7 天触发</h4><div class="nv-history" id="nvDHistList"><div><span>今天 15:42 · 开仓信号</span><b>97.0</b></div><div><span>今天 11:08 · 重点候选</span><b>84.2</b></div><div><span>昨天 22:16 · 初筛观察</span><b>72.1</b></div><div><span>11-01 09:31 · 重新进入监控</span><b>68.4</b></div></div></div>
    <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts"><div><span>触发次数</span><b>4</b></div><div><span>升级</span><b>2</b></div><div><span>降级</span><b>1</b></div><div><span>OI 快增</span><b>1</b></div></div></div>
   </div>
-  <div class="nv-pane" data-pane="multi" hidden>
-   <div class="nv-d-sec"><h4>MULTISIG HISTORY</h4><div class="nv-ms" id="nvDMsFull">$1.2M <small>累计 · 2 笔 · 2 条链</small></div><div class="nv-history"><div><span>11-04 · ETH · +1.0M</span><b>累计 1.2M</b></div><div><span>11-02 · ETH · +200K</span><b>累计 200K</b></div></div></div>
-   <div class="nv-d-sec"><h4>口径</h4><p>只记录多签额度新增，只加不减，不做流入流出判断。</p></div>
+  <div class="nv-pane" data-pane="alerts" hidden>
+   <div class="nv-d-sec"><h4>POSITION ALERTS HISTORY</h4><div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIAUSDT</span><b>OI +49.5%</b></div></div></div>
+   <div class="nv-d-sec"><h4>口径</h4><p>记录持仓快速增加/减少的异动快照，不构成交易建议。</p></div>
   </div>
  </div>
 </div>
@@ -10762,7 +10777,38 @@ requestAnimationFrame(frame);
     };
     window.__NOVA_FIRE = fire;
     const fmtQv = (v) => v >= 1e9 ? (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(1) + 'K' : String(Math.round(v || 0));
+    const fmtWan = (v) => (v / 1e4).toFixed(1) + '万 USD';
     const sign = (v) => (v > 0 ? '+' : '') + Number(v || 0).toFixed(2);
+    const alertLog = [{ time: '17:00:15', symbol: 'ARIAUSDT', pct: 49.5, oi: 12990000, price: '0.12066', dir: '↑↑↑' }];
+    const alertFeed = sr.querySelector('#nvAlertFeed');
+    const alertHistory = sr.querySelector('#nvAlertHistory');
+    const renderAlertHistory = () => {
+      if (!alertHistory) return;
+      alertHistory.innerHTML = alertLog.slice(0, 30).map(a => `<div><span>${a.time} · ${a.symbol}</span><b>${a.dir} ${Number(a.pct).toFixed(1)}%</b></div>`).join('');
+    };
+    const pushAlert = (r, liveTime) => {
+      if (!alertFeed || !r) return;
+      const pct = Number(r.oi15m || r.oi5m || 0);
+      const dir = pct >= 0 ? '↑↑↑' : '↓↓↓';
+      const abs = Math.abs(pct);
+      const fire = abs >= 10 ? '🔥🔥🔥' : abs >= 4 ? '🔥🔥' : '🔥';
+      const delta = Math.abs(Number(r.oiNotional || 0) * pct / (100 + pct));
+      const time = liveTime || new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      const item = document.createElement('div');
+      item.className = 'nv-alertitem';
+      item.innerHTML = `<div class="nv-alert-top"><b>${r.symbol || r.baseAsset}</b><span>${fire}</span></div>
+<div class="nv-alert-tag">合约持仓 ${dir}</div>
+<div class="nv-alert-price">${Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')}</div>
+<div class="nv-alert-line">15分钟持仓量${pct >= 0 ? '增加' : '减少'} <b>${fmtWan(delta)}</b> <em>(${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)</em></div>
+<div class="nv-alert-line">当前持仓量 <b>${fmtWan(r.oiNotional)}</b></div>
+<div class="nv-alert-time">${time}</div>`;
+      alertFeed.appendChild(item);
+      while (alertFeed.children.length > 30) alertFeed.firstElementChild.remove();
+      requestAnimationFrame(() => alertFeed.scrollTo({ top: alertFeed.scrollHeight, behavior: 'smooth' }));
+      alertLog.unshift({ time, symbol: r.symbol || r.baseAsset, pct, oi: r.oiNotional, price: r.price, dir });
+      if (alertLog.length > 40) alertLog.pop();
+      renderAlertHistory();
+    };
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
       window.__MOSS_LIVE_ACTIVE = true;
@@ -10807,6 +10853,23 @@ requestAnimationFrame(frame);
       updCard('focus', focusRows[0]);
       updCard('imported', importRows[0]);
       const f = focusRows[0], im = importRows[0];
+      const alertPrev = window.__MOSS_ALERT_PREV || {};
+      const maybeAlert = (r) => {
+        if (!r) return;
+        const pct = Math.abs(Number(r.oi15m || r.oi5m || 0));
+        const p = alertPrev[r.symbol];
+        if (!p || Math.abs(pct - p.pct) >= .5 || Math.abs((r.score || 0) - p.score) >= 1.2) {
+          pushAlert(r, live.updatedAt);
+        }
+        alertPrev[r.symbol] = { pct, score: r.score || 0 };
+      };
+      if (!window.__MOSS_ALERT_SEEDED) {
+        maybeAlert(f); maybeAlert(im);
+        window.__MOSS_ALERT_SEEDED = true;
+      } else {
+        maybeAlert(f); maybeAlert(im);
+      }
+      window.__MOSS_ALERT_PREV = alertPrev;
       const mk = (r) => r ? ({ v: [sign(r.change24h) + '%', sign(r.change5m) + '%', fmtQv(r.quoteVolume24h), fmtQv(r.oiNotional), Number(r.pullback || 0).toFixed(2) + '%', Number(r.score || 0).toFixed(1)], s: [`${r.baseAsset || r.symbol} · 24H`, `1m ${sign(r.change1m)}%`, `60s 成交`, `OI 5m ${sign(r.oi5m)}%`, `距高点 ${Number(r.pullback || 0).toFixed(2)}%`, r.stage === 'entry' ? 'ENTRY' : r.stage === 'watch' ? 'WATCH' : '观察'] }) : null;
       window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       if (f) { data.focus.title = f.baseAsset || f.symbol; data.focus.stage = `${f.stage === 'entry' ? '开仓信号' : f.stage === 'watch' ? '重点候选' : '观察'} · ${Number(f.score || 0).toFixed(1)}`; data.focus.why = `${f.symbol} 现价 ${f.price}，24H ${sign(f.change24h)}%，5M ${sign(f.change5m)}%。`; }
@@ -10879,6 +10942,16 @@ requestAnimationFrame(frame);
       drawer.setAttribute('aria-hidden', 'false');
       freshPanel(drawer, 'focus');
     };
+    const openAlerts = () => {
+      showTab('alerts');
+      sr.querySelector('#nvDKind').textContent = 'POSITION ALERTS · 持仓异动';
+      sr.querySelector('#nvDTitle').textContent = 'ALERT HISTORY';
+      sr.querySelector('#nvDStage').textContent = `滚屏记录 · ${alertLog.length} 条 · ${window.__MOSS_LIVE ? 'SNAPSHOT' : '样例'}`;
+      renderAlertHistory();
+      drawer.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+      freshPanel(drawer, 'focus');
+    };
     const shut = () => { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); };
     cards.forEach(card => card.addEventListener('click', () => {
       window.__NOVA_SELECTED = card.dataset.nvCard;
@@ -10898,7 +10971,7 @@ requestAnimationFrame(frame);
       showTab('current');
     }));
     const msPanel = sr.querySelector('.p-heat');
-    msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); open('focus'); showTab('multi'); });
+    msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); openAlerts(); });
     close && close.addEventListener('click', shut);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') shut(); });
     sr.addEventListener('click', e => {
@@ -10932,8 +11005,8 @@ requestAnimationFrame(frame);
     const msHitPanel = sr.querySelector('.p-heat');
     if (msHitPanel) {
       const hit = document.createElement('button');
-      hit.type = 'button'; hit.className = 'nv-hit'; hit.setAttribute('aria-label', '打开多签详情');
-      hit.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); open('focus'); showTab('multi'); });
+      hit.type = 'button'; hit.className = 'nv-hit'; hit.setAttribute('aria-label', '打开持仓异动历史');
+      hit.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openAlerts(); });
       msHitPanel.appendChild(hit);
     }
 
@@ -10948,8 +11021,7 @@ requestAnimationFrame(frame);
       const ms = e.target.closest && e.target.closest('.p-heat');
       if (ms) {
         e.preventDefault(); e.stopPropagation();
-        open('focus');
-        showTab('multi');
+        openAlerts();
       }
     }, true);
   };
