@@ -605,9 +605,9 @@ body{background:var(--page);overflow:hidden}
 .pnl::before{left:-1px;top:-1px;border-width:1px 0 0 1px}
 .pnl::after{right:-1px;bottom:-1px;border-width:0 1px 1px 0}
 .p-heat{flex:none;height:340px}
-.nv-alertfeed{height:calc(100% - 34px);overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;padding:0 10px 6px;scrollbar-width:none;display:flex;flex-direction:column;justify-content:flex-start}
+.nv-alertfeed{height:calc(100% - 34px);overflow:hidden;scroll-behavior:smooth;padding:0 10px 6px;scrollbar-width:none;display:flex;flex-direction:column;justify-content:flex-start}
 .nv-alertfeed::-webkit-scrollbar{display:none}
-.nv-alertitem{position:relative;flex:0 0 auto;min-height:124px;padding:10px 0 9px;border-bottom:1px solid rgba(232,160,32,.12);animation:nvalertin .4s ease-out}
+.nv-alertitem{position:relative;flex:0 0 auto;min-height:150px;padding:10px 0 9px;border-bottom:1px solid rgba(232,160,32,.12);animation:nvalertin .4s ease-out}
 .nv-alertitem.fresh{background:linear-gradient(90deg,rgba(232,160,32,.16),transparent 82%);border-color:rgba(232,160,32,.42);box-shadow:inset 0 0 26px rgba(232,160,32,.08)}
 .nv-alertitem.fresh .nv-alert-top b{color:#ffe6a8;text-shadow:0 0 12px rgba(232,160,32,.55)}
 .nv-alertitem.fresh::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:linear-gradient(90deg,transparent,#e8a020,transparent);transform-origin:left;animation:nvline 900s linear forwards;opacity:.85}
@@ -10804,17 +10804,30 @@ requestAnimationFrame(frame);
     const alertFeed = sr.querySelector('#nvAlertFeed');
     const alertHistory = sr.querySelector('#nvAlertHistory');
     const saveAlerts = () => { try { localStorage.setItem(ALERT_KEY, JSON.stringify(alertLog.slice(0, 500))); } catch (e) {} };
-    const alertItemHtml = (a) => `<div class="nv-alertitem">
+    const alertItemHtml = (a) => `<div class="nv-alertitem" data-key="${a.ts}-${a.symbol}">
 <div class="nv-alert-top"><b>${a.symbol}</b><span>${Math.abs(a.pct) >= 10 ? '🔥🔥🔥' : Math.abs(a.pct) >= 4 ? '🔥🔥' : '🔥'}</span></div>
 <div class="nv-alert-tag">合约持仓 ${a.dir}</div>
 <div class="nv-alert-price">${a.price}</div>
 <div class="nv-alert-line">15分钟持仓量${a.pct >= 0 ? '增加' : '减少'} <b>${fmtWan(a.delta)}</b> <em>(${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%)</em></div>
 <div class="nv-alert-line">当前持仓量 <b>${fmtWan(a.oi)}</b></div>
 <div class="nv-alert-time">${a.time}</div></div>`;
-    const renderAlertFeed = () => {
+    const renderAlertFeed = (animate = false) => {
       if (!alertFeed) return;
+      const oldTop = new Map();
+      if (animate) alertFeed.querySelectorAll('.nv-alertitem').forEach(el => oldTop.set(el.dataset.key, el.getBoundingClientRect().top));
       alertFeed.innerHTML = alertLog.slice(0, 3).map(alertItemHtml).join('');
-      requestAnimationFrame(() => alertFeed.scrollTo({ top: 0, behavior: 'smooth' }));
+      if (!animate) return;
+      requestAnimationFrame(() => {
+        alertFeed.querySelectorAll('.nv-alertitem').forEach((el, i) => {
+          const before = oldTop.get(el.dataset.key);
+          if (before != null) {
+            const delta = before - el.getBoundingClientRect().top;
+            if (Math.abs(delta) > .5) el.animate([{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }], { duration: 430, easing: 'cubic-bezier(.2,.8,.2,1)' });
+          } else if (i === 0) {
+            el.animate([{ transform: 'translateY(-14px)', opacity: .35 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 360, easing: 'cubic-bezier(.2,.8,.2,1)' });
+          }
+        });
+      });
     };
     const markAlertFresh = (el) => {
       if (!el) return;
@@ -10838,7 +10851,7 @@ requestAnimationFrame(frame);
       const now = Date.now();
       alertLog.unshift({ time, symbol: r.symbol || r.baseAsset, pct, oi: Number(r.oiNotional || 0), price: Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), dir, delta, ts: now });
       alertLog = alertLog.filter(a => now - a.ts < ALERT_TTL).slice(0, 500);
-      saveAlerts(); renderAlertFeed(); renderAlertHistory();
+      saveAlerts(); renderAlertFeed(true); renderAlertHistory();
       const first = alertFeed && alertFeed.firstElementChild;
       if (first) {
         if (announce) meteorTo(first, 'focus', 950, () => { markAlertFresh(first); ping('focus'); });
