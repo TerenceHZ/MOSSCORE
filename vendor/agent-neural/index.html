@@ -10791,7 +10791,10 @@ requestAnimationFrame(frame);
       if (Array.isArray(saved)) alertLog = saved.filter(a => a && a.ts && Date.now() - a.ts < ALERT_TTL);
     } catch (e) {}
     if (!alertLog.length) {
-      alertLog = [{ time: '17:00:15', symbol: 'ARIAUSDT', pct: 49.5, oi: 12990000, price: '0.12066', dir: '↑↑↑', delta: 4302000, ts: Date.now() }];
+      alertLog = [
+        { time: '17:00:15', symbol: 'ARIAUSDT', pct: 49.5, oi: 12990000, price: '0.12066', dir: '↑↑↑', delta: 4302000, ts: Date.now() },
+        { time: '16:58:42', symbol: 'BTWUSDT', pct: 23.4, oi: 51100000, price: '0.0671', dir: '↑↑↑', delta: 9680000, ts: Date.now() - 93000 }
+      ];
     }
     const alertFeed = sr.querySelector('#nvAlertFeed');
     const alertHistory = sr.querySelector('#nvAlertHistory');
