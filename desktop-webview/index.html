@@ -641,6 +641,8 @@ body{background:var(--page);overflow:hidden}
 .nv-ar-oi{font:600 11px/1 var(--mono);font-style:normal;white-space:nowrap}
 .nv-ar-chg.up,.nv-ar-oi.up{color:#63C08E}
 .nv-ar-chg.down,.nv-ar-oi.down{color:#C96358}
+.nv-drawer #nvAlertHistory .nv-ar-chg.up,.nv-drawer #nvAlertHistory .nv-ar-oi.up{color:#63C08E!important}
+.nv-drawer #nvAlertHistory .nv-ar-chg.down,.nv-drawer #nvAlertHistory .nv-ar-oi.down{color:#C96358!important}
 .p-feed{flex:1;min-height:0;display:flex;flex-direction:column}
 .p-crawl{flex:none;height:104px}
 .heat{position:relative;height:238px;background:repeating-linear-gradient(90deg,rgba(232,160,32,.10) 0 1px,transparent 1px 7.14%),repeating-linear-gradient(0deg,rgba(232,160,32,.08) 0 1px,transparent 1px 8.33%),rgba(232,160,32,.018)}
@@ -10918,8 +10920,9 @@ requestAnimationFrame(frame);
       alertHistory.innerHTML = alertLog.slice(start, start + ALERT_PAGE_SIZE).map(a => {
         const up = Number(a.chg || 0) >= 0;
         const cls = up ? 'up' : 'down';
+        const color = up ? '#63C08E' : '#C96358';
         const delta = `${a.pct >= 0 ? '+' : '-'}${fmtWan(Math.abs(Number(a.delta || 0)))}`;
-        return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-main"><b class="nv-ar-sym">${a.symbol}</b><em class="nv-ar-chg ${cls}">${sign(a.chg)}%</em></div><div class="nv-ar-line"><span>${a.price} / ${fmtWan(a.oi)} / ${delta}</span><span class="nv-ar-oi ${cls}">${a.dir} / ${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%</span></div></div>`;
+        return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-main"><b class="nv-ar-sym">${a.symbol}</b><em class="nv-ar-chg ${cls}" style="color:${color}">${sign(a.chg)}%</em></div><div class="nv-ar-line"><span>${a.price} / ${fmtWan(a.oi)} / ${delta}</span><span class="nv-ar-oi ${cls}" style="color:${color}">${a.dir} / ${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%</span></div></div>`;
       }).join('');
       const label = sr.querySelector('#nvAlertPage');
       if (label) label.textContent = `${alertHistoryPage + 1} / ${pages}`;
