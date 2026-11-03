@@ -608,9 +608,12 @@ body{background:var(--page);overflow:hidden}
 .nv-alertfeed{height:calc(100% - 34px);overflow:hidden;padding:0;scrollbar-width:none;display:flex;flex-direction:column;justify-content:flex-start}
 .nv-alertfeed::-webkit-scrollbar{display:none}
 .nv-alertitem{position:relative;flex:0 0 auto;min-height:148px;box-sizing:border-box;padding:9px 10px;margin:0 0 4px;border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(8,7,4,.72),rgba(18,14,6,.56));animation:nvalertin .4s ease-out;overflow:hidden}
+.nv-alertitem::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(105deg,transparent 22%,rgba(232,160,32,.1) 44%,rgba(255,192,67,.2) 52%,rgba(232,160,32,.1) 60%,transparent 82%);transform:translateX(-120%);animation:nvalertsweep 5.2s ease-in-out infinite}
+@keyframes nvalertsweep{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
+.nv-alertitem>div{position:relative;z-index:1}
 .nv-alertitem.fresh{background:linear-gradient(115deg,rgba(232,160,32,.28),rgba(232,160,32,.04) 34%,rgba(255,192,67,.16) 54%,rgba(232,160,32,.03) 76%,rgba(232,160,32,.22));background-size:220% 220%;border-color:rgba(255,192,67,.7);box-shadow:inset 0 0 30px rgba(232,160,32,.1),0 0 14px rgba(232,160,32,.06);animation:nvalertflow 6s ease-in-out infinite}
+.nv-alertitem.fresh::before{background:linear-gradient(105deg,transparent 18%,rgba(255,192,67,.18) 42%,rgba(255,216,130,.3) 52%,rgba(255,192,67,.18) 62%,transparent 84%);animation-duration:4.2s}
 @keyframes nvalertflow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-.nv-alertitem.fresh{background:linear-gradient(90deg,rgba(232,160,32,.16),transparent 82%);border-color:rgba(232,160,32,.42);box-shadow:inset 0 0 26px rgba(232,160,32,.08)}
 .nv-alertitem.fresh .nv-alert-top b{color:#ffe6a8;text-shadow:0 0 12px rgba(232,160,32,.55)}
 .nv-alertitem.fresh::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:linear-gradient(90deg,transparent,#e8a020,transparent);transform-origin:left;animation:nvline 900s linear forwards;opacity:.85}
 .nv-alertitem.flash{animation:nvalertflash .58s ease-out}
