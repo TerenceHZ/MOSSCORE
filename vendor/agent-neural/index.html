@@ -817,6 +817,24 @@ linear-gradient(var(--nv-edge),var(--nv-edge)) right bottom / 2px 18px no-repeat
 .nv-row .nv-score{position:relative;z-index:1;font:700 13px/1 var(--mono);color:#ffc043;text-align:right;font-variant-numeric:tabular-nums;text-shadow:0 0 10px rgba(232,160,32,.2)}
 .nv-row.live{background:linear-gradient(90deg,rgba(232,160,32,.1),transparent 72%);box-shadow:inset 0 0 20px rgba(232,160,32,.05)}
 .nv-mod.imported .nv-row.live{background:linear-gradient(90deg,rgba(242,240,232,.065),transparent 72%);box-shadow:inset 0 0 20px rgba(242,240,232,.025)}.nv-mod.imported .nv-row .nv-score{color:#d8d2c5;font-weight:500;text-shadow:none}
+/* 24H 涨跌榜：每条独立小窗 */
+.nv-rows{gap:4px;padding:4px}
+.nv-row{display:block;min-height:0;padding:7px 9px 7px 13px;border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(10,8,4,.9),rgba(4,4,3,.76));cursor:pointer}
+.nv-row::before{width:3px;opacity:.9}
+.nv-row.gain::before{background:#0ecb81;box-shadow:0 0 12px rgba(14,203,129,.55)}
+.nv-row.loss::before{background:#f6465d;box-shadow:0 0 12px rgba(246,70,93,.5)}
+.nv-row::after{display:none}
+.nv-row-head{position:relative;z-index:1;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.nv-row .nv-sym{font:700 14px/1 var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-row .nv-tag{font:500 9px/1 var(--mono);font-style:normal;color:#e8a020;margin-right:5px}
+.nv-row .nv-change{font:700 18px/1 var(--mono);letter-spacing:-.03em;white-space:nowrap}
+.nv-row .nv-change.up,.nv-row-oi b.up,.nv-row-foot b.up{color:#0ecb81}
+.nv-row .nv-change.down,.nv-row-oi b.down,.nv-row-foot b.down{color:#f6465d}
+.nv-row-oi{position:relative;z-index:1;display:flex;justify-content:space-between;gap:6px;margin-top:7px;padding-top:6px;border-top:1px solid rgba(232,160,32,.1);font:500 8.5px/1 var(--cjk);color:#7d725f;white-space:nowrap}
+.nv-row-oi b{font:600 10px/1 var(--mono);color:#e4d4a8}
+.nv-row-foot{position:relative;z-index:1;display:flex;justify-content:space-between;gap:8px;margin-top:5px;font:500 8px/1 var(--cjk);color:#80735e;white-space:nowrap}
+.nv-row-foot b{font:600 9px/1 var(--mono);color:#d8cdb8}
+.nv-mod.focus .nv-row-oi,.nv-mod.focus .nv-row-foot{color:#8f8168}
 @keyframes nvbadge{0%,100%{box-shadow:0 0 0 rgba(232,160,32,0)}50%{box-shadow:0 0 12px rgba(232,160,32,.18)}}
 .nv-cards{position:absolute;left:24px;right:24px;bottom:112px;height:150px;display:flex;justify-content:space-between;align-items:stretch;z-index:14;pointer-events:none}
 .nv-mslist{padding:4px 10px 8px;overflow:auto;height:calc(100% - 31px)}
@@ -1021,22 +1039,44 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   </section>
 
   <div class="nv-left">
-   <section class="nv-mod nv-fx focus">
-    <div class="nv-mod-h"><b>★ FOCUS · 自选主监控</b><small>4 个 · 暗金</small></div>
+   <section class="nv-mod nv-fx focus gains">
+    <div class="nv-mod-h"><b>▲ 24H 涨幅榜</b><small><span id="nvGainCount">3</span> 条 · 实时排序</small></div>
     <div class="nv-rows">
-     <div class="nv-row"><span class="nv-dot">★</span><div><span class="nv-sym">BLESS</span><span class="nv-sub"><i class="nv-stage entry">开仓</i>3m +1.73% · 15.96M</span></div><span class="nv-score">97.0</span></div>
-     <div class="nv-row"><span class="nv-dot">★</span><div><span class="nv-sym">WIF</span><span class="nv-sub"><i class="nv-stage watch">候选</i>5m +1.12% · 8.42M</span></div><span class="nv-score">81.2</span></div>
-     <div class="nv-row"><span class="nv-dot">★</span><div><span class="nv-sym">BTC</span><span class="nv-sub"><i class="nv-stage low">初筛</i>24h +2.41% · 5.10M</span></div><span class="nv-score">74.0</span></div>
-     <div class="nv-row"><span class="nv-dot">★</span><div><span class="nv-sym">SEI</span><span class="nv-sub"><i class="nv-stage low">观察</i>等待动量确认</span></div><span class="nv-score">62.0</span></div>
+     <div class="nv-row gain">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">★</i>ARIAUSDT</span><span class="nv-change up">+25.3%</span></div>
+      <div class="nv-row-oi"><span>OI <b>1299万</b></span><span>5M <b class="up">+6.2%</b></span><span>15M <b class="up">+49.5%</b></span></div>
+      <div class="nv-row-foot"><span>VOL 24H <b>5110万</b></span><span>ΔOI <b class="up">+430.2万</b></span></div>
+     </div>
+     <div class="nv-row gain">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">★</i>BTWUSDT</span><span class="nv-change up">+18.7%</span></div>
+      <div class="nv-row-oi"><span>OI <b>5110万</b></span><span>5M <b class="up">+2.4%</b></span><span>15M <b class="up">+23.4%</b></span></div>
+      <div class="nv-row-foot"><span>VOL 24H <b>1.28亿</b></span><span>ΔOI <b class="up">+968.0万</b></span></div>
+     </div>
+     <div class="nv-row gain">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>SOPHUSDT</span><span class="nv-change up">+12.4%</span></div>
+      <div class="nv-row-oi"><span>OI <b>663万</b></span><span>5M <b class="up">+0.8%</b></span><span>15M <b class="up">+9.6%</b></span></div>
+      <div class="nv-row-foot"><span>VOL 24H <b>4420万</b></span><span>ΔOI <b class="up">+58.2万</b></span></div>
+     </div>
     </div>
    </section>
-   <section class="nv-mod nv-fx imported">
-    <div class="nv-mod-h"><b>○ IMPORTED · 导入辅助</b><small>4 个 · 白色</small></div>
+   <section class="nv-mod nv-fx imported losses">
+    <div class="nv-mod-h"><b>▼ 24H 跌幅榜</b><small><span id="nvLossCount">3</span> 条 · 实时排序</small></div>
     <div class="nv-rows">
-     <div class="nv-row"><span class="nv-dot">○</span><div><span class="nv-sym">SOPH</span><span class="nv-sub"><i class="nv-stage watch">候选</i>1m +0.51% · 44.56M</span></div><span class="nv-score">77.2</span></div>
-     <div class="nv-row"><span class="nv-dot">○</span><div><span class="nv-sym">OGN</span><span class="nv-sub"><i class="nv-stage low">初筛</i>5m -1.56% · 22.42M</span></div><span class="nv-score">74.9</span></div>
-     <div class="nv-row"><span class="nv-dot">○</span><div><span class="nv-sym">EVAA</span><span class="nv-sub"><i class="nv-stage low">观察</i>OI 5m +6.2%</span></div><span class="nv-score">61.0</span></div>
-     <div class="nv-row"><span class="nv-dot">○</span><div><span class="nv-sym">ARX</span><span class="nv-sub"><i class="nv-stage low">观察</i>等待数据</span></div><span class="nv-score">58.0</span></div>
+     <div class="nv-row loss">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>FLUIDUSDT</span><span class="nv-change down">-9.8%</span></div>
+      <div class="nv-row-oi"><span>OI <b>663万</b></span><span>5M <b class="down">-3.1%</b></span><span>15M <b class="down">-12.4%</b></span></div>
+      <div class="nv-row-foot"><span>VOL 24H <b>6630万</b></span><span>ΔOI <b class="down">-84.2万</b></span></div>
+     </div>
+     <div class="nv-row loss">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>MASKUSDT</span><span class="nv-change down">-6.4%</span></div>
+      <div class="nv-row-oi"><span>OI <b>1.58亿</b></span><span>5M <b class="down">-1.8%</b></span><span>15M <b class="down">-7.2%</b></span></div>
+      <div class="nv-row-foot"><span>VOL 24H <b>8820万</b></span><span>ΔOI <b class="down">-156.0万</b></span></div>
+     </div>
+     <div class="nv-row loss">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>IDOLUSDT</span><span class="nv-change down">-4.1%</span></div>
+      <div class="nv-row-oi"><span>OI <b>244.7万</b></span><span>5M <b class="down">-0.9%</b></span><span>15M <b class="down">-3.8%</b></span></div>
+      <div class="nv-row-foot"><span>VOL 24H <b>3120万</b></span><span>ΔOI <b class="down">-12.8万</b></span></div>
+     </div>
     </div>
    </section>
   </div>
@@ -10866,35 +10906,37 @@ requestAnimationFrame(frame);
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
       window.__MOSS_LIVE_ACTIVE = true;
-      const rows = [...live.rows].sort((a, b) => (b.score || 0) - (a.score || 0));
-      let focusRows = rows.filter(r => r.focus && (r.score || 0) >= 35);
-      if (focusRows.length < 4) {
-        const picked = new Set(focusRows.map(r => r.symbol));
-        focusRows = focusRows.concat(rows.filter(r => !picked.has(r.symbol)));
-      }
-      focusRows = focusRows.slice(0, 4);
-      const focusSet = new Set(focusRows.map(r => r.symbol));
-      const importRows = rows.filter(r => !focusSet.has(r.symbol)).slice(0, 4);
+      const rows = [...live.rows].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
+      const gainRows = rows.filter(r => (r.change24h || 0) >= 0).slice(0, 3);
+      const lossRows = rows.filter(r => (r.change24h || 0) < 0).sort((a, b) => (a.change24h || 0) - (b.change24h || 0)).slice(0, 3);
       const stageClass = (s) => s === 'entry' ? 'entry' : s === 'watch' ? 'watch' : 'low';
-      const fillRows = (mod, list) => {
+      const fillRows = (mod, list, kind) => {
         if (!mod) return;
         const els = [...mod.querySelectorAll('.nv-row')];
         els.forEach((row, i) => {
           const r = list[i];
           if (!r) return;
+          row.className = 'nv-row ' + kind;
           const sym = row.querySelector('.nv-sym');
-          const sub = row.querySelector('.nv-sub');
-          const score = row.querySelector('.nv-score');
-          if (sym) sym.textContent = r.baseAsset || r.symbol;
-          if (sub) sub.innerHTML = `<i class="nv-stage ${stageClass(r.stage)}">${r.stage === 'entry' ? '开仓' : r.stage === 'watch' ? '候选' : '观察'}</i>${sign(r.change5m)}% · ${fmtQv(r.quoteVolume24h)}`;
-          if (score) score.textContent = Number(r.score || 0).toFixed(1);
-          row.style.setProperty('--p', Math.max(0, Math.min(100, r.score || 0)));
+          const change = row.querySelector('.nv-change');
+          if (sym) sym.innerHTML = `<i class="nv-tag">${r.focus ? '★' : '○'}</i>${r.symbol || r.baseAsset}`;
+          if (change) { change.textContent = sign(r.change24h) + '%'; change.className = 'nv-change ' + ((r.change24h || 0) >= 0 ? 'up' : 'down'); }
+          const oi = row.querySelectorAll('.nv-row-oi span');
+          if (oi[0]) oi[0].innerHTML = `OI <b>${fmtQv(r.oiNotional)}</b>`;
+          if (oi[1]) oi[1].innerHTML = `5M <b class="${(r.oi5m || 0) >= 0 ? 'up' : 'down'}">${sign(r.oi5m)}%</b>`;
+          if (oi[2]) oi[2].innerHTML = `15M <b class="${(r.oi15m || 0) >= 0 ? 'up' : 'down'}">${sign(r.oi15m)}%</b>`;
+          const foot = row.querySelectorAll('.nv-row-foot span');
+          const delta = Number(r.oiNotional || 0) * Number(r.oi15m || 0) / (100 + Number(r.oi15m || 0));
+          if (foot[0]) foot[0].innerHTML = `VOL 24H <b>${fmtQv(r.quoteVolume24h)}</b>`;
+          if (foot[1]) foot[1].innerHTML = `ΔOI <b class="${delta >= 0 ? 'up' : 'down'}">${delta >= 0 ? '+' : ''}${fmtQv(Math.abs(delta))}</b>`;
         });
       };
       const focusMod = sr.querySelector('.nv-mod.focus');
       const importMod = sr.querySelector('.nv-mod.imported');
-      fillRows(focusMod, focusRows);
-      fillRows(importMod, importRows);
+      fillRows(focusMod, gainRows, 'gain');
+      fillRows(importMod, lossRows, 'loss');
+      const gc = sr.querySelector('#nvGainCount'); if (gc) gc.textContent = gainRows.length;
+      const lc = sr.querySelector('#nvLossCount'); if (lc) lc.textContent = lossRows.length;
       const updCard = (lane, r) => {
         const card = sr.querySelector(`[data-nv-card="${lane}"]`);
         if (!card || !r) return;
@@ -10904,9 +10946,9 @@ requestAnimationFrame(frame);
         const score = card.querySelector('.nv-c-score'); if (score) score.textContent = Number(r.score || 0).toFixed(1);
         card.dataset.liveSymbol = r.symbol;
       };
-      updCard('focus', focusRows[0]);
-      updCard('imported', importRows[0]);
-      const f = focusRows[0], im = importRows[0];
+      updCard('focus', gainRows[0]);
+      updCard('imported', lossRows[0]);
+      const f = gainRows[0], im = lossRows[0];
       const alertPrev = window.__MOSS_ALERT_PREV || {};
       const maybeAlert = (r, announce = true) => {
         if (!r) return;
