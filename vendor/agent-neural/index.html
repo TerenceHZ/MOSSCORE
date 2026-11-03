@@ -1070,6 +1070,44 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-drawer .nv-history .nv-alert-record .nv-ar-row{display:flex}
 .nv-drawer .nv-ms{font:700 23px/1 var(--mono);color:#f2f0e8}
 .nv-drawer .nv-ms small{font:500 10px/1 var(--cjk);color:#8a7b62;margin-left:6px}
+.nv-signal{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.64);backdrop-filter:blur(5px);opacity:0;pointer-events:none;transition:opacity .2s}
+.nv-signal.open{opacity:1;pointer-events:auto}
+.nv-signal-card{position:relative;width:620px;max-width:calc(100% - 40px);padding:0 0 16px;background:linear-gradient(145deg,rgba(12,10,5,.98),rgba(3,3,2,.98));border:1px solid rgba(232,160,32,.6);box-shadow:0 30px 100px rgba(0,0,0,.7),inset 0 0 60px rgba(232,160,32,.04);transform:scale(.95);transition:transform .22s;animation:nvsigpulse 2.4s ease-in-out infinite}
+.nv-signal.open .nv-signal-card{transform:scale(1)}
+@keyframes nvsigpulse{0%,100%{border-color:rgba(232,160,32,.55);box-shadow:0 30px 100px rgba(0,0,0,.7),inset 0 0 60px rgba(232,160,32,.04)}50%{border-color:rgba(255,192,67,.9);box-shadow:0 30px 100px rgba(0,0,0,.7),inset 0 0 70px rgba(232,160,32,.08),0 0 30px rgba(232,160,32,.12)}}
+.nv-sig-h{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid rgba(232,160,32,.24);background:linear-gradient(90deg,rgba(232,160,32,.13),transparent 72%)}
+.nv-sig-h span{font:700 11px/1 var(--mono);letter-spacing:.18em;color:#ffc043}
+.nv-sig-x{background:none;border:1px solid rgba(232,160,32,.3);color:#b9a887;width:26px;height:26px;font:600 15px/1 var(--mono);cursor:pointer}
+.nv-sig-hero{display:flex;justify-content:space-between;align-items:flex-end;padding:18px 18px 8px}
+.nv-sig-hero b{display:block;font:700 30px/1 var(--mono);color:#f7ecd0}
+.nv-sig-hero span{display:block;margin-top:7px;font:600 13px/1 var(--mono);color:#c9bda6}
+.nv-sig-hero em{font:700 28px/1 var(--mono);font-style:normal;color:#63C08E}
+.nv-signal.short .nv-sig-hero em{color:#C96358}
+.nv-sig-side{margin:3px 18px 14px;padding:10px 12px;border:1px solid rgba(99,192,142,.4);background:rgba(99,192,142,.08);font:700 18px/1 var(--cjk);letter-spacing:.08em;color:#63C08E}
+.nv-signal.short .nv-sig-side{border-color:rgba(201,99,88,.45);background:rgba(201,99,88,.08);color:#C96358}
+.nv-sig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:0 18px;border:1px solid rgba(232,160,32,.16);background:rgba(232,160,32,.1)}
+.nv-sig-grid div{padding:9px 10px;background:rgba(5,5,3,.86)}
+.nv-sig-grid span{display:block;font:500 9px/1 var(--cjk);color:#8a7b62;margin-bottom:5px}
+.nv-sig-grid b{display:block;font:600 11px/1.2 var(--mono);color:#e4d4a8;white-space:nowrap}
+.nv-sig-grid b.up{color:#63C08E}
+.nv-sig-grid b.down{color:#C96358}
+.nv-sig-exit{display:flex;align-items:baseline;gap:10px;margin:14px 18px 0;padding:10px 12px;border-left:2px solid #e8a020;background:rgba(232,160,32,.055)}
+.nv-sig-exit span{font:500 10px/1 var(--cjk);color:#8a7b62;white-space:nowrap}
+.nv-sig-exit b{font:700 14px/1 var(--mono);color:#ffe0a0;white-space:nowrap}
+.nv-sig-exit small{font:500 10px/1 var(--mono);color:#C96358;white-space:nowrap}
+.nv-sig-win{display:flex;align-items:center;gap:12px;margin:12px 18px 0}
+.nv-sig-win>div:first-child{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+.nv-sig-win span{font:500 10px/1 var(--cjk);color:#8a7b62}
+.nv-sig-win b{font:700 24px/1 var(--mono);color:#63C08E}
+.nv-signal.short .nv-sig-win b{color:#C96358}
+.nv-sigbar{flex:1;height:6px;background:rgba(255,255,255,.08);overflow:hidden}
+.nv-sigbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,rgba(99,192,142,.35),#63C08E);transition:width .45s}
+.nv-signal.short .nv-sigbar i{background:linear-gradient(90deg,rgba(201,99,88,.3),#C96358)}
+.nv-sig-foot{display:flex;justify-content:space-between;align-items:center;margin:16px 18px 0;padding-top:12px;border-top:1px solid rgba(232,160,32,.14)}
+.nv-sig-foot>span{font:500 8px/1 var(--cjk);color:#6f6453;letter-spacing:.08em}
+.nv-sig-foot div{display:flex;gap:7px}
+.nv-sig-foot button{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a;font:600 10px/1 var(--cjk);padding:8px 12px;cursor:pointer}
+.nv-sig-foot button:first-child{background:rgba(232,160,32,.1);color:#ffc043}
 @media(max-width:1500px){.nv-regime{width:640px}.nv-left{width:340px}.nv-card,.nv-card.focus{width:340px}}
 </style>
 
@@ -1282,6 +1320,20 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="nv-d-sec"><h4>POSITION ALERTS HISTORY</h4><div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIAUSDT</span><b>OI +49.5%</b></div></div><div class="nv-alert-pager"><button type="button" data-alert-page="prev">上一页</button><span id="nvAlertPage">1 / 1</span><button type="button" data-alert-page="next">下一页</button></div></div>
    <div class="nv-d-sec"><h4>口径</h4><p>记录持仓快速增加/减少的异动快照，不构成交易建议。</p></div>
   </div>
+ </div>
+</div>
+<div class="nv-signal" id="nvSignal" aria-hidden="true">
+ <div class="nv-signal-card">
+  <div class="nv-sig-h"><span>⚠ MOSS SIGNAL · 建仓警报</span><button class="nv-sig-x" type="button" data-signal-close>×</button></div>
+  <div class="nv-sig-hero"><div><b id="nvSigSym">ARIAUSDT</b><span id="nvSigPrice">0.12066</span></div><em id="nvSigChg">+25.30%</em></div>
+  <div class="nv-sig-side" id="nvSigSide">建议建多 · LONG</div>
+  <div class="nv-sig-grid">
+   <div><span>当前 OI</span><b id="nvSigOi">1299.0万 USDT</b></div><div><span>5M OI</span><b id="nvSigOi5">+6.2%</b></div><div><span>15M OI</span><b id="nvSigOi15">+49.5%</b></div>
+   <div><span>15M 增量</span><b id="nvSigDelta">+430.2万 USDT</b></div><div><span>24H 成交额</span><b id="nvSigVol">5110.0万 USDT</b></div><div><span>策略分</span><b id="nvSigScore">97</b></div>
+  </div>
+  <div class="nv-sig-exit"><span>建议出仓位置</span><b id="nvSigExit">0.12790 (+6.0%)</b><small id="nvSigStop">止损 0.11704 (-3.0%)</small></div>
+  <div class="nv-sig-win"><div><span>策略胜率</span><b id="nvSigWin">92%</b></div><div class="nv-sigbar"><i id="nvSigBar"></i></div></div>
+  <div class="nv-sig-foot"><span>策略估算 · 非投资建议</span><div><button type="button" data-signal-detail>查看详情</button><button type="button" data-signal-close>关闭</button></div></div>
  </div>
 </div>
 <div class="tip" id="tip" hidden></div>
@@ -11025,6 +11077,60 @@ requestAnimationFrame(frame);
     renderAlertFeed();
     renderAlertHistory();
     { const first = alertFeed && alertFeed.firstElementChild; if (first) markAlertFresh(first); }
+    const calcSignal = (r) => {
+      const chg = Number(r.change24h || 0);
+      const oi5 = Number(r.oi5m || 0);
+      const oi15 = Number(r.oi15m || 0);
+      const vol = Number(r.quoteVolume24h || 0);
+      const score = Number(r.score || 0);
+      const pullback = Number(r.pullback || 0);
+      const stage = r.stage || 'watch';
+      let win = stage === 'entry' ? 60 : stage === 'watch' ? 50 : 38;
+      win += (score - 50) * 0.35;
+      win += Math.max(-12, Math.min(12, oi15 * 0.18));
+      win += Math.max(-6, Math.min(6, oi5 * 0.25));
+      if (vol >= 5e7) win += 4; else if (vol >= 1e7) win += 2; else if (vol < 2e6) win -= 3;
+      if (pullback > 10) win -= 4; else if (pullback < 3) win += 2;
+      if (chg > 50) win -= 3;
+      win = Math.max(20, Math.min(92, Math.round(win)));
+      const side = chg >= 0 ? 'long' : 'short';
+      const price = Number(r.price || 0);
+      const target = price ? price * (side === 'long' ? 1.06 : 0.94) : 0;
+      const stop = price ? price * (side === 'long' ? 0.97 : 1.03) : 0;
+      const fmtPx = (v) => v ? v.toFixed(v < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
+      return { r, chg, oi5, oi15, vol, score, stage, side, win, target, stop, targetText: fmtPx(target), stopText: fmtPx(stop) };
+    };
+    const showSignal = (sig, row, lane) => {
+      const el = sr.querySelector('#nvSignal');
+      if (!el || !sig) return;
+      el.className = 'nv-signal open ' + sig.side;
+      el.setAttribute('aria-hidden', 'false');
+      const color = sig.side === 'long' ? '#63C08E' : '#C96358';
+      sr.querySelector('#nvSigSym').textContent = sig.r.symbol || sig.r.baseAsset || '—';
+      sr.querySelector('#nvSigPrice').textContent = `${Number(sig.r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USDT`;
+      const chg = sr.querySelector('#nvSigChg'); chg.textContent = `${sig.chg >= 0 ? '+' : ''}${sig.chg.toFixed(2)}%`; chg.style.color = color;
+      const side = sr.querySelector('#nvSigSide'); side.textContent = sig.side === 'long' ? '建议建多 · LONG' : '建议建空 · SHORT'; side.style.color = color;
+      sr.querySelector('#nvSigOi').textContent = fmtWan(sig.r.oiNotional).replace(' USD', ' USDT');
+      const oi5El = sr.querySelector('#nvSigOi5'); oi5El.textContent = `${sign(sig.oi5)}%`; oi5El.className = sig.oi5 >= 0 ? 'up' : 'down';
+      const oi15El = sr.querySelector('#nvSigOi15'); oi15El.textContent = `${sign(sig.oi15)}%`; oi15El.className = sig.oi15 >= 0 ? 'up' : 'down';
+      const delta = Number(sig.r.oiNotional || 0) * sig.oi15 / (100 + sig.oi15);
+      sr.querySelector('#nvSigDelta').textContent = `${delta >= 0 ? '+' : '-'}${fmtWan(Math.abs(delta)).replace(' USD', ' USDT')}`;
+      sr.querySelector('#nvSigVol').textContent = fmtWan(sig.vol).replace(' USD', ' USDT');
+      sr.querySelector('#nvSigScore').textContent = sig.score ? sig.score.toFixed(1) : '—';
+      sr.querySelector('#nvSigExit').textContent = `${sig.targetText} (${sig.side === 'long' ? '+6.0%' : '-6.0%'})`;
+      sr.querySelector('#nvSigStop').textContent = `止损 ${sig.stopText} (${sig.side === 'long' ? '-3.0%' : '+3.0%'})`;
+      sr.querySelector('#nvSigWin').textContent = `${sig.win}%`;
+      sr.querySelector('#nvSigBar').style.width = `${sig.win}%`;
+      window.__MOSS_SIGNAL_ROW = row || null;
+      window.__MOSS_SIGNAL_LANE = lane || 'gain';
+      ping('focus');
+    };
+    const hideSignal = () => {
+      const el = sr.querySelector('#nvSignal');
+      if (!el) return;
+      el.classList.remove('open');
+      el.setAttribute('aria-hidden', 'true');
+    };
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
       window.__MOSS_LIVE_ACTIVE = true;
@@ -11143,6 +11249,24 @@ requestAnimationFrame(frame);
       runRowEffects(focusMod, oldGain, gainRows, 'gain');
       runRowEffects(importMod, oldLoss, lossRows, 'loss');
       window.__MOSS_ROW_READY = true;
+      const seen = window.__MOSS_SIGNAL_SEEN || {};
+      const candidates = [];
+      [[focusMod, gainRows, 'gain'], [importMod, lossRows, 'loss']].forEach(([mod, list, lane]) => {
+        list.forEach((r, i) => {
+          const sig = calcSignal(r);
+          if (sig.win >= 72 && (r.stage === 'entry' || sig.win >= 82)) {
+            candidates.push({ sig, row: mod && mod.querySelectorAll('.nv-row')[i], lane });
+          }
+        });
+      });
+      const best = candidates.sort((a, b) => b.sig.win - a.sig.win)[0];
+      const key = best ? `${best.sig.r.symbol}-${best.sig.side}` : '';
+      const signalEl = sr.querySelector('#nvSignal');
+      if (best && !signalEl.classList.contains('open') && (!seen[key] || Date.now() - seen[key] > 30 * 60 * 1000)) {
+        seen[key] = Date.now();
+        window.__MOSS_SIGNAL_SEEN = seen;
+        setTimeout(() => showSignal(best.sig, best.row, best.lane), 1100);
+      }
     };
     window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
@@ -11270,6 +11394,16 @@ requestAnimationFrame(frame);
       freshPanel(drawer, 'focus');
     };
     const shut = () => { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); };
+    const signalEl = sr.querySelector('#nvSignal');
+    sr.querySelectorAll('[data-signal-close]').forEach(btn => btn.addEventListener('click', hideSignal));
+    const signalDetail = sr.querySelector('[data-signal-detail]');
+    signalDetail && signalDetail.addEventListener('click', () => {
+      const row = window.__MOSS_SIGNAL_ROW;
+      const lane = window.__MOSS_SIGNAL_LANE || 'gain';
+      hideSignal();
+      if (row) openRow(row, lane);
+    });
+    signalEl && signalEl.addEventListener('click', (e) => { if (e.target === signalEl) hideSignal(); });
     cards.forEach(card => card.addEventListener('click', () => {
       window.__NOVA_SELECTED = card.dataset.nvCard;
       open(card.dataset.nvCard);
@@ -11284,7 +11418,7 @@ requestAnimationFrame(frame);
     const msPanel = sr.querySelector('.p-heat');
     msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); openAlerts(); });
     close && close.addEventListener('click', shut);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') shut(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideSignal(); shut(); } });
     sr.addEventListener('click', e => {
       if (drawer.classList.contains('open') && !drawer.contains(e.target) && !e.target.closest('[data-nv-card], .nv-mod, .nv-row, .p-heat')) shut();
     });
