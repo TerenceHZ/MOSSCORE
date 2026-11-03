@@ -999,6 +999,23 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-drawer .nv-d-x{background:none;border:1px solid rgba(232,160,32,.3);color:#9e917b;width:32px;height:32px;cursor:pointer;font:600 15px/1 var(--mono)}
 .nv-drawer .nv-d-x:hover{color:#ffc043;border-color:#e8a020}
 .nv-drawer .nv-d-body{padding:16px 22px 26px}
+.nv-now{display:grid;grid-template-columns:1.05fr 1fr;gap:18px;padding:15px 16px;margin-bottom:18px;border:1px solid rgba(232,160,32,.22);background:linear-gradient(115deg,rgba(232,160,32,.09),rgba(4,4,3,.55))}
+.nv-now-main{display:flex;flex-direction:column;justify-content:center}
+.nv-now-k{font:600 10px/1 var(--cjk);letter-spacing:.12em;color:#8a7b62}
+.nv-now-chg{margin-top:6px;font:700 42px/1 var(--mono);letter-spacing:-.04em;color:#63C08E}
+.nv-now-chg.up{color:#63C08E}
+.nv-now-chg.down{color:#C96358}
+.nv-now-price{margin-top:7px;font:600 12px/1 var(--mono);color:#d8cdb8}
+.nv-now-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:center}
+.nv-now-side div{padding:8px 9px;border-left:1px solid rgba(232,160,32,.22)}
+.nv-now-side span{display:block;font:500 9px/1 var(--cjk);color:#8a7b62;margin-bottom:5px}
+.nv-now-side b{display:block;font:600 12px/1.2 var(--mono);color:#f2f0e8;white-space:nowrap}
+.nv-oi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;border:1px solid rgba(232,160,32,.14);background:rgba(232,160,32,.1)}
+.nv-oi-grid div{padding:9px 10px;background:rgba(5,5,3,.82)}
+.nv-oi-grid span{display:block;font:500 9px/1 var(--cjk);color:#8a7b62;margin-bottom:5px}
+.nv-oi-grid b{display:block;font:600 12px/1.2 var(--mono);color:#e4d4a8;white-space:nowrap}
+.nv-oi-grid b.up,.nv-facts b.up{color:#63C08E}
+.nv-oi-grid b.down,.nv-facts b.down{color:#C96358}
 .nv-drawer>.nv-d-h,.nv-drawer>.nv-tabs,.nv-drawer>.nv-d-body{position:relative;z-index:2}
 .nv-drawer.nv-fresh>.nv-winbg{opacity:.2}
 .nv-drawer.nv-fresh>.nv-winflow{opacity:1}
@@ -1068,7 +1085,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <section class="nv-mod nv-fx focus gains">
     <div class="nv-mod-h"><b>▲ 24H 涨幅榜</b><small><span id="nvGainCount">3</span> 条 · 实时排序</small></div>
     <div class="nv-rows">
-     <div class="nv-row gain">
+     <div class="nv-row gain" data-price="0.12066" data-chg="25.3" data-oi="12990000" data-vol="51100000" data-oi5="6.2" data-oi15="49.5">
       <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">★</i>ARIAUSDT</span><span class="nv-change up">+25.3%</span></div>
       <div class="nv-row-oi"><span>OI <b>1299万</b></span><span>5M <b class="up">+6.2%</b></span><span>15M <b class="up">+49.5%</b></span></div>
       <div class="nv-row-foot"><span>VOL 24H <b>5110万</b></span><span>ΔOI <b class="up">+430.2万</b></span></div>
@@ -1209,12 +1226,20 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
  <div class="nv-tabs"><button class="on" type="button" data-nv-tab="current">当前详情</button><button type="button" data-nv-tab="history">历史监控</button><button type="button" data-nv-tab="alerts">异动历史</button></div>
  <div class="nv-d-body">
   <div class="nv-pane" data-pane="current">
-  <div class="nv-d-sec"><h4>结论</h4><p id="nvDWhy">3 分钟动量 +1.73%，成交额 15.96M，短线未回撤。</p></div>
-  <div class="nv-d-sec"><h4>关键数据</h4><div class="nv-facts" id="nvDFacts"><div><span>24H</span><b>+7.94%</b></div><div><span>5M</span><b>+1.81%</b></div><div><span>1M QV</span><b>70.5K</b></div><div><span>全网 OI</span><b>待核验</b></div><div><span>多签</span><b>1.2M</b></div><div><span>回撤</span><b>0.00%</b></div></div></div>
-  <div class="nv-d-sec"><h4>为什么选中</h4><div class="nv-reasons" id="nvDReasons"><span>达到开仓信号条件</span><span>3分钟动量 +1.73%</span><span>成交额 15.96M</span></div></div>
-  <div class="nv-d-sec"><h4>MULTISIG · 多签额度</h4><div class="nv-ms" id="nvDMs">$1.2M <small>累计 · 2 笔</small></div><div class="nv-history" id="nvDHistory"><div><span>11-02 · ETH</span><b>+200K</b></div><div><span>11-04 · ETH</span><b>+1.0M</b></div></div></div>
-  <div class="nv-d-sec"><h4>10X / 20X 风控参考</h4><p id="nvDRisk">10x 保证金止损 18% · 20x 保证金止损 30% · 利润峰值回撤 10% 全止盈。</p></div>
-  <div class="nv-d-sec"><h4>数据</h4><p id="nvDData">数据源：公开行情 / 公开多签 · 最后更新 15:42:31 · 缺失项：OI 待核验。</p></div>
+  <div class="nv-now">
+   <div class="nv-now-main"><span class="nv-now-k">24H 涨跌幅</span><b class="nv-now-chg" id="nvDChange">+25.30%</b><span class="nv-now-price" id="nvDPrice">0.12066 USDT</span></div>
+   <div class="nv-now-side"><div><span>当前 OI</span><b id="nvDOi">1299.0万 USDT</b></div><div><span>24H 成交额</span><b id="nvDVol">5110.0万 USDT</b></div></div>
+  </div>
+  <div class="nv-d-sec"><h4>合约 OI 明细</h4><div class="nv-oi-grid" id="nvDOiGrid">
+   <div><span>当前 OI</span><b>1299.0万 USDT</b></div><div><span>5M OI</span><b class="up">+6.2%</b></div><div><span>15M OI</span><b class="up">+49.5%</b></div>
+   <div><span>5M 增量</span><b class="up">+75.2万 USDT</b></div><div><span>15M 增量</span><b class="up">+430.2万 USDT</b></div><div><span>增量 / OI</span><b class="up">+33.1%</b></div>
+  </div></div>
+  <div class="nv-d-sec"><h4>价格与成交</h4><div class="nv-facts" id="nvDFacts">
+   <div><span>最新价格</span><b>0.12066 USDT</b></div><div><span>24H 涨幅</span><b class="up">+25.30%</b></div>
+   <div><span>24H 成交额</span><b>5110.0万 USDT</b></div><div><span>当前榜单</span><b>涨幅榜 #1</b></div>
+  </div></div>
+  <div class="nv-d-sec"><h4>为什么在榜</h4><p id="nvDWhy">24H +25.30%，15M OI +49.5%，持仓增量 +430.2万 USDT。</p><div class="nv-reasons" id="nvDReasons"><span>24H 涨幅榜 #1</span><span>15M OI +49.5%</span><span>持仓增量 +430.2万 USDT</span></div></div>
+  <div class="nv-d-sec"><h4>数据</h4><p id="nvDData">数据源：公开行情快照 · 最后更新 17:00:15 · 当前为延时快照。</p></div>
   </div>
   <div class="nv-pane" data-pane="history" hidden>
    <div class="nv-d-sec"><h4>近 7 天触发</h4><div class="nv-history" id="nvDHistList"><div><span>今天 15:42 · 开仓信号</span><b>97.0</b></div><div><span>今天 11:08 · 重点候选</span><b>84.2</b></div><div><span>昨天 22:16 · 初筛观察</span><b>72.1</b></div><div><span>11-01 09:31 · 重新进入监控</span><b>68.4</b></div></div></div>
@@ -10985,6 +11010,13 @@ requestAnimationFrame(frame);
           const sameSymbol = oldSymbol === (r.symbol || r.baseAsset);
           const wasFresh = row.classList.contains('fresh') && sameSymbol;
           row.className = 'nv-row ' + kind + (wasFresh ? ' fresh' : '');
+          row.dataset.symbol = r.symbol || r.baseAsset || '';
+          row.dataset.price = r.price || '';
+          row.dataset.chg = r.change24h || 0;
+          row.dataset.oi = r.oiNotional || 0;
+          row.dataset.vol = r.quoteVolume24h || 0;
+          row.dataset.oi5 = r.oi5m || 0;
+          row.dataset.oi15 = r.oi15m || 0;
           const sym = row.querySelector('.nv-sym');
           const change = row.querySelector('.nv-change');
           if (sym) sym.innerHTML = `<i class="nv-tag">${r.focus ? '★' : '○'}</i>${r.symbol || r.baseAsset}`;
@@ -11106,12 +11138,10 @@ requestAnimationFrame(frame);
       sr.querySelector('#nvDKind').textContent = d.kind;
       sr.querySelector('#nvDTitle').textContent = d.title;
       sr.querySelector('#nvDStage').textContent = d.stage;
-      sr.querySelector('#nvDWhy').textContent = d.why;
-      sr.querySelector('#nvDFacts').innerHTML = d.facts.map(([a,b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
-      sr.querySelector('#nvDReasons').innerHTML = d.reasons.map(x => `<span>${x}</span>`).join('');
-      sr.querySelector('#nvDMs').innerHTML = d.ms;
-      sr.querySelector('#nvDHistory').innerHTML = d.history.map(([a,b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
-      sr.querySelector('#nvDRisk').textContent = d.risk;
+      const why = sr.querySelector('#nvDWhy'); if (why) why.textContent = d.why;
+      const facts = sr.querySelector('#nvDFacts'); if (facts) facts.innerHTML = d.facts.map(([a,b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
+      const reasons = sr.querySelector('#nvDReasons'); if (reasons) reasons.innerHTML = d.reasons.map(x => `<span>${x}</span>`).join('');
+      const dataEl = sr.querySelector('#nvDData'); if (dataEl) dataEl.textContent = d.data || '数据源：公开行情快照 · 当前为延时快照。';
       renderCaptureLog();
       drawer.classList.add('open');
       drawer.setAttribute('aria-hidden', 'false');
@@ -11120,16 +11150,45 @@ requestAnimationFrame(frame);
     const openRow = (row, lane) => {
       open(lane);
       const sym = (row.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, '');
-      const change = row.querySelector('.nv-change')?.textContent || '';
-      const oi = row.querySelectorAll('.nv-row-oi span')[0]?.textContent || '';
-      const vol = row.querySelectorAll('.nv-row-foot span')[0]?.textContent || '';
-      const delta = row.querySelectorAll('.nv-row-foot span')[1]?.textContent || '';
+      const changeText = row.querySelector('.nv-change')?.textContent || '0%';
+      const oiText = row.querySelectorAll('.nv-row-oi span')[0]?.textContent || '';
+      const oi5Text = row.querySelectorAll('.nv-row-oi span')[1]?.textContent || '';
+      const oi15Text = row.querySelectorAll('.nv-row-oi span')[2]?.textContent || '';
+      const volText = row.querySelectorAll('.nv-row-foot span')[0]?.textContent || '';
+      const deltaText = row.querySelectorAll('.nv-row-foot span')[1]?.textContent || '';
+      const chg = Number(row.dataset.chg ?? changeText.replace(/[^0-9.-]/g, '')) || 0;
+      const up = chg >= 0;
+      const color = up ? '#63C08E' : '#C96358';
+      const oiNum = Number(row.dataset.oi || 0);
+      const volNum = Number(row.dataset.vol || 0);
+      const oi5 = Number(row.dataset.oi5 || oi5Text.replace(/[^0-9.-]/g, '')) || 0;
+      const oi15 = Number(row.dataset.oi15 || oi15Text.replace(/[^0-9.-]/g, '')) || 0;
+      const deltaNum = oiNum ? oiNum * oi15 / (100 + oi15) : Number((deltaText.match(/-?[\d.]+/) || [0])[0]) * 10000;
+      const delta5 = oiNum * oi5 / (100 + oi5);
+      const oiDisp = oiNum ? `${fmtWan(oiNum).replace(' USD', ' USDT')}` : oiText.replace(/^OI\s*/, '');
+      const volDisp = volNum ? `${fmtWan(volNum).replace(' USD', ' USDT')}` : volText.replace(/^VOL 24H\s*/, '');
+      const deltaDisp = `${deltaNum >= 0 ? '+' : '-'}${fmtWan(Math.abs(deltaNum)).replace(' USD', ' USDT')}`;
+      const delta5Disp = `${delta5 >= 0 ? '+' : '-'}${fmtWan(Math.abs(delta5)).replace(' USD', ' USDT')}`;
+      const changeDisp = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
+      const price = row.dataset.price ? `${row.dataset.price} USDT` : '—';
       sr.querySelector('#nvDKind').textContent = lane === 'focus' ? '▲ 24H 涨幅榜 · 当前详情' : '▼ 24H 跌幅榜 · 当前详情';
       sr.querySelector('#nvDTitle').textContent = sym;
-      sr.querySelector('#nvDStage').textContent = `24H ${change}`;
-      sr.querySelector('#nvDWhy').textContent = `24H ${change}，${oi}，${delta}。`;
-      sr.querySelector('#nvDFacts').innerHTML = `<div><span>24H</span><b>${change}</b></div><div><span>方向</span><b>${lane === 'focus' ? '涨幅榜' : '跌幅榜'}</b></div><div><span>${oi.split(' ')[0] || 'OI'}</span><b>${oi.replace(/^OI\s*/, '')}</b></div><div><span>成交量</span><b>${vol.replace(/^VOL 24H\s*/, '')}</b></div><div><span>持仓增量</span><b>${delta.replace(/^ΔOI\s*/, '')}</b></div><div><span>快照</span><b>${window.__MOSS_LIVE?.updatedAt || '本地'}</b></div>`;
-      sr.querySelector('#nvDReasons').innerHTML = `<span>24H ${change}</span><span>${oi}</span><span>${delta}</span>`;
+      sr.querySelector('#nvDStage').textContent = `24H ${changeDisp}`;
+      const chgEl = sr.querySelector('#nvDChange');
+      chgEl.textContent = changeDisp; chgEl.className = 'nv-now-chg ' + (up ? 'up' : 'down'); chgEl.style.color = color;
+      sr.querySelector('#nvDPrice').textContent = price;
+      sr.querySelector('#nvDOi').textContent = oiDisp;
+      sr.querySelector('#nvDVol').textContent = volDisp;
+      sr.querySelector('#nvDOiGrid').innerHTML = `
+        <div><span>当前 OI</span><b>${oiDisp}</b></div>
+        <div><span>5M OI</span><b class="${oi5 >= 0 ? 'up' : 'down'}">${sign(oi5)}%</b></div>
+        <div><span>15M OI</span><b class="${oi15 >= 0 ? 'up' : 'down'}">${sign(oi15)}%</b></div>
+        <div><span>5M 增量</span><b class="${delta5 >= 0 ? 'up' : 'down'}">${delta5Disp}</b></div>
+        <div><span>15M 增量</span><b class="${deltaNum >= 0 ? 'up' : 'down'}">${deltaDisp}</b></div>
+        <div><span>增量 / OI</span><b class="${oi15 >= 0 ? 'up' : 'down'}">${sign(oi15)}%</b></div>`;
+      sr.querySelector('#nvDFacts').innerHTML = `<div><span>最新价格</span><b>${price}</b></div><div><span>24H 涨跌幅</span><b style="color:${color}">${changeDisp}</b></div><div><span>24H 成交额</span><b>${volDisp}</b></div><div><span>当前榜单</span><b>${lane === 'focus' ? '涨幅榜' : '跌幅榜'}</b></div>`;
+      sr.querySelector('#nvDWhy').textContent = `24H ${changeDisp}，15M OI ${sign(oi15)}%，持仓增量 ${deltaDisp}。`;
+      sr.querySelector('#nvDReasons').innerHTML = `<span>24H ${changeDisp}</span><span>5M OI ${sign(oi5)}%</span><span>15M OI ${sign(oi15)}%</span><span>持仓增量 ${deltaDisp}</span>`;
       sr.querySelector('#nvDData').textContent = `数据源：公开行情快照 · 最后更新 ${window.__MOSS_LIVE?.updatedAt || '本地'} · 当前为延时快照。`;
       showTab('current');
     };
