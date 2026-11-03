@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
@@ -44,9 +46,10 @@ internal static class Program
 internal sealed class MainForm : Form
 {
     private readonly WebView2 _web = new();
-    private readonly HttpClient _liveHttp = new() { Timeout = TimeSpan.FromSeconds(25) };
+    private readonly HttpClient _liveHttp = new() { Timeout = TimeSpan.FromSeconds(45) };
     private System.Windows.Forms.Timer? _liveTimer;
     private bool _liveBusy;
+    private HashSet<string>? _binanceSymbols;
     private int _savedW;
     private int _savedH;
 
@@ -319,7 +322,153 @@ internal sealed class MainForm : Form
     private static bool B(JsonElement e, string name)
         => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.True;
 
+    private static double DStr(JsonElement e, string name)
+        => double.TryParse(S(e, name), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : 0;
+
+    private async Task<JsonDocument> GetJsonAsync(string url)
+    {
+        using var response = await _liveHttp.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+    }
+
+    private async Task<LiveRow?> FetchBinanceRowAsync(string symbol, double price, double change24h, double quoteVolume)
+    {
+        double oi = 0, oi5 = 0, oi15 = 0, oiNotional = 0;
+        try
+        {
+            using var oiDoc = await GetJsonAsync(
+                $"https://fapi.binance.com/fapi/v1/openInterest?symbol={symbol}");
+            oi = DStr(oiDoc.RootElement, "openInterest");
+        }
+        catch { }
+
+        try
+        {
+            using var histDoc = await GetJsonAsync(
+                $"https://fapi.binance.com/futures/data/openInterestHist?symbol={symbol}&period=5m&limit=4");
+            var arr = histDoc.RootElement;
+            if (arr.ValueKind == JsonValueKind.Array && arr.GetArrayLength() > 0)
+            {
+                var len = arr.GetArrayLength();
+                var current = DStr(arr[len - 1], "sumOpenInterestValue");
+                if (current > 0) oiNotional = current;
+                if (len >= 2)
+                {
+                    var prev = DStr(arr[len - 2], "sumOpenInterestValue");
+                    if (prev > 0) oi5 = (current - prev) / prev * 100.0;
+                }
+                if (len >= 4)
+                {
+                    var prev = DStr(arr[0], "sumOpenInterestValue");
+                    if (prev > 0) oi15 = (current - prev) / prev * 100.0;
+                }
+            }
+        }
+        catch { }
+
+        if (oiNotional <= 0 && oi > 0) oiNotional = oi * price;
+        if (double.IsNaN(oi5) || double.IsInfinity(oi5)) oi5 = 0;
+        if (double.IsNaN(oi15) || double.IsInfinity(oi15)) oi15 = 0;
+
+        var score = Math.Clamp(50 + change24h * 0.7 + oi15 * 0.6 + (quoteVolume >= 1e8 ? 8 : 4), 0, 100);
+        var stage = score >= 72 ? "entry" : score >= 55 ? "watch" : "low";
+        var label = stage == "entry" ? "开仓信号" : stage == "watch" ? "重点候选" : "观察";
+        return new LiveRow
+        {
+            Symbol = symbol,
+            BaseAsset = symbol.Replace("USDT", ""),
+            Price = price,
+            Change24h = change24h,
+            Change1m = 0,
+            Change5m = 0,
+            QuoteVolume24h = quoteVolume,
+            OiNotional = oiNotional,
+            Oi5m = oi5,
+            Oi15m = oi15,
+            Pullback = 0,
+            Score = score,
+            Stage = stage,
+            StageLabel = label,
+            Focus = false,
+            StateLabel = label
+        };
+    }
+
     private async Task PullLiveAsync()
+    {
+        if (_liveBusy) return;
+        _liveBusy = true;
+        try
+        {
+            using var tickerDoc = await GetJsonAsync("https://fapi.binance.com/fapi/v1/ticker/24hr");
+            if (_binanceSymbols == null)
+            {
+                try
+                {
+                    using var infoDoc = await GetJsonAsync("https://fapi.binance.com/fapi/v1/exchangeInfo");
+                    _binanceSymbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var s in infoDoc.RootElement.GetProperty("symbols").EnumerateArray())
+                    {
+                        if (S(s, "contractType") == "PERPETUAL"
+                            && S(s, "quoteAsset") == "USDT"
+                            && S(s, "status") == "TRADING")
+                            _binanceSymbols.Add(S(s, "symbol"));
+                    }
+                }
+                catch { }
+            }
+
+            var candidates = new List<(string Symbol, double Price, double Change, double Volume)>();
+            foreach (var t in tickerDoc.RootElement.EnumerateArray())
+            {
+                var symbol = S(t, "symbol");
+                if (string.IsNullOrWhiteSpace(symbol) || !symbol.EndsWith("USDT", StringComparison.OrdinalIgnoreCase) || symbol.Contains('_')) continue;
+                if (_binanceSymbols != null && !_binanceSymbols.Contains(symbol)) continue;
+                var volume = DStr(t, "quoteVolume");
+                if (volume <= 0) continue;
+                candidates.Add((symbol, DStr(t, "lastPrice"), DStr(t, "priceChangePercent"), volume));
+            }
+
+            var top = candidates.OrderByDescending(x => x.Volume).Take(24).ToList();
+            using var gate = new SemaphoreSlim(6);
+            var tasks = top.Select(async t =>
+            {
+                await gate.WaitAsync();
+                try { return await FetchBinanceRowAsync(t.Symbol, t.Price, t.Change, t.Volume); }
+                finally { gate.Release(); }
+            }).ToList();
+
+            var fetched = await Task.WhenAll(tasks);
+            var rows = fetched.Where(r => r != null).Select(r => r!).ToList();
+            for (var i = 0; i < rows.Count; i++) rows[i].Focus = i < 8;
+
+            var payload = new
+            {
+                updatedAt = DateTime.Now.ToString("HH:mm:ss"),
+                source = "BINANCE USDⓈ-M FUTURES",
+                rows
+            };
+            var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(LiveCachePath)!);
+                await File.WriteAllTextAsync(LiveCachePath, json);
+            }
+            catch { }
+            await _web.ExecuteScriptAsync("window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));");
+        }
+        catch (Exception ex)
+        {
+            try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"), $"[{DateTime.Now:O}] binance: {ex.Message}\r\n"); } catch { }
+        }
+        finally
+        {
+            _liveBusy = false;
+        }
+    }
+
+    private async Task PullLegacyLiveAsync()
     {
         if (_liveBusy) return;
         _liveBusy = true;
