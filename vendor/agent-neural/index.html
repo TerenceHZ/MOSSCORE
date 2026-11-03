@@ -841,6 +841,7 @@ linear-gradient(var(--nv-edge),var(--nv-edge)) right bottom / 2px 18px no-repeat
 .nv-row::after{display:none}
 .nv-row-head{position:relative;z-index:1;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .nv-row .nv-sym{font:700 14px/1 var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-row .nv-price{font:500 10px/1 var(--mono);color:#a99a7e;margin-left:auto;margin-right:8px;white-space:nowrap}
 .nv-row .nv-tag{font:500 9px/1 var(--mono);font-style:normal;color:#e8a020;margin-right:5px}
 .nv-row .nv-change{font:700 18px/1 var(--mono);letter-spacing:-.03em;white-space:nowrap}
 .nv-row .nv-change.up,.nv-row-oi b.up,.nv-row-foot b.up{color:#63C08E;text-shadow:0 0 9px rgba(99,192,142,.15)}
@@ -1086,17 +1087,17 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
     <div class="nv-mod-h"><b>▲ 24H 涨幅榜</b><small><span id="nvGainCount">3</span> 条 · 实时排序</small></div>
     <div class="nv-rows">
      <div class="nv-row gain" data-price="0.12066" data-chg="25.3" data-oi="12990000" data-vol="51100000" data-oi5="6.2" data-oi15="49.5">
-      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">★</i>ARIAUSDT</span><span class="nv-change up">+25.3%</span></div>
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">★</i>ARIAUSDT</span><span class="nv-price">0.12066</span><span class="nv-change up">+25.3%</span></div>
       <div class="nv-row-oi"><span>OI <b>1299万</b></span><span>5M <b class="up">+6.2%</b></span><span>15M <b class="up">+49.5%</b></span></div>
       <div class="nv-row-foot"><span>VOL 24H <b>5110万</b></span><span>ΔOI <b class="up">+430.2万</b></span></div>
      </div>
-     <div class="nv-row gain">
-      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">★</i>BTWUSDT</span><span class="nv-change up">+18.7%</span></div>
+     <div class="nv-row gain" data-price="0.0671">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">★</i>BTWUSDT</span><span class="nv-price">0.0671</span><span class="nv-change up">+18.7%</span></div>
       <div class="nv-row-oi"><span>OI <b>5110万</b></span><span>5M <b class="up">+2.4%</b></span><span>15M <b class="up">+23.4%</b></span></div>
       <div class="nv-row-foot"><span>VOL 24H <b>1.28亿</b></span><span>ΔOI <b class="up">+968.0万</b></span></div>
      </div>
-     <div class="nv-row gain">
-      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>SOPHUSDT</span><span class="nv-change up">+12.4%</span></div>
+     <div class="nv-row gain" data-price="0.4512">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>SOPHUSDT</span><span class="nv-price">0.4512</span><span class="nv-change up">+12.4%</span></div>
       <div class="nv-row-oi"><span>OI <b>663万</b></span><span>5M <b class="up">+0.8%</b></span><span>15M <b class="up">+9.6%</b></span></div>
       <div class="nv-row-foot"><span>VOL 24H <b>4420万</b></span><span>ΔOI <b class="up">+58.2万</b></span></div>
      </div>
@@ -1105,18 +1106,18 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <section class="nv-mod nv-fx imported losses">
     <div class="nv-mod-h"><b>▼ 24H 跌幅榜</b><small><span id="nvLossCount">3</span> 条 · 实时排序</small></div>
     <div class="nv-rows">
-     <div class="nv-row loss">
-      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>FLUIDUSDT</span><span class="nv-change down">-9.8%</span></div>
+     <div class="nv-row loss" data-price="0.2384">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>FLUIDUSDT</span><span class="nv-price">0.2384</span><span class="nv-change down">-9.8%</span></div>
       <div class="nv-row-oi"><span>OI <b>663万</b></span><span>5M <b class="down">-3.1%</b></span><span>15M <b class="down">-12.4%</b></span></div>
       <div class="nv-row-foot"><span>VOL 24H <b>6630万</b></span><span>ΔOI <b class="down">-84.2万</b></span></div>
      </div>
-     <div class="nv-row loss">
-      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>MASKUSDT</span><span class="nv-change down">-6.4%</span></div>
+     <div class="nv-row loss" data-price="1.247">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>MASKUSDT</span><span class="nv-price">1.247</span><span class="nv-change down">-6.4%</span></div>
       <div class="nv-row-oi"><span>OI <b>1.58亿</b></span><span>5M <b class="down">-1.8%</b></span><span>15M <b class="down">-7.2%</b></span></div>
       <div class="nv-row-foot"><span>VOL 24H <b>8820万</b></span><span>ΔOI <b class="down">-156.0万</b></span></div>
      </div>
-     <div class="nv-row loss">
-      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>IDOLUSDT</span><span class="nv-change down">-4.1%</span></div>
+     <div class="nv-row loss" data-price="0.0312">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>IDOLUSDT</span><span class="nv-price">0.0312</span><span class="nv-change down">-4.1%</span></div>
       <div class="nv-row-oi"><span>OI <b>244.7万</b></span><span>5M <b class="down">-0.9%</b></span><span>15M <b class="down">-3.8%</b></span></div>
       <div class="nv-row-foot"><span>VOL 24H <b>3120万</b></span><span>ΔOI <b class="down">-12.8万</b></span></div>
      </div>
@@ -11018,8 +11019,10 @@ requestAnimationFrame(frame);
           row.dataset.oi5 = r.oi5m || 0;
           row.dataset.oi15 = r.oi15m || 0;
           const sym = row.querySelector('.nv-sym');
+          const priceEl = row.querySelector('.nv-price');
           const change = row.querySelector('.nv-change');
           if (sym) sym.innerHTML = `<i class="nv-tag">${r.focus ? '★' : '○'}</i>${r.symbol || r.baseAsset}`;
+          if (priceEl) priceEl.textContent = Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
           if (change) { change.textContent = sign(r.change24h) + '%'; change.className = 'nv-change ' + ((r.change24h || 0) >= 0 ? 'up' : 'down'); }
           const oi = row.querySelectorAll('.nv-row-oi span');
           if (oi[0]) oi[0].innerHTML = `OI <b>${fmtQv(r.oiNotional)}</b>`;
