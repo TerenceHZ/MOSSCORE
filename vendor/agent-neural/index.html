@@ -11404,6 +11404,14 @@ requestAnimationFrame(frame);
       if (row) openRow(row, lane);
     });
     signalEl && signalEl.addEventListener('click', (e) => { if (e.target === signalEl) hideSignal(); });
+    if (new URLSearchParams(location.search).get('demo') === '1') {
+      setTimeout(() => {
+        const title = sr.querySelector('.nv-sig-h span');
+        if (title) title.textContent = '⚠ MOSS SIGNAL · 建仓警报 · DEMO';
+        const row = sr.querySelector('.nv-row');
+        showSignal(calcSignal({ symbol: 'ARIAUSDT', price: 0.12066, change24h: 25.3, oiNotional: 12990000, oi5m: 6.2, oi15m: 49.5, quoteVolume24h: 51100000, score: 97, stage: 'entry', pullback: 2.1 }), row, 'gain');
+      }, 1400);
+    }
     cards.forEach(card => card.addEventListener('click', () => {
       window.__NOVA_SELECTED = card.dataset.nvCard;
       open(card.dataset.nvCard);

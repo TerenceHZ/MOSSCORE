@@ -246,7 +246,9 @@ internal sealed class MainForm : Form
                 return;
             }
 
-            var uri = new Uri(page).AbsoluteUri + "?v=20261102-alerts#neural";
+            var demo = Environment.GetCommandLineArgs().Any(a => string.Equals(a, "--demo", StringComparison.OrdinalIgnoreCase))
+                || (Environment.ProcessPath ?? string.Empty).IndexOf("DEMO", StringComparison.OrdinalIgnoreCase) >= 0;
+            var uri = new Uri(page).AbsoluteUri + (demo ? "?v=20261102-alerts&demo=1#neural" : "?v=20261102-alerts#neural");
             File.AppendAllText(log, $"[{DateTime.Now:O}] navigating {uri}\r\n");
             _web.CoreWebView2.Navigate(uri);
         }
