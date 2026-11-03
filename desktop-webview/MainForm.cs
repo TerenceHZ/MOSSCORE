@@ -46,7 +46,7 @@ internal static class Program
 internal sealed class MainForm : Form
 {
     private readonly WebView2 _web = new();
-    private readonly HttpClient _liveHttp = new() { Timeout = TimeSpan.FromSeconds(45) };
+    private readonly HttpClient _liveHttp = new() { Timeout = TimeSpan.FromSeconds(90) };
     private System.Windows.Forms.Timer? _liveTimer;
     private bool _liveBusy;
     private HashSet<string>? _binanceSymbols;
@@ -395,6 +395,28 @@ internal sealed class MainForm : Form
         };
     }
 
+    private static (HashSet<string> Focus, HashSet<string> All) LoadWatchlist()
+    {
+        var focus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var all = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "watchlist.json");
+            if (!File.Exists(path)) return (focus, all);
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            if (doc.RootElement.TryGetProperty("focus", out var f) && f.ValueKind == JsonValueKind.Array)
+                foreach (var x in f.EnumerateArray())
+                    if (x.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(x.GetString()))
+                    { var s = x.GetString()!.ToUpperInvariant(); focus.Add(s); all.Add(s); }
+            if (doc.RootElement.TryGetProperty("imported", out var im) && im.ValueKind == JsonValueKind.Array)
+                foreach (var x in im.EnumerateArray())
+                    if (x.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(x.GetString()))
+                        all.Add(x.GetString()!.ToUpperInvariant());
+        }
+        catch { }
+        return (focus, all);
+    }
+
     private async Task PullLiveAsync()
     {
         if (_liveBusy) return;
@@ -430,18 +452,69 @@ internal sealed class MainForm : Form
                 candidates.Add((symbol, DStr(t, "lastPrice"), DStr(t, "priceChangePercent"), volume));
             }
 
-            var top = candidates.OrderByDescending(x => x.Volume).Take(24).ToList();
+            var watchlist = LoadWatchlist();
+            if (watchlist.All.Count > 0)
+                candidates = candidates.Where(c => watchlist.All.Contains(c.Symbol)).ToList();
+            else
+                candidates = candidates.OrderByDescending(c => c.Volume).Take(24).ToList();
+
+            var selected = candidates
+                .OrderByDescending(x => watchlist.Focus.Contains(x.Symbol))
+                .ThenByDescending(x => x.Volume)
+                .Take(400)
+                .ToList();
+
+            var focusSymbols = watchlist.Focus.Count > 0
+                ? watchlist.Focus
+                : new HashSet<string>(candidates.OrderByDescending(x => x.Volume).Take(8).Select(x => x.Symbol), StringComparer.OrdinalIgnoreCase);
+            var movers = candidates.OrderByDescending(x => x.Change).Take(3)
+                .Concat(candidates.OrderBy(x => x.Change).Take(3));
+            var oiSymbols = new HashSet<string>(focusSymbols, StringComparer.OrdinalIgnoreCase);
+            foreach (var m in movers) oiSymbols.Add(m.Symbol);
+            var selectedSymbols = new HashSet<string>(selected.Select(x => x.Symbol), StringComparer.OrdinalIgnoreCase);
+            oiSymbols.IntersectWith(selectedSymbols);
+
             using var gate = new SemaphoreSlim(6);
-            var tasks = top.Select(async t =>
+            var tasks = oiSymbols.Select(async symbol =>
             {
+                var t = selected.First(x => x.Symbol == symbol);
                 await gate.WaitAsync();
                 try { return await FetchBinanceRowAsync(t.Symbol, t.Price, t.Change, t.Volume); }
                 finally { gate.Release(); }
             }).ToList();
 
             var fetched = await Task.WhenAll(tasks);
-            var rows = fetched.Where(r => r != null).Select(r => r!).ToList();
-            for (var i = 0; i < rows.Count; i++) rows[i].Focus = i < 8;
+            var oiMap = fetched.Where(r => r != null).Select(r => r!).ToDictionary(r => r.Symbol, StringComparer.OrdinalIgnoreCase);
+            var rows = selected.Select(t =>
+            {
+                if (oiMap.TryGetValue(t.Symbol, out var row))
+                {
+                    row.Focus = focusSymbols.Contains(t.Symbol);
+                    return row;
+                }
+                var score = Math.Clamp(50 + t.Change * 0.7 + (t.Volume >= 1e8 ? 8 : 4), 0, 100);
+                var stage = score >= 72 ? "entry" : score >= 55 ? "watch" : "low";
+                var label = stage == "entry" ? "开仓信号" : stage == "watch" ? "重点候选" : "观察";
+                return new LiveRow
+                {
+                    Symbol = t.Symbol,
+                    BaseAsset = t.Symbol.Replace("USDT", ""),
+                    Price = t.Price,
+                    Change24h = t.Change,
+                    Change1m = 0,
+                    Change5m = 0,
+                    QuoteVolume24h = t.Volume,
+                    OiNotional = 0,
+                    Oi5m = 0,
+                    Oi15m = 0,
+                    Pullback = 0,
+                    Score = score,
+                    Stage = stage,
+                    StageLabel = label,
+                    Focus = focusSymbols.Contains(t.Symbol),
+                    StateLabel = label
+                };
+            }).ToList();
 
             var payload = new
             {
