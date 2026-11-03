@@ -1017,6 +1017,16 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-oi-grid b{display:block;font:600 12px/1.2 var(--mono);color:#e4d4a8;white-space:nowrap}
 .nv-oi-grid b.up,.nv-facts b.up{color:#63C08E}
 .nv-oi-grid b.down,.nv-facts b.down{color:#C96358}
+.nv-entry{border:1px solid rgba(232,160,32,.25);background:rgba(232,160,32,.05);padding:11px 13px;margin-bottom:18px}
+.nv-entry-h{display:flex;justify-content:space-between;align-items:center;font:600 10px/1 var(--cjk);letter-spacing:.1em;color:#9a8a70}
+.nv-entry-h b{font:700 15px/1 var(--mono);letter-spacing:0;color:#e8a020}
+.nv-entry.entry{border-color:rgba(99,192,142,.4);background:rgba(99,192,142,.06)}
+.nv-entry.entry .nv-entry-h b{color:#63C08E}
+.nv-entry.watch .nv-entry-h b{color:#e8a020}
+.nv-entry.low .nv-entry-h b{color:#b85c50}
+.nv-entry p{margin:7px 0 8px;font:500 11px/1.5 var(--cjk);color:#c9bda6}
+.nv-entry-meta{display:flex;gap:16px;font:500 9px/1 var(--cjk);color:#80735e}
+.nv-entry-meta b{color:#d8cdb8;font-weight:600}
 .nv-drawer>.nv-d-h,.nv-drawer>.nv-tabs,.nv-drawer>.nv-d-body{position:relative;z-index:2}
 .nv-drawer.nv-fresh>.nv-winbg{opacity:.2}
 .nv-drawer.nv-fresh>.nv-winflow{opacity:1}
@@ -1230,6 +1240,11 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div class="nv-now">
    <div class="nv-now-main"><span class="nv-now-k">24H 涨跌幅</span><b class="nv-now-chg" id="nvDChange">+25.30%</b><span class="nv-now-price" id="nvDPrice">0.12066 USDT</span></div>
    <div class="nv-now-side"><div><span>当前 OI</span><b id="nvDOi">1299.0万 USDT</b></div><div><span>24H 成交额</span><b id="nvDVol">5110.0万 USDT</b></div></div>
+  </div>
+  <div class="nv-entry" id="nvEntry">
+   <div class="nv-entry-h"><span>进仓建议</span><b id="nvEntryLabel">开仓</b></div>
+   <p id="nvEntryText">24H 涨幅榜 + 15M 持仓增量，满足开仓信号。</p>
+   <div class="nv-entry-meta"><span>策略分 <b id="nvEntryScore">—</b></span><span>方向 <b id="nvEntrySide">顺势</b></span><span>风险 <b>追高回撤</b></span></div>
   </div>
   <div class="nv-d-sec"><h4>合约 OI 明细</h4><div class="nv-oi-grid" id="nvDOiGrid">
    <div><span>当前 OI</span><b>1299.0万 USDT</b></div><div><span>5M OI</span><b class="up">+6.2%</b></div><div><span>15M OI</span><b class="up">+49.5%</b></div>
@@ -11018,6 +11033,8 @@ requestAnimationFrame(frame);
           row.dataset.vol = r.quoteVolume24h || 0;
           row.dataset.oi5 = r.oi5m || 0;
           row.dataset.oi15 = r.oi15m || 0;
+          row.dataset.stage = r.stage || '';
+          row.dataset.score = r.score || '';
           const sym = row.querySelector('.nv-sym');
           const priceEl = row.querySelector('.nv-price');
           const change = row.querySelector('.nv-change');
@@ -11193,6 +11210,19 @@ requestAnimationFrame(frame);
       sr.querySelector('#nvDWhy').textContent = `24H ${changeDisp}，15M OI ${sign(oi15)}%，持仓增量 ${deltaDisp}。`;
       sr.querySelector('#nvDReasons').innerHTML = `<span>24H ${changeDisp}</span><span>5M OI ${sign(oi5)}%</span><span>15M OI ${sign(oi15)}%</span><span>持仓增量 ${deltaDisp}</span>`;
       sr.querySelector('#nvDData').textContent = `数据源：公开行情快照 · 最后更新 ${window.__MOSS_LIVE?.updatedAt || '本地'} · 当前为延时快照。`;
+      const stage = row.dataset.stage || (lane === 'focus' ? 'entry' : 'low');
+      const score = row.dataset.score || '—';
+      const entry = sr.querySelector('#nvEntry');
+      const entryLabel = stage === 'entry' ? '开仓' : stage === 'watch' ? '等待确认' : '观察';
+      entry.className = 'nv-entry ' + stage;
+      sr.querySelector('#nvEntryLabel').textContent = entryLabel;
+      sr.querySelector('#nvEntryText').textContent = stage === 'entry'
+        ? `24H ${changeDisp} 位列涨幅榜，15M OI ${sign(oi15)}%，满足开仓观察条件。`
+        : stage === 'watch'
+          ? `已进入榜单，等待 15M 持仓继续确认后再考虑进场。`
+          : `跌幅榜观察，不主动进场，等待止跌信号。`;
+      sr.querySelector('#nvEntryScore').textContent = score;
+      sr.querySelector('#nvEntrySide').textContent = lane === 'focus' ? '顺势' : '回避';
       showTab('current');
     };
     const openAlerts = () => {
