@@ -982,7 +982,7 @@ background-size:180% 180%,220% 220%}
 .nv-trace-tools button:hover{color:#ffc043;border-color:rgba(232,160,32,.5)}
 #feed.paused{opacity:.55}
 @keyframes nvline{from{transform:scaleX(1);transform-origin:left}to{transform:scaleX(0);transform-origin:left}}
-.nv-drawer{position:fixed;left:50%;top:50%;width:880px;max-width:calc(100% - 60px);height:820px;max-height:calc(100% - 40px);z-index:60;background:rgba(4,4,3,.92);border:1px solid rgba(232,160,32,.48);box-shadow:0 30px 100px rgba(0,0,0,.55),inset 0 0 60px rgba(232,160,32,.025);backdrop-filter:blur(22px);transform:translate(-50%,-50%) scale(.97);opacity:0;transition:opacity .28s,transform .28s;pointer-events:none;overflow:auto}
+.nv-drawer{position:fixed;left:50%;top:50%;width:880px;max-width:calc(100% - 60px);height:860px;max-height:calc(100% - 30px);z-index:60;background:rgba(4,4,3,.92);border:1px solid rgba(232,160,32,.48);box-shadow:0 30px 100px rgba(0,0,0,.55),inset 0 0 60px rgba(232,160,32,.025);backdrop-filter:blur(22px);transform:translate(-50%,-50%) scale(.97);opacity:0;transition:opacity .28s,transform .28s;pointer-events:none;overflow:auto}
 .nv-drawer::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:
 linear-gradient(#e8a020,#e8a020) left top/18px 1px no-repeat,
 linear-gradient(#e8a020,#e8a020) left top/1px 18px no-repeat,
@@ -1025,6 +1025,19 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-entry.watch .nv-entry-h b{color:#e8a020}
 .nv-entry.low .nv-entry-h b{color:#b85c50}
 .nv-entry p{margin:7px 0 8px;font:500 11px/1.5 var(--cjk);color:#c9bda6}
+.nv-winline{display:flex;align-items:center;gap:10px;margin:8px 0 9px}
+.nv-winrate{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.nv-winrate span{font:500 9px/1 var(--cjk);color:#8a7b62}
+.nv-winrate b{font:700 19px/1 var(--mono);color:#e8a020}
+.nv-winbar{flex:1;height:5px;background:rgba(255,255,255,.08);overflow:hidden}
+.nv-winbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,rgba(232,160,32,.4),#e8a020);transition:width .45s ease}
+.nv-winsignal{font:700 11px/1 var(--cjk);color:#e8a020;border:1px solid rgba(232,160,32,.3);padding:4px 7px;white-space:nowrap}
+.nv-entry.entry .nv-winrate b{color:#63C08E}
+.nv-entry.entry .nv-winbar i{background:linear-gradient(90deg,rgba(99,192,142,.35),#63C08E)}
+.nv-entry.entry .nv-winsignal{color:#63C08E;border-color:rgba(99,192,142,.4)}
+.nv-entry.low .nv-winrate b{color:#C96358}
+.nv-entry.low .nv-winbar i{background:linear-gradient(90deg,rgba(201,99,88,.3),#C96358)}
+.nv-entry.low .nv-winsignal{color:#C96358;border-color:rgba(201,99,88,.4)}
 .nv-entry-meta{display:flex;gap:16px;font:500 9px/1 var(--cjk);color:#80735e}
 .nv-entry-meta b{color:#d8cdb8;font-weight:600}
 .nv-drawer>.nv-d-h,.nv-drawer>.nv-tabs,.nv-drawer>.nv-d-body{position:relative;z-index:2}
@@ -1096,7 +1109,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <section class="nv-mod nv-fx focus gains">
     <div class="nv-mod-h"><b>▲ 24H 涨幅榜</b><small><span id="nvGainCount">3</span> 条 · 实时排序</small></div>
     <div class="nv-rows">
-     <div class="nv-row gain" data-price="0.12066" data-chg="25.3" data-oi="12990000" data-vol="51100000" data-oi5="6.2" data-oi15="49.5">
+     <div class="nv-row gain" data-price="0.12066" data-chg="25.3" data-oi="12990000" data-vol="51100000" data-oi5="6.2" data-oi15="49.5" data-stage="entry" data-score="97" data-pullback="2.1">
       <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">★</i>ARIAUSDT</span><span class="nv-price">0.12066</span><span class="nv-change up">+25.3%</span></div>
       <div class="nv-row-oi"><span>OI <b>1299万</b></span><span>5M <b class="up">+6.2%</b></span><span>15M <b class="up">+49.5%</b></span></div>
       <div class="nv-row-foot"><span>VOL 24H <b>5110万</b></span><span>ΔOI <b class="up">+430.2万</b></span></div>
@@ -1244,6 +1257,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div class="nv-entry" id="nvEntry">
    <div class="nv-entry-h"><span>进仓建议</span><b id="nvEntryLabel">开仓</b></div>
    <p id="nvEntryText">24H 涨幅榜 + 15M 持仓增量，满足开仓信号。</p>
+   <div class="nv-winline"><div class="nv-winrate"><span>策略估算胜率</span><b id="nvWinRate">—</b></div><div class="nv-winbar"><i id="nvWinBar"></i></div><b class="nv-winsignal" id="nvWinSignal">等待</b></div>
    <div class="nv-entry-meta"><span>策略分 <b id="nvEntryScore">—</b></span><span>方向 <b id="nvEntrySide">顺势</b></span><span>风险 <b>追高回撤</b></span></div>
   </div>
   <div class="nv-d-sec"><h4>合约 OI 明细</h4><div class="nv-oi-grid" id="nvDOiGrid">
@@ -11035,6 +11049,7 @@ requestAnimationFrame(frame);
           row.dataset.oi15 = r.oi15m || 0;
           row.dataset.stage = r.stage || '';
           row.dataset.score = r.score || '';
+          row.dataset.pullback = r.pullback || 0;
           const sym = row.querySelector('.nv-sym');
           const priceEl = row.querySelector('.nv-price');
           const change = row.querySelector('.nv-change');
@@ -11211,16 +11226,31 @@ requestAnimationFrame(frame);
       sr.querySelector('#nvDReasons').innerHTML = `<span>24H ${changeDisp}</span><span>5M OI ${sign(oi5)}%</span><span>15M OI ${sign(oi15)}%</span><span>持仓增量 ${deltaDisp}</span>`;
       sr.querySelector('#nvDData').textContent = `数据源：公开行情快照 · 最后更新 ${window.__MOSS_LIVE?.updatedAt || '本地'} · 当前为延时快照。`;
       const stage = row.dataset.stage || (lane === 'focus' ? 'entry' : 'low');
-      const score = row.dataset.score || '—';
+      const scoreRaw = row.dataset.score || '';
+      const scoreNum = Number(scoreRaw) || 50;
+      const score = scoreRaw || '—';
+      const pullback = Number(row.dataset.pullback || 0) || 0;
+      let winrate = stage === 'entry' ? 60 : stage === 'watch' ? 50 : 38;
+      winrate += (scoreNum - 50) * 0.35;
+      winrate += Math.max(-12, Math.min(12, oi15 * 0.18));
+      winrate += Math.max(-6, Math.min(6, oi5 * 0.25));
+      if (volNum >= 5e7) winrate += 4; else if (volNum >= 1e7) winrate += 2; else if (volNum < 2e6) winrate -= 3;
+      if (pullback > 10) winrate -= 4; else if (pullback < 3) winrate += 2;
+      if (chg > 50) winrate -= 3;
+      winrate = Math.max(20, Math.min(92, Math.round(winrate)));
+      const sig = winrate >= 70 ? 'entry' : winrate >= 55 ? 'watch' : 'low';
+      const sigLabel = sig === 'entry' ? '开仓信号' : sig === 'watch' ? '等待确认' : '暂不开仓';
       const entry = sr.querySelector('#nvEntry');
-      const entryLabel = stage === 'entry' ? '开仓' : stage === 'watch' ? '等待确认' : '观察';
-      entry.className = 'nv-entry ' + stage;
-      sr.querySelector('#nvEntryLabel').textContent = entryLabel;
-      sr.querySelector('#nvEntryText').textContent = stage === 'entry'
-        ? `24H ${changeDisp} 位列涨幅榜，15M OI ${sign(oi15)}%，满足开仓观察条件。`
-        : stage === 'watch'
-          ? `已进入榜单，等待 15M 持仓继续确认后再考虑进场。`
-          : `跌幅榜观察，不主动进场，等待止跌信号。`;
+      entry.className = 'nv-entry ' + sig;
+      sr.querySelector('#nvEntryLabel').textContent = sig === 'entry' ? '开仓' : sig === 'watch' ? '等待确认' : '观察';
+      sr.querySelector('#nvEntryText').textContent = sig === 'entry'
+        ? `策略胜率 ${winrate}%：24H ${changeDisp}，15M OI ${sign(oi15)}%，满足开仓信号。`
+        : sig === 'watch'
+          ? `策略胜率 ${winrate}%：已进入榜单，等待 15M 持仓继续确认。`
+          : `策略胜率 ${winrate}%：当前不满足开仓条件，继续观察。`;
+      sr.querySelector('#nvWinRate').textContent = `${winrate}%`;
+      const winBar = sr.querySelector('#nvWinBar'); winBar.style.width = `${winrate}%`;
+      const winSignal = sr.querySelector('#nvWinSignal'); winSignal.textContent = sigLabel;
       sr.querySelector('#nvEntryScore').textContent = score;
       sr.querySelector('#nvEntrySide').textContent = lane === 'focus' ? '顺势' : '回避';
       showTab('current');
