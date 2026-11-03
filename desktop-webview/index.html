@@ -1072,7 +1072,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-drawer .nv-ms small{font:500 10px/1 var(--cjk);color:#8a7b62;margin-left:6px}
 .nv-signal{position:fixed;inset:0;z-index:90;display:block;background:rgba(0,0,0,.64);backdrop-filter:blur(5px);opacity:0;pointer-events:none}
 .nv-signal.open{opacity:1;pointer-events:auto}
-.nv-signal-card{position:fixed;left:50%;top:64px;width:700px;max-width:calc(100% - 40px);padding:0 0 18px;background:linear-gradient(145deg,rgba(12,10,5,.98),rgba(3,3,2,.98));border:1px solid rgba(232,160,32,.6);box-shadow:0 30px 100px rgba(0,0,0,.7),inset 0 0 60px rgba(232,160,32,.04);transform:translateX(-50%) scale(.9);transform-origin:top center;animation:nvsigpulse 2.4s ease-in-out infinite;overflow:hidden}
+.nv-signal-card{position:fixed;left:50%;top:calc(50% - 250px);width:700px;max-width:calc(100% - 40px);padding:0 0 18px;background:linear-gradient(145deg,rgba(12,10,5,.98),rgba(3,3,2,.98));border:1px solid rgba(232,160,32,.6);box-shadow:0 30px 100px rgba(0,0,0,.7),inset 0 0 60px rgba(232,160,32,.04);transform:translateX(-50%) scale(.9);transform-origin:center;animation:nvsigpulse 2.4s ease-in-out infinite;overflow:hidden}
 .nv-signal-card::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(115deg,transparent 15%,rgba(232,160,32,.14) 38%,rgba(255,192,67,.04) 52%,rgba(232,160,32,.1) 68%,transparent 88%);background-size:220% 220%;animation:nvsigflow 6s ease-in-out infinite;opacity:.8}
 .nv-signal-card::after{content:"";position:absolute;top:-20%;left:-40%;width:35%;height:140%;z-index:0;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,220,140,.1),transparent);transform:skewX(-18deg);animation:nvsigsweep 5.2s ease-in-out infinite}
 .nv-signal-card>*{position:relative;z-index:1}
@@ -1082,8 +1082,8 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-signal.short .nv-signal-card::before{background:linear-gradient(115deg,transparent 12%,rgba(201,99,88,.16) 36%,rgba(232,160,32,.08) 52%,rgba(201,99,88,.12) 70%,transparent 90%);background-size:220% 220%}
 .nv-signal.open .nv-signal-card{transform:translateX(-50%) scale(.9)}
 @media(min-width:1800px){
- .nv-signal-card{transform:translateX(calc(-50% - 290px)) scale(.9)}
- .nv-signal.open .nv-signal-card{transform:translateX(calc(-50% - 290px)) scale(.9)}
+ .nv-signal-card{transform:translateX(calc(-50% - 360px)) scale(.9)}
+ .nv-signal.open .nv-signal-card{transform:translateX(calc(-50% - 360px)) scale(.9)}
 }
 @keyframes nvsigpulse{0%,100%{border-color:rgba(232,160,32,.55);box-shadow:0 30px 100px rgba(0,0,0,.7),inset 0 0 60px rgba(232,160,32,.04)}50%{border-color:rgba(255,192,67,.9);box-shadow:0 30px 100px rgba(0,0,0,.7),inset 0 0 70px rgba(232,160,32,.08),0 0 30px rgba(232,160,32,.12)}}
 .nv-sig-h{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid rgba(232,160,32,.24);background:linear-gradient(90deg,rgba(232,160,32,.13),transparent 72%)}
@@ -11123,6 +11123,23 @@ requestAnimationFrame(frame);
       const fmtPx = (v) => v ? v.toFixed(v < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
       return { r, chg, oi5, oi15, vol, score, stage, side, win, target, stop, targetText: fmtPx(target), stopText: fmtPx(stop) };
     };
+    const signalChime = async () => {
+      if (muted) return;
+      try {
+        if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+        await actx.resume();
+        const t = actx.currentTime;
+        [880, 660, 880].forEach((freq, i) => {
+          const o = actx.createOscillator(), g = actx.createGain();
+          o.type = 'square'; o.frequency.value = freq;
+          g.gain.setValueAtTime(0.0001, t + i * 0.15);
+          g.gain.exponentialRampToValueAtTime(0.12, t + i * 0.15 + 0.015);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.15 + 0.12);
+          o.connect(g).connect(actx.destination);
+          o.start(t + i * 0.15); o.stop(t + i * 0.15 + 0.13);
+        });
+      } catch (e) {}
+    };
     const speakSignal = (sig) => {
       if (muted || !window.speechSynthesis || !sig) return;
       try {
@@ -11131,12 +11148,14 @@ requestAnimationFrame(frame);
         const text = `系统监测到${base}强烈开${sig.side === 'long' ? '多' : '空'}信号，请立即查看`;
         const u = new SpeechSynthesisUtterance(text);
         u.lang = 'zh-CN';
-        u.rate = 0.92;
-        u.pitch = 0.72;
+        u.rate = 0.95;
+        u.pitch = 0.5;
         u.volume = 1;
         const voices = window.speechSynthesis.getVoices();
-        const zh = voices.find(v => /zh|Chinese|Xiaoxiao|Yunxi|Yunyang|Huihui/i.test(`${v.lang} ${v.name}`));
-        if (zh) u.voice = zh;
+        const zhVoices = voices.filter(v => /zh|Chinese/i.test(`${v.lang} ${v.name}`));
+        const male = zhVoices.find(v => /Yunxi|Yunyang|Yunjian|Kangkang|Male|男/i.test(v.name));
+        const voice = male || zhVoices[0];
+        if (voice) u.voice = voice;
         window.speechSynthesis.speak(u);
       } catch (e) {}
     };
@@ -11166,7 +11185,7 @@ requestAnimationFrame(frame);
       window.__MOSS_SIGNAL_ROW = row || null;
       window.__MOSS_SIGNAL_LANE = lane || 'gain';
       ping('focus');
-      setTimeout(() => speakSignal(sig), 240);
+      setTimeout(() => { signalChime(); speakSignal(sig); }, 180);
     };
     const hideSignal = () => {
       const el = sr.querySelector('#nvSignal');
