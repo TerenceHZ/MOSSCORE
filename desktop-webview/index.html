@@ -1110,6 +1110,9 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-sig-exits small{font:700 11px/1 var(--mono);color:var(--xc);margin-left:8px;white-space:nowrap}
 .nv-sig-tp{--xc:#63C08E;border-color:rgba(99,192,142,.36)!important;background:rgba(99,192,142,.065)!important}
 .nv-sig-sl{--xc:#C96358;border-color:rgba(201,99,88,.4)!important;background:rgba(201,99,88,.065)!important}
+.nv-signal.short .nv-sig-tp{--xc:#C96358;border-color:rgba(201,99,88,.55)!important;background:rgba(201,99,88,.16)!important}
+.nv-signal.short .nv-sig-tp span{color:#c08d84}
+.nv-signal.short .nv-sig-sl{background:rgba(201,99,88,.07)!important}
 .nv-sig-win{display:flex;align-items:center;gap:12px;margin:12px 18px 0}
 .nv-sig-win>div:first-child{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
 .nv-sig-win span{font:500 10px/1 var(--cjk);color:#8a7b62}
@@ -11445,12 +11448,16 @@ requestAnimationFrame(frame);
       if (row) openRow(row, lane);
     });
     signalEl && signalEl.addEventListener('click', (e) => { if (e.target === signalEl) hideSignal(); });
-    if (new URLSearchParams(location.search).get('demo') === '1') {
+    const demoMode = new URLSearchParams(location.search).get('demo');
+    if (demoMode) {
       setTimeout(() => {
         const title = sr.querySelector('.nv-sig-h span');
         if (title) title.textContent = '⚠ MOSS SIGNAL · 建仓警报 · DEMO';
         const row = sr.querySelector('.nv-row');
-        showSignal(calcSignal({ symbol: 'ARIAUSDT', price: 0.12066, change24h: 25.3, oiNotional: 12990000, oi5m: 6.2, oi15m: 49.5, quoteVolume24h: 51100000, score: 97, stage: 'entry', pullback: 2.1 }), row, 'gain');
+        const short = demoMode === 'short';
+        showSignal(calcSignal(short
+          ? { symbol: 'ARIAUSDT', price: 0.12066, change24h: -9.8, oiNotional: 6630000, oi5m: -3.1, oi15m: -12.4, quoteVolume24h: 66300000, score: 92, stage: 'entry', pullback: 4.2 }
+          : { symbol: 'ARIAUSDT', price: 0.12066, change24h: 25.3, oiNotional: 12990000, oi5m: 6.2, oi15m: 49.5, quoteVolume24h: 51100000, score: 97, stage: 'entry', pullback: 2.1 }), row, short ? 'loss' : 'gain');
       }, 1400);
     }
     cards.forEach(card => card.addEventListener('click', () => {
