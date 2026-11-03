@@ -625,11 +625,14 @@ body{background:var(--page);overflow:hidden}
 .nv-alert-line b{color:#e4d4a8;font-weight:600}
 .nv-alert-line em{font-style:normal;color:#e8a020}
 .nv-alert-time{margin-top:5px;font:500 8.5px/1 var(--mono);color:#7b6d58}
-.nv-alert-record{padding:9px 0;border-bottom:1px solid rgba(232,160,32,.1)}
-.nv-alert-record .rt{display:flex;justify-content:space-between;gap:8px;font:600 9px/1 var(--mono);color:#d8cdb8}
+.nv-alert-record{padding:10px 0;border-bottom:1px solid rgba(232,160,32,.1)}
+.nv-alert-record .rt{display:flex;justify-content:space-between;gap:8px;font:600 11px/1.3 var(--mono);color:#d8cdb8}
 .nv-alert-record .rt em{font-style:normal;color:#e8a020}
-.nv-alert-record .rl{margin-top:4px;font:500 8px/1.45 var(--cjk);color:#8f816b}
+.nv-alert-record .rl{margin-top:5px;font:500 10.5px/1.5 var(--cjk);color:#9a8a70}
 .nv-alert-record .rl b{color:#d8cdb8}
+.nv-alert-pager{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:8px;font:500 9px/1 var(--mono);color:#8a7b62}
+.nv-alert-pager button{background:transparent;border:1px solid rgba(232,160,32,.25);color:#c9a35a;font:600 9px/1 var(--cjk);padding:5px 8px;cursor:pointer}
+.nv-alert-pager button:disabled{opacity:.3;cursor:default}
 .p-feed{flex:1;min-height:0;display:flex;flex-direction:column}
 .p-crawl{flex:none;height:104px}
 .heat{position:relative;height:238px;background:repeating-linear-gradient(90deg,rgba(232,160,32,.10) 0 1px,transparent 1px 7.14%),repeating-linear-gradient(0deg,rgba(232,160,32,.08) 0 1px,transparent 1px 8.33%),rgba(232,160,32,.018)}
@@ -966,7 +969,7 @@ background-size:180% 180%,220% 220%}
 .nv-trace-tools button:hover{color:#ffc043;border-color:rgba(232,160,32,.5)}
 #feed.paused{opacity:.55}
 @keyframes nvline{from{transform:scaleX(1);transform-origin:left}to{transform:scaleX(0);transform-origin:left}}
-.nv-drawer{position:fixed;left:50%;top:50%;width:820px;max-width:calc(100% - 80px);height:auto;max-height:80%;z-index:60;background:rgba(4,4,3,.84);border:1px solid rgba(232,160,32,.48);box-shadow:0 30px 100px rgba(0,0,0,.55),inset 0 0 60px rgba(232,160,32,.025);backdrop-filter:blur(22px);transform:translate(-50%,-50%) scale(.97);opacity:0;transition:opacity .28s,transform .28s;pointer-events:none;overflow:auto}
+.nv-drawer{position:fixed;left:50%;top:50%;width:880px;max-width:calc(100% - 60px);height:720px;max-height:calc(100% - 60px);z-index:60;background:rgba(4,4,3,.84);border:1px solid rgba(232,160,32,.48);box-shadow:0 30px 100px rgba(0,0,0,.55),inset 0 0 60px rgba(232,160,32,.025);backdrop-filter:blur(22px);transform:translate(-50%,-50%) scale(.97);opacity:0;transition:opacity .28s,transform .28s;pointer-events:none;overflow:auto}
 .nv-drawer::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:
 linear-gradient(#e8a020,#e8a020) left top/18px 1px no-repeat,
 linear-gradient(#e8a020,#e8a020) left top/1px 18px no-repeat,
@@ -978,33 +981,36 @@ linear-gradient(#e8a020,#e8a020) right bottom/18px 1px no-repeat,
 linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;filter:drop-shadow(0 0 6px rgba(232,160,32,.7));pointer-events:none}
 .nv-drawer.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
 .nv-drawer .nv-d-h{position:sticky;top:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px 14px;background:rgba(5,5,3,.82);border-bottom:1px solid rgba(232,160,32,.22);z-index:2;backdrop-filter:blur(22px)}
-.nv-drawer .nv-d-k{font:600 7.5px/1 var(--mono);letter-spacing:.22em;color:#8a7b62}
-.nv-drawer .nv-d-title{font:700 28px/1 var(--mono);color:#f2f0e8;margin-top:8px}
-.nv-drawer .nv-d-stage{font:600 11px/1 var(--cjk);color:#e8a020;margin-top:7px}
-.nv-drawer .nv-d-x{background:none;border:1px solid rgba(232,160,32,.3);color:#9e917b;width:28px;height:28px;cursor:pointer;font:600 13px/1 var(--mono)}
+.nv-drawer .nv-d-k{font:600 9px/1 var(--mono);letter-spacing:.22em;color:#8a7b62}
+.nv-drawer .nv-d-title{font:700 30px/1 var(--mono);color:#f2f0e8;margin-top:9px}
+.nv-drawer .nv-d-stage{font:600 12px/1 var(--cjk);color:#e8a020;margin-top:8px}
+.nv-drawer .nv-d-x{background:none;border:1px solid rgba(232,160,32,.3);color:#9e917b;width:32px;height:32px;cursor:pointer;font:600 15px/1 var(--mono)}
 .nv-drawer .nv-d-x:hover{color:#ffc043;border-color:#e8a020}
 .nv-drawer .nv-d-body{padding:16px 22px 26px}
 .nv-drawer>.nv-d-h,.nv-drawer>.nv-tabs,.nv-drawer>.nv-d-body{position:relative;z-index:2}
 .nv-drawer.nv-fresh>.nv-winbg{opacity:.2}
 .nv-drawer.nv-fresh>.nv-winflow{opacity:1}
 .nv-tabs{display:flex;gap:2px;padding:10px 22px 0;border-bottom:1px solid rgba(232,160,32,.14)}
-.nv-tabs button{background:transparent;border:1px solid transparent;border-bottom:0;color:#8a7b62;font:600 8.5px/1 var(--cjk);letter-spacing:.08em;padding:8px 11px;cursor:pointer}
+.nv-tabs button{background:transparent;border:1px solid transparent;border-bottom:0;color:#8a7b62;font:600 10.5px/1 var(--cjk);letter-spacing:.08em;padding:9px 12px;cursor:pointer}
 .nv-tabs button.on{color:#ffc043;border-color:rgba(232,160,32,.28);background:rgba(232,160,32,.06)}
 .nv-pane[hidden]{display:none}
 .nv-drawer .nv-d-sec{margin-bottom:17px}
-.nv-drawer .nv-d-sec h4{font:600 9px/1 var(--mono);letter-spacing:.16em;color:#9a8a70;margin:0 0 8px}
-.nv-drawer .nv-d-sec p{font:400 10.5px/1.6 var(--cjk);color:#d8cdb8;margin:0}
-.nv-drawer .nv-facts{display:grid;grid-template-columns:1fr 1fr;gap:7px 16px}
-.nv-drawer .nv-facts div{display:flex;justify-content:space-between;border-bottom:1px solid rgba(232,160,32,.1);padding-bottom:5px;font:500 9px/1.3 var(--mono);color:#9a8a70}
+.nv-drawer .nv-d-sec h4{font:600 11px/1 var(--mono);letter-spacing:.16em;color:#9a8a70;margin:0 0 8px}
+.nv-drawer .nv-d-sec p{font:400 12.5px/1.65 var(--cjk);color:#d8cdb8;margin:0}
+.nv-drawer .nv-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+.nv-drawer .nv-facts div{display:flex;justify-content:space-between;border-bottom:1px solid rgba(232,160,32,.1);padding-bottom:6px;font:500 10.5px/1.3 var(--mono);color:#9a8a70}
 .nv-drawer .nv-facts b{color:#f2f0e8;font-weight:500}
-.nv-drawer .nv-reasons{display:flex;flex-wrap:wrap;gap:6px}
-.nv-drawer .nv-reasons span{font:500 9px/1.3 var(--cjk);color:#d6b36a;border:1px solid rgba(232,160,32,.26);padding:5px 7px}
+.nv-drawer .nv-reasons{display:flex;flex-wrap:wrap;gap:7px}
+.nv-drawer .nv-reasons span{font:500 10.5px/1.3 var(--cjk);color:#d6b36a;border:1px solid rgba(232,160,32,.26);padding:5px 7px}
 .nv-drawer .nv-history{margin-top:7px;border-top:1px solid rgba(232,160,32,.12)}
-.nv-drawer .nv-history div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(232,160,32,.08);font:500 9px/1 var(--mono);color:#9a8a70}
+.nv-drawer .nv-history div{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(232,160,32,.08);font:500 10.5px/1.35 var(--mono);color:#9a8a70}
 .nv-drawer .nv-history b{color:#d8cdb8;font-weight:500}
-.nv-drawer .nv-ms{font:700 17px/1 var(--mono);color:#f2f0e8}
-.nv-drawer .nv-ms small{font:500 8px/1 var(--cjk);color:#8a7b62;margin-left:6px}
-@media(max-width:1500px){.nv-regime{width:640px}.nv-left{width:340px}.nv-card,.nv-card.focus{width:340px}.nv-drawer{width:460px}}
+.nv-drawer .nv-history .nv-alert-record{display:block;padding:10px 0;border-bottom:1px solid rgba(232,160,32,.1);font:500 10.5px/1.4 var(--mono);color:#9a8a70}
+.nv-drawer .nv-history .nv-alert-record .rt{display:flex;justify-content:space-between;gap:8px;padding:0;border:0;font:600 11px/1.3 var(--mono);color:#d8cdb8}
+.nv-drawer .nv-history .nv-alert-record .rl{display:block;padding:0;border:0;margin-top:5px;font:500 10.5px/1.5 var(--cjk);color:#9a8a70}
+.nv-drawer .nv-ms{font:700 21px/1 var(--mono);color:#f2f0e8}
+.nv-drawer .nv-ms small{font:500 9px/1 var(--cjk);color:#8a7b62;margin-left:6px}
+@media(max-width:1500px){.nv-regime{width:640px}.nv-left{width:340px}.nv-card,.nv-card.focus{width:340px}}
 </style>
 
 <canvas class="gl" id="gl" aria-label="神经星环：13 个智能体神经团，脉冲沿突触束在它们之间传递任务。拖动可转动视角，点击神经团可聚焦"></canvas>
@@ -1199,7 +1205,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts"><div><span>触发次数</span><b>4</b></div><div><span>升级</span><b>2</b></div><div><span>降级</span><b>1</b></div><div><span>OI 快增</span><b>1</b></div></div></div>
   </div>
   <div class="nv-pane" data-pane="alerts" hidden>
-   <div class="nv-d-sec"><h4>POSITION ALERTS HISTORY</h4><div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIAUSDT</span><b>OI +49.5%</b></div></div></div>
+   <div class="nv-d-sec"><h4>POSITION ALERTS HISTORY</h4><div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIAUSDT</span><b>OI +49.5%</b></div></div><div class="nv-alert-pager"><button type="button" data-alert-page="prev">上一页</button><span id="nvAlertPage">1 / 1</span><button type="button" data-alert-page="next">下一页</button></div></div>
    <div class="nv-d-sec"><h4>口径</h4><p>记录持仓快速增加/减少的异动快照，不构成交易建议。</p></div>
   </div>
  </div>
@@ -10859,6 +10865,8 @@ requestAnimationFrame(frame);
     }
     const alertFeed = sr.querySelector('#nvAlertFeed');
     const alertHistory = sr.querySelector('#nvAlertHistory');
+    let alertHistoryPage = 0;
+    const ALERT_PAGE_SIZE = 15;
     const saveAlerts = () => { try { localStorage.setItem(ALERT_KEY, JSON.stringify(alertLog.slice(0, 500))); } catch (e) {} };
     const alertItemHtml = (a) => `<div class="nv-alertitem" data-key="${a.ts}-${a.symbol}">
 <div class="nv-alert-top"><b>${a.symbol}</b><span>${Math.abs(a.pct) >= 10 ? '🔥🔥🔥' : Math.abs(a.pct) >= 4 ? '🔥🔥' : '🔥'}</span></div>
@@ -10896,8 +10904,24 @@ requestAnimationFrame(frame);
     };
     const renderAlertHistory = () => {
       if (!alertHistory) return;
-      alertHistory.innerHTML = alertLog.slice(0, 500).map(a => `<div class="nv-alert-record"><div class="rt"><b>${a.time} · ${a.symbol}</b><em>${a.dir} ${Number(a.pct).toFixed(1)}%</em></div><div class="rl">价格 ${a.price} · 当前持仓 ${fmtWan(a.oi)} · 15m增量 ${fmtWan(a.delta)}</div></div>`).join('');
+      const pages = Math.max(1, Math.ceil(alertLog.length / ALERT_PAGE_SIZE));
+      alertHistoryPage = Math.max(0, Math.min(alertHistoryPage, pages - 1));
+      const start = alertHistoryPage * ALERT_PAGE_SIZE;
+      alertHistory.innerHTML = alertLog.slice(start, start + ALERT_PAGE_SIZE).map(a => `<div class="nv-alert-record"><div class="rt"><b>${a.time} · ${a.symbol}</b><em>${a.dir} ${Number(a.pct).toFixed(1)}%</em></div><div class="rl">价格 ${a.price} · 当前持仓 ${fmtWan(a.oi)} · 15m增量 ${fmtWan(a.delta)}</div></div>`).join('');
+      const label = sr.querySelector('#nvAlertPage');
+      if (label) label.textContent = `${alertHistoryPage + 1} / ${pages}`;
+      const prev = sr.querySelector('[data-alert-page="prev"]');
+      const next = sr.querySelector('[data-alert-page="next"]');
+      if (prev) prev.disabled = alertHistoryPage === 0;
+      if (next) next.disabled = alertHistoryPage >= pages - 1;
     };
+    const alertPager = sr.querySelector('.nv-alert-pager');
+    alertPager && alertPager.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-alert-page]');
+      if (!btn || btn.disabled) return;
+      alertHistoryPage += btn.dataset.alertPage === 'next' ? 1 : -1;
+      renderAlertHistory();
+    });
     const pushAlert = (r, liveTime, announce = true) => {
       if (!r) return;
       const pct = Number(r.oi15m || r.oi5m || 0);
@@ -10907,6 +10931,7 @@ requestAnimationFrame(frame);
       const now = Date.now();
       alertLog.unshift({ time, symbol: r.symbol || r.baseAsset, pct, oi: Number(r.oiNotional || 0), price: Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), dir, delta, ts: now });
       alertLog = alertLog.filter(a => now - a.ts < ALERT_TTL).slice(0, 500);
+      alertHistoryPage = 0;
       saveAlerts(); renderAlertFeed(true); renderAlertHistory();
       const first = alertFeed && alertFeed.firstElementChild;
       if (first) {
@@ -11067,7 +11092,24 @@ requestAnimationFrame(frame);
       drawer.setAttribute('aria-hidden', 'false');
       freshPanel(drawer, 'focus');
     };
+    const openRow = (row, lane) => {
+      open(lane);
+      const sym = (row.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, '');
+      const change = row.querySelector('.nv-change')?.textContent || '';
+      const oi = row.querySelectorAll('.nv-row-oi span')[0]?.textContent || '';
+      const vol = row.querySelectorAll('.nv-row-foot span')[0]?.textContent || '';
+      const delta = row.querySelectorAll('.nv-row-foot span')[1]?.textContent || '';
+      sr.querySelector('#nvDKind').textContent = lane === 'focus' ? '▲ 24H 涨幅榜 · 当前详情' : '▼ 24H 跌幅榜 · 当前详情';
+      sr.querySelector('#nvDTitle').textContent = sym;
+      sr.querySelector('#nvDStage').textContent = `24H ${change}`;
+      sr.querySelector('#nvDWhy').textContent = `24H ${change}，${oi}，${delta}。`;
+      sr.querySelector('#nvDFacts').innerHTML = `<div><span>24H</span><b>${change}</b></div><div><span>方向</span><b>${lane === 'focus' ? '涨幅榜' : '跌幅榜'}</b></div><div><span>${oi.split(' ')[0] || 'OI'}</span><b>${oi.replace(/^OI\s*/, '')}</b></div><div><span>成交量</span><b>${vol.replace(/^VOL 24H\s*/, '')}</b></div><div><span>持仓增量</span><b>${delta.replace(/^ΔOI\s*/, '')}</b></div><div><span>快照</span><b>${window.__MOSS_LIVE?.updatedAt || '本地'}</b></div>`;
+      sr.querySelector('#nvDReasons').innerHTML = `<span>24H ${change}</span><span>${oi}</span><span>${delta}</span>`;
+      sr.querySelector('#nvDData').textContent = `数据源：公开行情快照 · 最后更新 ${window.__MOSS_LIVE?.updatedAt || '本地'} · 当前为延时快照。`;
+      showTab('current');
+    };
     const openAlerts = () => {
+      alertHistoryPage = 0;
       showTab('alerts');
       sr.querySelector('#nvDKind').textContent = 'POSITION ALERTS · 持仓异动';
       sr.querySelector('#nvDTitle').textContent = 'ALERT HISTORY';
@@ -11082,18 +11124,10 @@ requestAnimationFrame(frame);
       window.__NOVA_SELECTED = card.dataset.nvCard;
       open(card.dataset.nvCard);
     }));
-    sr.querySelectorAll('.nv-mod').forEach(mod => mod.addEventListener('click', (e) => {
-      if (e.target.closest('.nv-row')) return;
-      e.stopPropagation();
-      const lane = mod.classList.contains('focus') ? 'focus' : 'imported';
-      open(lane);
-      showTab('history');
-    }));
     sr.querySelectorAll('.nv-row').forEach(row => row.addEventListener('click', (e) => {
       e.stopPropagation();
       const mod = row.closest('.nv-mod');
-      open(mod && mod.classList.contains('focus') ? 'focus' : 'imported');
-      showTab('current');
+      openRow(row, mod && mod.classList.contains('focus') ? 'focus' : 'imported');
     }));
     const msPanel = sr.querySelector('.p-heat');
     msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); openAlerts(); });
@@ -11117,16 +11151,6 @@ requestAnimationFrame(frame);
       }
     }));
     const focusCard = sr.querySelector('[data-nv-card="focus"]');
-    sr.querySelectorAll('.nv-mod').forEach(mod => {
-      const hit = document.createElement('button');
-      hit.type = 'button'; hit.className = 'nv-hit'; hit.setAttribute('aria-label', '打开监控窗口详情');
-      hit.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        open(mod.classList.contains('focus') ? 'focus' : 'imported');
-        showTab('current');
-      });
-      mod.appendChild(hit);
-    });
     const msHitPanel = sr.querySelector('.p-heat');
     if (msHitPanel) {
       const hit = document.createElement('button');
@@ -11136,13 +11160,6 @@ requestAnimationFrame(frame);
     }
 
     sr.addEventListener('click', (e) => {
-      const mod = e.target.closest && e.target.closest('.nv-mod');
-      if (mod) {
-        e.preventDefault(); e.stopPropagation();
-        open(mod.classList.contains('focus') ? 'focus' : 'imported');
-        showTab('current');
-        return;
-      }
       const ms = e.target.closest && e.target.closest('.p-heat');
       if (ms) {
         e.preventDefault(); e.stopPropagation();
