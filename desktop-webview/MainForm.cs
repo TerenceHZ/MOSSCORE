@@ -67,6 +67,12 @@ internal sealed class MainForm : Form
         public double Oi15m { get; set; }
         public double Pullback { get; set; }
         public double Score { get; set; }
+        public double VolRatio3m { get; set; }
+        public double Change3m { get; set; }
+        public string LargeSide { get; set; } = "";
+        public double LargeUsdt { get; set; }
+        public double LargeMultiple { get; set; }
+        public double Change30s { get; set; }
         public string Stage { get; set; } = "low";
         public string StageLabel { get; set; } = "";
         public bool Focus { get; set; }
@@ -325,6 +331,16 @@ internal sealed class MainForm : Form
     private static double DStr(JsonElement e, string name)
         => double.TryParse(S(e, name), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : 0;
 
+    private static double Num(JsonElement e, int index)
+    {
+        if (e.ValueKind != JsonValueKind.Array || e.GetArrayLength() <= index) return 0;
+        var v = e[index];
+        if (v.ValueKind == JsonValueKind.Number && v.TryGetDouble(out var d)) return d;
+        if (v.ValueKind == JsonValueKind.String
+            && double.TryParse(v.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var s)) return s;
+        return 0;
+    }
+
     private async Task<JsonDocument> GetJsonAsync(string url)
     {
         using var response = await _liveHttp.GetAsync(url);
@@ -371,6 +387,67 @@ internal sealed class MainForm : Form
         if (double.IsNaN(oi5) || double.IsInfinity(oi5)) oi5 = 0;
         if (double.IsNaN(oi15) || double.IsInfinity(oi15)) oi15 = 0;
 
+        double volRatio3m = 0, change3m = 0, largeUsdt = 0, largeMultiple = 0, change30s = 0;
+        var largeSide = "";
+        try
+        {
+            using var kDoc = await GetJsonAsync(
+                $"https://fapi.binance.com/fapi/v1/klines?symbol={symbol}&interval=1m&limit=48");
+            var arr = kDoc.RootElement;
+            if (arr.ValueKind == JsonValueKind.Array && arr.GetArrayLength() >= 48)
+            {
+                var current3 = Num(arr[45], 5) + Num(arr[46], 5) + Num(arr[47], 5);
+                var avg3 = 0.0;
+                for (var w = 0; w < 15; w++)
+                    avg3 += Num(arr[w * 3], 5) + Num(arr[w * 3 + 1], 5) + Num(arr[w * 3 + 2], 5);
+                avg3 /= 15;
+                if (avg3 > 0) volRatio3m = current3 / avg3;
+                var c0 = Num(arr[44], 4);
+                if (c0 > 0) change3m = (Num(arr[47], 4) - c0) / c0 * 100;
+            }
+        }
+        catch { }
+
+        try
+        {
+            using var aDoc = await GetJsonAsync(
+                $"https://fapi.binance.com/fapi/v1/aggTrades?symbol={symbol}&limit=1000");
+            var arr = aDoc.RootElement;
+            if (arr.ValueKind == JsonValueKind.Array && arr.GetArrayLength() > 0)
+            {
+                var n = arr.GetArrayLength();
+                var sum = 0.0;
+                var max = 0.0;
+                var maxSide = "";
+                var lastT = 0L;
+                for (var i = 0; i < n; i++)
+                {
+                    var notional = DStr(arr[i], "p") * DStr(arr[i], "q");
+                    sum += notional;
+                    if (notional > max)
+                    {
+                        max = notional;
+                        maxSide = B(arr[i], "m") ? "sell" : "buy";
+                    }
+                    if (arr[i].TryGetProperty("T", out var tv) && tv.TryGetInt64(out var ts)) lastT = Math.Max(lastT, ts);
+                }
+                var avg = sum / n;
+                largeUsdt = max;
+                if (avg > 0) largeMultiple = max / avg;
+                largeSide = maxSide;
+                if (lastT > 0)
+                {
+                    var lastPrice = DStr(arr[n - 1], "p");
+                    var firstPrice = 0.0;
+                    for (var i = 0; i < n; i++)
+                        if (arr[i].TryGetProperty("T", out var tv) && tv.TryGetInt64(out var ts) && ts >= lastT - 30000)
+                        { firstPrice = DStr(arr[i], "p"); break; }
+                    if (firstPrice > 0) change30s = (lastPrice - firstPrice) / firstPrice * 100;
+                }
+            }
+        }
+        catch { }
+
         var score = Math.Clamp(50 + change24h * 0.7 + oi15 * 0.6 + (quoteVolume >= 1e8 ? 8 : 4), 0, 100);
         var stage = score >= 72 ? "entry" : score >= 55 ? "watch" : "low";
         var label = stage == "entry" ? "开仓信号" : stage == "watch" ? "重点候选" : "观察";
@@ -388,6 +465,12 @@ internal sealed class MainForm : Form
             Oi15m = oi15,
             Pullback = 0,
             Score = score,
+            VolRatio3m = volRatio3m,
+            Change3m = change3m,
+            LargeSide = largeSide,
+            LargeUsdt = largeUsdt,
+            LargeMultiple = largeMultiple,
+            Change30s = change30s,
             Stage = stage,
             StageLabel = label,
             Focus = false,

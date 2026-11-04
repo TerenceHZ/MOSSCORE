@@ -620,11 +620,11 @@ body{background:var(--page);overflow:hidden}
 @keyframes nvalertflash{0%{filter:contrast(2) brightness(2.2)}100%{filter:contrast(1) brightness(1)}}
 @keyframes nvalertin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .nv-alert-top{display:flex;justify-content:space-between;align-items:baseline}
-.nv-alert-top b{font:700 14px/1 var(--mono);color:#f5e7c4;letter-spacing:.02em}
+.nv-alert-top b{font:700 15px/1 var(--mono);color:#ffffff;letter-spacing:.02em}
 .nv-alert-top span{font-size:10px;color:#e8a020;letter-spacing:1px}
-.nv-alert-tag{margin-top:6px;font:600 10px/1 var(--cjk);color:#e8a020;letter-spacing:.05em}
-.nv-alert-price{margin-top:6px;font:600 14px/1 var(--mono);color:#ffc043}
-.nv-alert-line{margin-top:5px;font:500 9.5px/1.4 var(--cjk);color:#a99a7e}
+.nv-alert-tag{margin-top:6px;font:600 11px/1 var(--cjk);color:#e8a020;letter-spacing:.05em}
+.nv-alert-price{margin-top:6px;font:600 16px/1 var(--mono);color:#ffc043}
+.nv-alert-line{margin-top:5px;font:500 10.5px/1.5 var(--cjk);color:#a99a7e}
 .nv-alert-line b{color:#e4d4a8;font-weight:600}
 .nv-alert-line em{font-style:normal;color:#e8a020}
 .nv-alert-time{margin-top:5px;font:500 8.5px/1 var(--mono);color:#7b6d58}
@@ -1343,13 +1343,13 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    </button>
   </div>
 
-  <section class="bs smart-bs">
-   <div class="bc smart"><span class="l">大户持仓<i>交易员</i></span><span class="v" id="bSmTopPos">—</span><span class="s" id="bSmTopPosS">空 —</span><div class="smartbar"><i id="bSmTopPosL"></i><i id="bSmTopPosR"></i></div></div>
-   <div class="bc smart"><span class="l">大户账户<i>交易员</i></span><span class="v" id="bSmTopAcc">—</span><span class="s" id="bSmTopAccS">空 —</span><div class="smartbar"><i id="bSmTopAccL"></i><i id="bSmTopAccR"></i></div></div>
-   <div class="bc smart"><span class="l">主动买卖<i>交易员</i></span><span class="v" id="bSmActive">—</span><span class="s" id="bSmActiveS">卖 —</span><div class="smartbar"><i id="bSmActiveL"></i><i id="bSmActiveR"></i></div></div>
-   <div class="bc smart"><span class="l">全市场多空<i>巨鲸</i></span><span class="v" id="bSmGlobal">—</span><span class="s" id="bSmGlobalS">空 —</span><div class="smartbar"><i id="bSmGlobalL"></i><i id="bSmGlobalR"></i></div></div>
-   <div class="bc smart big"><span class="l">主动买入<i>巨鲸</i></span><span class="v" id="bSmBuy">—</span><span class="s" id="bSmBuyS">USDT</span><div class="smartbar"><i id="bSmBuyBar"></i><i class="rest"></i></div></div>
-   <div class="bc smart big"><span class="l">主动卖出<i>巨鲸</i></span><span class="v" id="bSmSell">—</span><span class="s" id="bSmSellS">USDT</span><div class="smartbar"><i class="buy" id="bSmSellBar"></i><i class="rest"></i></div></div>
+  <section class="bs">
+   <div class="bc"><span class="l">OI<i>持仓量</i></span><span class="v" id="bOi">—</span><span class="s" id="bOiS">5M / 15M</span></div>
+   <div class="bc"><span class="l">PRICE<i>价格</i></span><span class="v" id="bPrice">—</span><span class="s" id="bPriceS">5M / 15M</span></div>
+   <div class="bc big"><span class="l">VOLUME<i>成交量</i></span><span class="v" id="bVol">—</span><span class="s" id="bVolS">相对均量</span></div>
+   <div class="bc"><span class="l">FUNDING<i>资金费率</i></span><span class="v" id="bFund">—</span><span class="s" id="bFundS">8H</span></div>
+   <div class="bc"><span class="l">DEPTH<i>盘口深度</i></span><span class="v" id="bDepth">—</span><span class="s" id="bDepthS">买 / 卖</span></div>
+   <div class="bc"><span class="l">RISK<i>风险</i></span><span class="v" id="bRisk">—</span><span class="s" id="bRiskS">FLAGS</span></div>
    <canvas id="spark" hidden></canvas>
   </section>
 
@@ -5511,7 +5511,6 @@ function renderSpark(){
 }
 let fps = 60, fpsN = 0, fpsT = 0, lowT = 0, autoNote = '';
 function renderBottom(iOverride){
-  if (window.__NOVA_VISUAL) return;
   if (window.__NOVA_VISUAL) {
     const key = window.__NOVA_SELECTED || 'focus';
     const live = window.__NOVA_BOTTOM && window.__NOVA_BOTTOM[key];
@@ -11136,13 +11135,33 @@ requestAnimationFrame(frame);
     let alertHistoryPage = 0;
     const ALERT_PAGE_SIZE = 15;
     const saveAlerts = () => { try { localStorage.setItem(ALERT_KEY, JSON.stringify(alertLog.slice(0, 500))); } catch (e) {} };
-    const alertItemHtml = (a) => `<div class="nv-alertitem" data-key="${a.ts}-${a.symbol}">
-<div class="nv-alert-top"><b>${pairName(a.symbol)}</b><span>${Math.abs(a.pct) >= 10 ? '🔥🔥🔥' : Math.abs(a.pct) >= 4 ? '🔥🔥' : '🔥'}</span></div>
-<div class="nv-alert-tag">合约持仓 ${a.dir}</div>
+    const alertItemHtml = (a) => {
+      const color = Number(a.chg || 0) >= 0 ? '#63C08E' : '#C96358';
+      const kind = a.type || 'oi';
+      const head = `<div class="nv-alert-top"><b>${pairName(a.symbol)}</b><span>${Math.abs(a.pct || 0) >= 10 ? '🔥🔥🔥' : '🔥'}</span></div>`;
+      if (kind === 'volume') {
+        return `<div class="nv-alertitem" data-key="${a.ts}-${a.symbol}">${head}
+<div class="nv-alert-tag" style="color:${color}">3分钟放量 ${Number(a.volRatio || 0).toFixed(1)}×</div>
 <div class="nv-alert-price">${a.price}</div>
-<div class="nv-alert-line">15分钟持仓量${a.pct >= 0 ? '增加' : '减少'} <b>${fmtWan(a.delta)}</b> <em>(${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%)</em></div>
+<div class="nv-alert-line">3分钟放量超过10倍，${Number(a.change3m) >= 0 ? '上涨' : '下跌'} <em style="color:${color}">${Math.abs(Number(a.change3m || 0)).toFixed(1)}%</em></div>
+<div class="nv-alert-time">${a.time}</div></div>`;
+      }
+      if (kind === 'large') {
+        const buy = a.largeSide === 'buy';
+        return `<div class="nv-alertitem" data-key="${a.ts}-${a.symbol}">${head}
+<div class="nv-alert-tag" style="color:${buy ? '#63C08E' : '#C96358'}">特大主动${buy ? '买' : '卖'}</div>
+<div class="nv-alert-price">${a.price}</div>
+<div class="nv-alert-line">单笔${buy ? '买入' : '卖出'}量 <b>${fmtWan(a.largeUsdt)}</b>，超出平均 <b>${Number(a.largeMultiple || 0).toFixed(0)} 倍</b></div>
+<div class="nv-alert-line">半分钟价格变动 <em style="color:${color}">${Number(a.change30s) >= 0 ? '+' : ''}${Number(a.change30s || 0).toFixed(2)}%</em></div>
+<div class="nv-alert-time">${a.time}</div></div>`;
+      }
+      return `<div class="nv-alertitem" data-key="${a.ts}-${a.symbol}">${head}
+<div class="nv-alert-tag" style="color:${color}">合约持仓 ${a.dir}</div>
+<div class="nv-alert-price">${a.price}</div>
+<div class="nv-alert-line">15分钟持仓量${a.pct >= 0 ? '增加' : '减少'} <b>${fmtWan(a.delta)}</b> <em style="color:${color}">(${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%)</em></div>
 <div class="nv-alert-line">当前持仓量 <b>${fmtWan(a.oi)}</b></div>
 <div class="nv-alert-time">${a.time}</div></div>`;
+    };
     const renderAlertFeed = (animate = false) => {
       if (!alertFeed) return;
       const oldTop = new Map();
@@ -11179,7 +11198,14 @@ requestAnimationFrame(frame);
         const up = Number(a.chg || 0) >= 0;
         const cls = up ? 'up' : 'down';
         const color = up ? '#63C08E' : '#C96358';
-        const pair = String(a.symbol || '').replace(/^(.*?)(USDT|USDC|BUSD)$/, '$1/$2');
+        const pair = pairName(a.symbol);
+        if ((a.type || 'oi') === 'volume') {
+          return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-row nv-ar-top"><b class="nv-ar-pair">${pair}</b><span class="nv-ar-price">价格：${a.price}</span><em class="nv-ar-chg ${cls}" style="color:${color}">${up ? '涨幅' : '跌幅'} ${sign(a.chg)}%</em></div><div class="nv-ar-row nv-ar-bottom"><span>3分钟放量 ${Number(a.volRatio || 0).toFixed(1)}×</span><span>3分钟${Number(a.change3m) >= 0 ? '上涨' : '下跌'} ${Math.abs(Number(a.change3m || 0)).toFixed(1)}%</span><em class="nv-ar-oi ${cls}" style="color:${color}">VOLUME SPIKE</em></div></div>`;
+        }
+        if ((a.type || 'oi') === 'large') {
+          const buy = a.largeSide === 'buy';
+          return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-row nv-ar-top"><b class="nv-ar-pair">${pair}</b><span class="nv-ar-price">价格：${a.price}</span><em class="nv-ar-chg ${buy ? 'up' : 'down'}" style="color:${buy ? '#63C08E' : '#C96358'}">特大主动${buy ? '买' : '卖'}</em></div><div class="nv-ar-row nv-ar-bottom"><span>单笔${buy ? '买入' : '卖出'}量：${fmtWan(a.largeUsdt)}</span><span>超出平均 ${Number(a.largeMultiple || 0).toFixed(0)} 倍</span><em class="nv-ar-oi ${cls}" style="color:${color}">30S ${Number(a.change30s) >= 0 ? '+' : ''}${Number(a.change30s || 0).toFixed(2)}%</em></div></div>`;
+        }
         const oi = fmtWan(a.oi);
         const inc = `${a.pct >= 0 ? '+' : '-'}${fmtWan(Math.abs(Number(a.delta || 0)))}`;
         const oiPct = `${a.dir} / ${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%`;
@@ -11199,14 +11225,21 @@ requestAnimationFrame(frame);
       alertHistoryPage += btn.dataset.alertPage === 'next' ? 1 : -1;
       renderAlertHistory();
     });
-    const pushAlert = (r, liveTime, announce = true) => {
+    const pushAlert = (r, liveTime, announce = true, type = 'oi') => {
       if (!r) return;
       const pct = Number(r.oi15m || r.oi5m || 0);
       const dir = pct >= 0 ? '↑↑↑' : '↓↓↓';
       const delta = Math.abs(Number(r.oiNotional || 0) * pct / (100 + pct));
       const time = liveTime || new Date().toLocaleTimeString('zh-CN', { hour12: false });
       const now = Date.now();
-      alertLog.unshift({ time, symbol: r.symbol || r.baseAsset, pct, oi: Number(r.oiNotional || 0), price: Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''), dir, chg: Number(r.change24h || 0), delta, ts: now });
+      alertLog.unshift({
+        time, type, symbol: r.symbol || r.baseAsset, pct, oi: Number(r.oiNotional || 0),
+        price: Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''),
+        dir, chg: Number(r.change24h || 0), delta, ts: now,
+        volRatio: Number(r.volRatio3m || 0), change3m: Number(r.change3m || 0),
+        largeSide: r.largeSide || '', largeUsdt: Number(r.largeUsdt || 0),
+        largeMultiple: Number(r.largeMultiple || 0), change30s: Number(r.change30s || 0)
+      });
       alertLog = alertLog.filter(a => now - a.ts < ALERT_TTL).slice(0, 500);
       alertHistoryPage = 0;
       saveAlerts(); renderAlertFeed(true); renderAlertHistory();
@@ -11419,7 +11452,6 @@ requestAnimationFrame(frame);
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
       window.__MOSS_LIVE_ACTIVE = true;
-      renderSmart(live.smart);
       const rows = [...live.rows].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
       const gainRows = rows.filter(r => (r.change24h || 0) >= 0).slice(0, 3);
       const gainSet = new Set(gainRows.map(r => r.symbol));
@@ -11509,6 +11541,23 @@ requestAnimationFrame(frame);
         maybeAlert(f); maybeAlert(im);
       }
       window.__MOSS_ALERT_PREV = alertPrev;
+      const eventSeen = window.__MOSS_EVENT_SEEN || {};
+      const eventNow = Date.now();
+      const eventCool = 15 * 60 * 1000;
+      rows.slice(0, 40).forEach(r => {
+        const volKey = `${r.symbol}-volume`, largeKey = `${r.symbol}-large`;
+        if (Number(r.volRatio3m || 0) >= 10 && Math.abs(Number(r.change3m || 0)) >= 5
+            && (!eventSeen[volKey] || eventNow - eventSeen[volKey] >= eventCool)) {
+          eventSeen[volKey] = eventNow;
+          pushAlert(r, live.updatedAt, true, 'volume');
+        }
+        if (Number(r.largeUsdt || 0) >= 100000 && Number(r.largeMultiple || 0) >= 200
+            && (!eventSeen[largeKey] || eventNow - eventSeen[largeKey] >= eventCool)) {
+          eventSeen[largeKey] = eventNow;
+          pushAlert(r, live.updatedAt, true, 'large');
+        }
+      });
+      window.__MOSS_EVENT_SEEN = eventSeen;
       const mk = (r) => r ? ({ v: [sign(r.change24h) + '%', sign(r.change5m) + '%', fmtQv(r.quoteVolume24h), fmtQv(r.oiNotional), Number(r.pullback || 0).toFixed(2) + '%', Number(r.score || 0).toFixed(1)], s: [`${r.baseAsset || r.symbol} · 24H`, `1m ${sign(r.change1m)}%`, `60s 成交`, `OI 5m ${sign(r.oi5m)}%`, `距高点 ${Number(r.pullback || 0).toFixed(2)}%`, r.stage === 'entry' ? 'ENTRY' : r.stage === 'watch' ? 'WATCH' : '观察'] }) : null;
       window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       if (f) { data.focus.title = f.baseAsset || f.symbol; data.focus.stage = `${f.stage === 'entry' ? '开仓信号' : f.stage === 'watch' ? '重点候选' : '观察'} · ${Number(f.score || 0).toFixed(1)}`; data.focus.why = `${f.symbol} 现价 ${f.price}，24H ${sign(f.change24h)}%，5M ${sign(f.change5m)}%。`; }
