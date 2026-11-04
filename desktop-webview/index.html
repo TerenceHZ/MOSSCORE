@@ -804,6 +804,16 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-regime .nv-meta{display:flex;flex-direction:column;width:100%;gap:1px;margin-top:2px;font:500 8px/1.55 var(--mono);color:#8f826e;letter-spacing:.03em;white-space:normal}
 .nv-regime .nv-meta span{display:block;white-space:nowrap}
 .nv-regime .nv-meta b{color:#d8cdb8;font-weight:500}
+.nv-fng{position:absolute;right:436px;top:80px;width:118px;z-index:12;padding:10px 10px 9px;border:1px solid rgba(232,160,32,.28);background:linear-gradient(135deg,rgba(12,12,10,.94),rgba(5,6,8,.72));box-shadow:inset 0 0 24px rgba(232,160,32,.035),0 0 24px rgba(0,0,0,.35);backdrop-filter:blur(8px);pointer-events:none;--fng:#e8a020}
+.nv-fng::before{content:"";position:absolute;right:0;top:0;width:34px;height:1px;background:var(--fng);box-shadow:0 0 8px var(--fng)}
+.nv-fng .nv-k{font:600 7.5px/1.45 var(--mono);letter-spacing:.18em;color:#7a6c55;white-space:normal}
+.nv-fng-main{display:flex;align-items:baseline;gap:7px;margin-top:7px}
+.nv-fng-main b{font:800 27px/1 var(--mono);color:var(--fng);letter-spacing:-.04em}
+.nv-fng-main span{font:600 10px/1 var(--cjk);color:var(--fng)}
+.nv-fng-gauge{position:relative;height:5px;margin-top:9px;background:linear-gradient(90deg,#C96358,#e8a020 38%,#d8c56a 55%,#63C08E 78%,#42a978);box-shadow:0 0 10px rgba(232,160,32,.12)}
+.nv-fng-gauge i{position:absolute;top:-3px;width:2px;height:11px;background:#fff;box-shadow:0 0 7px #fff;transform:translateX(-1px)}
+.nv-fng-scale{display:flex;justify-content:space-between;margin-top:4px;font:500 6.5px/1 var(--cjk);color:#746a59}
+.nv-fng-prev{margin-top:8px;padding-top:6px;border-top:1px solid rgba(232,160,32,.12);font:500 8px/1.3 var(--mono);color:#8f826e;white-space:nowrap}
 .nv-left{position:absolute;left:24px;top:236px;bottom:262px;width:384px;display:flex;flex-direction:column;gap:8px;z-index:8;min-height:0}
 .nv-mod{position:relative;display:flex;flex-direction:column;min-height:0;border:1px solid rgba(232,160,32,.22);background:linear-gradient(180deg,rgba(5,6,8,.72),rgba(3,4,6,.55));overflow:hidden;cursor:pointer;pointer-events:auto}
 .nv-hit{position:absolute;inset:0;z-index:20;border:0;padding:0;margin:0;background:transparent;cursor:pointer;pointer-events:auto}
@@ -1243,6 +1253,14 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="cap-l">LAST SIGNAL · 最近一次脉冲</div>
    <div class="cap-b"><span class="ck" id="capK">CHIEF</span><span class="cv" id="capV">派单</span><span class="ct" id="capT">—</span></div>
    <div class="cap-line"></div>
+  </div>
+
+  <div class="nv-fng" id="nvFng" style="--fng:#e8a020">
+   <div class="nv-k">FEAR &amp; GREED · 今日</div>
+   <div class="nv-fng-main"><b id="nvFngValue">—</b><span id="nvFngLabel">恐慌贪婪</span></div>
+   <div class="nv-fng-gauge"><i id="nvFngMark"></i></div>
+   <div class="nv-fng-scale"><span>极度恐慌</span><span>极度贪婪</span></div>
+   <div class="nv-fng-prev" id="nvFngPrev">昨日 —</div>
   </div>
 
   <div class="nv-regime">
@@ -11477,9 +11495,36 @@ requestAnimationFrame(frame);
       set('bSmBuy', fmtWan(sm.buyUsdt)); set('bSmSell', fmtWan(sm.sellUsdt));
       setBar('bSmBuyBar', 1, 1); setBar('bSmSellBar', 1, 1);
     };
+    const renderFearGreed = (fg) => {
+      if (!fg) return;
+      const v = Math.max(0, Math.min(100, Number(fg.value || 0)));
+      const labelMap = { 'Extreme Fear': '极度恐慌', 'Fear': '恐慌', 'Neutral': '中性', 'Greed': '贪婪', 'Extreme Greed': '极度贪婪' };
+      const color = v <= 25 ? '#C96358' : v <= 45 ? '#e8a020' : v <= 55 ? '#d8c56a' : v <= 75 ? '#63C08E' : '#42a978';
+      const box = sr.querySelector('#nvFng');
+      if (box) box.style.setProperty('--fng', color);
+      const val = sr.querySelector('#nvFngValue'); if (val) val.textContent = String(Math.round(v));
+      const lab = sr.querySelector('#nvFngLabel'); if (lab) lab.textContent = labelMap[fg.label] || fg.label || '恐慌贪婪';
+      const mark = sr.querySelector('#nvFngMark'); if (mark) mark.style.left = `${v}%`;
+      const prev = sr.querySelector('#nvFngPrev');
+      if (prev) prev.textContent = `昨日 ${fg.previous != null ? fg.previous : '—'}${fg.date ? ' · ' + fg.date : ''}`;
+    };
+    const loadFearGreed = async () => {
+      try {
+        const r = await fetch('https://api.alternative.me/fng/?limit=2', { cache: 'no-store' });
+        if (!r.ok) return;
+        const j = await r.json();
+        const a = j.data && j.data[0];
+        if (!a) return;
+        const b = j.data[1] || a;
+        const ts = Number(a.timestamp || 0);
+        const date = ts ? new Date(ts * 1000).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }).replace('/', '-') : '';
+        renderFearGreed({ value: Number(a.value), label: a.value_classification, previous: Number(b.value), date });
+      } catch (e) {}
+    };
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
       window.__MOSS_LIVE_ACTIVE = true;
+      renderFearGreed(live.fearGreed);
       const rows = [...live.rows].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
       const gainRows = rows.filter(r => (r.change24h || 0) >= 0).slice(0, 3);
       const gainSet = new Set(gainRows.map(r => r.symbol));
@@ -11672,6 +11717,8 @@ requestAnimationFrame(frame);
     };
     window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
+    setTimeout(loadFearGreed, 800);
+    setInterval(loadFearGreed, 15 * 60 * 1000);
     const captureLog = [];
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');

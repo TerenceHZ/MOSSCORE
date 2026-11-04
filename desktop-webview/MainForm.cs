@@ -524,6 +524,25 @@ internal sealed class MainForm : Form
         return (focus, all);
     }
 
+    private async Task<object?> FetchFearGreedAsync()
+    {
+        try
+        {
+            using var doc = await GetJsonAsync("https://api.alternative.me/fng/?limit=2");
+            if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array || data.GetArrayLength() == 0)
+                return null;
+            var today = data[0];
+            var value = (int)DStr(today, "value");
+            var label = S(today, "value_classification");
+            var previous = data.GetArrayLength() > 1 ? (int)DStr(data[1], "value") : value;
+            var ts = 0L;
+            if (today.TryGetProperty("timestamp", out var tv)) tv.TryGetInt64(out ts);
+            var date = ts > 0 ? DateTimeOffset.FromUnixTimeSeconds(ts).ToLocalTime().ToString("MM-dd") : "";
+            return new { value, label, previous, date };
+        }
+        catch { return null; }
+    }
+
     private async Task<object?> FetchSmartAsync(string? symbol, double price)
     {
         if (string.IsNullOrWhiteSpace(symbol)) return null;
@@ -679,11 +698,13 @@ internal sealed class MainForm : Form
                 };
             }).ToList();
 
+            var fearGreed = await FetchFearGreedAsync();
             var payload = new
             {
                 updatedAt = DateTime.Now.ToString("HH:mm:ss"),
                 source = "BINANCE USDⓈ-M FUTURES",
-                rows
+                rows,
+                fearGreed
             };
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             try
