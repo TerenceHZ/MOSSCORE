@@ -956,6 +956,19 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card.focus .nv-c-probe span::after{background:linear-gradient(90deg,transparent,rgba(232,160,32,.16),transparent)}
 .nv-card .nv-c-probe i{font-style:normal;font-weight:600;color:#c9bda6}
 .nv-card.focus .nv-c-probe i{color:#d6b36a}
+.nv-card-signal{--nv-c:#63C08E;border-color:rgba(99,192,142,.45)!important;background:linear-gradient(135deg,rgba(10,25,18,.9),rgba(5,5,4,.72))!important}
+.nv-card-signal.short{--nv-c:#C96358;border-color:rgba(201,99,88,.45)!important;background:linear-gradient(135deg,rgba(28,10,8,.9),rgba(5,5,4,.72))!important}
+.nv-card-signal .nv-c-h{color:#63C08E!important}
+.nv-card-signal.short .nv-c-h{color:#C96358!important}
+.nv-card-signal .nv-c-sym{font-size:24px;color:#f7ecd0}
+.nv-card-signal .nv-c-meta{font-size:9px;color:#b9ad95}
+.nv-card-signal .nv-c-score{right:15px;bottom:34px;font-size:26px;color:#63C08E}
+.nv-card-signal.short .nv-c-score{color:#C96358}
+.nv-card-signal .nv-sigcard-bar{position:absolute!important;left:13px;right:78px;bottom:25px;height:3px;background:rgba(255,255,255,.08);z-index:2;overflow:hidden}
+.nv-card-signal .nv-sigcard-bar i{display:block;height:100%;background:linear-gradient(90deg,rgba(99,192,142,.3),#63C08E)}
+.nv-card-signal.short .nv-sigcard-bar i{background:linear-gradient(90deg,rgba(201,99,88,.3),#C96358)}
+.nv-card-signal .nv-c-probe{grid-template-columns:repeat(3,1fr);font-size:7.5px}
+.nv-card-signal .nv-c-probe i{color:#d8cdb8}
 .nv-card:hover{border-color:rgba(232,160,32,.85)}
 .nv-card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(232,160,32,.55),transparent);opacity:0}
 .nv-card.hot::after{opacity:1;animation:nvline 900s linear forwards}
@@ -1227,10 +1240,24 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
      </div>
     </div>
    </section>
-   <section class="nv-mod nv-fx signal-feed" id="nvSignalFeed" role="button" tabindex="0">
-    <div class="nv-mod-h"><b>◉ SIGNAL FEED</b><small>建仓信号 · 点击历史</small></div>
-    <div class="nv-sigfeed" id="nvSigFeed">
-     <div class="nv-sigfeed-empty">等待新的建仓信号</div>
+   <section class="nv-mod nv-fx imported losses">
+    <div class="nv-mod-h"><b>▼ 24H 弱势榜</b><small><span id="nvLossCount">3</span> 条 · 实时排序</small></div>
+    <div class="nv-rows">
+     <div class="nv-row loss" data-price="0.2384">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>FLUIDUSDT</span><span class="nv-price">0.2384</span><span class="nv-change down">-9.8%</span></div>
+      <div class="nv-row-oi"><span>OI <b>6.6M USDT</b></span><span>5M <b class="down">-3.1%</b></span><span>15M <b class="down">-12.4%</b></span></div>
+      <div class="nv-row-foot"><span>VOL 24H <b>66.3M</b></span><span>ΔOI <b class="down">-842K USDT</b></span></div>
+     </div>
+     <div class="nv-row loss" data-price="1.247">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>MASKUSDT</span><span class="nv-price">1.247</span><span class="nv-change down">-6.4%</span></div>
+      <div class="nv-row-oi"><span>OI <b>158M USDT</b></span><span>5M <b class="down">-1.8%</b></span><span>15M <b class="down">-7.2%</b></span></div>
+      <div class="nv-row-foot"><span>VOL 24H <b>88.2M</b></span><span>ΔOI <b class="down">-1.6M USDT</b></span></div>
+     </div>
+     <div class="nv-row loss" data-price="0.0312">
+      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>IDOLUSDT</span><span class="nv-price">0.0312</span><span class="nv-change down">-4.1%</span></div>
+      <div class="nv-row-oi"><span>OI <b>2.4M USDT</b></span><span>5M <b class="down">-0.9%</b></span><span>15M <b class="down">-3.8%</b></span></div>
+      <div class="nv-row-foot"><span>VOL 24H <b>31.2M</b></span><span>ΔOI <b class="down">-128K USDT</b></span></div>
+     </div>
     </div>
    </section>
   </div>
@@ -1262,13 +1289,14 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   </div>
 
   <div class="nv-cards">
-   <button class="nv-card imported" type="button" data-nv-card="imported">
-    <span class="nv-c-h">○ IMPORTED · 导入辅助</span>
-    <span class="nv-c-sym">SOPH</span>
-    <span class="nv-c-meta"><i class="nv-stage watch">重点候选</i><b>77.2</b> · 15:42:31 抓取</span>
-    <span class="nv-c-score">77.2</span>
-    <span class="nv-c-arrow">↗</span>
-    <span class="nv-c-probe"><span>导入 <i>4</i></span><span>信号 <i>2</i></span><span>覆盖 <i>90%</i></span><span>延迟 <i>1.2s</i></span></span>
+   <button class="nv-card imported nv-card-signal" type="button" data-nv-card="signal" id="nvSignalCard">
+    <span class="nv-c-h">◉ SIGNAL · 最新建仓</span>
+    <span class="nv-c-sym" id="nvCardSigSym">等待信号</span>
+    <span class="nv-c-meta" id="nvCardSigMeta">等待新的有效开仓信号</span>
+    <span class="nv-c-score" id="nvCardSigWin">—</span>
+    <span class="nv-sigcard-bar" id="nvCardSigBar"><i></i></span>
+    <span class="nv-c-arrow">›</span>
+    <span class="nv-c-probe" id="nvCardSigProbe"><span>点击查看信号历史</span></span>
     <i class="nv-hotbg" aria-hidden="true"></i><i class="nv-flow" aria-hidden="true"></i><i class="nv-flash" aria-hidden="true"></i>
    </button>
    <button class="nv-card focus" type="button" data-nv-card="focus">
@@ -11153,26 +11181,19 @@ requestAnimationFrame(frame);
     } catch (e) {}
     const saveSignals = () => { try { localStorage.setItem(SIGNAL_KEY, JSON.stringify(signalLog.slice(0, 500))); } catch (e) {} };
     const renderSignalFeed = (sig) => {
-      const mod = sr.querySelector('#nvSignalFeed');
-      const feed = sr.querySelector('#nvSigFeed');
-      if (!feed || !sig) return;
+      const card = sr.querySelector('#nvSignalCard');
+      if (!card || !sig) return;
       const up = sig.side === 'long';
       const price = Number(sig.r.price || 0);
       const priceText = price ? price.toFixed(price < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
-      const delta = Number(sig.r.oiNotional || 0) * Number(sig.oi15 || 0) / (100 + Number(sig.oi15 || 0));
-      mod.classList.toggle('short', !up);
-      feed.innerHTML = `<div class="nv-sigfeed-card ${up ? 'long' : 'short'}">
-<div class="nv-sigfeed-top"><b class="nv-sigfeed-sym">${sig.r.symbol || sig.r.baseAsset}</b><em class="nv-sigfeed-chg">${sig.chg >= 0 ? '+' : ''}${Number(sig.chg).toFixed(2)}%</em></div>
-<div class="nv-sigfeed-price">${priceText} USDT</div>
-<div class="nv-sigfeed-side">${up ? '建议建多 · LONG' : '建议建空 · SHORT'}</div>
-<div class="nv-sigfeed-win"><span>策略胜率</span><b>${sig.win}%</b><div class="nv-sigfeed-bar"><i style="width:${sig.win}%"></i></div></div>
-<div class="nv-sigfeed-oi">
- <div><span>当前 OI</span><b>${fmtWan(sig.r.oiNotional)}</b></div>
- <div><span>15M 增量</span><b class="${delta >= 0 ? 'up' : 'down'}">${delta >= 0 ? '+' : '-'}${fmtWan(Math.abs(delta))}</b></div>
- <div><span>5M OI</span><b class="${sig.oi5 >= 0 ? 'up' : 'down'}">${sign(sig.oi5)}%</b></div>
- <div><span>15M OI</span><b class="${sig.oi15 >= 0 ? 'up' : 'down'}">${sign(sig.oi15)}%</b></div>
-</div>
-<div class="nv-sigfeed-foot">点击查看全部信号历史</div></div>`;
+      card.classList.toggle('short', !up);
+      const sym = sr.querySelector('#nvCardSigSym'); if (sym) sym.textContent = sig.r.symbol || sig.r.baseAsset;
+      const meta = sr.querySelector('#nvCardSigMeta');
+      if (meta) meta.innerHTML = `<i class="nv-stage ${up ? 'entry' : 'low'}">${up ? '建议建多' : '建议建空'}</i>${sig.chg >= 0 ? '+' : ''}${Number(sig.chg).toFixed(2)}%`;
+      const win = sr.querySelector('#nvCardSigWin'); if (win) win.textContent = `${sig.win}%`;
+      const bar = sr.querySelector('#nvCardSigBar i'); if (bar) bar.style.width = `${sig.win}%`;
+      const probe = sr.querySelector('#nvCardSigProbe');
+      if (probe) probe.innerHTML = `<span>价 <i>${priceText}</i></span><span>OI <i>${fmtWan(sig.r.oiNotional).replace(' USDT', '')}</i></span><span>5M <i>${sign(sig.oi5)}%</i></span>`;
     };
     const renderSignalHistory = () => {
       const box = sr.querySelector('#nvSignalHistory');
@@ -11626,12 +11647,9 @@ requestAnimationFrame(frame);
           : { symbol: 'ARIAUSDT', price: 0.12066, change24h: 25.3, oiNotional: 12990000, oi5m: 6.2, oi15m: 49.5, quoteVolume24h: 51100000, score: 97, stage: 'entry', pullback: 2.1 }), row, short ? 'loss' : 'gain');
       }, 1400);
     }
-    const signalFeedMod = sr.querySelector('#nvSignalFeed');
-    signalFeedMod && signalFeedMod.addEventListener('click', openSignalHistory);
-    signalFeedMod && signalFeedMod.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSignalHistory(); }
-    });
-    cards.forEach(card => card.addEventListener('click', () => {      window.__NOVA_SELECTED = card.dataset.nvCard;
+    cards.forEach(card => card.addEventListener('click', () => {
+      window.__NOVA_SELECTED = card.dataset.nvCard;
+      if (card.dataset.nvCard === 'signal') { openSignalHistory(); return; }
       const lane = card.dataset.nvCard === 'focus' ? 'focus' : 'imported';
       const mod = sr.querySelector(lane === 'focus' ? '.nv-mod.focus' : '.nv-mod.imported');
       const cardSymbol = (card.dataset.liveSymbol || card.querySelector('.nv-c-sym')?.textContent || '').trim().toUpperCase();
