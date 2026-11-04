@@ -687,7 +687,17 @@ body{background:var(--page);overflow:hidden}
 
 /* ---------- 底部指标条 ---------- */
 .bs{position:absolute;left:24px;right:24px;bottom:20px;height:92px;display:grid;grid-template-columns:1.05fr 1.5fr 1.45fr 1fr 1.15fr 1fr;border-top:1px solid var(--hair2);background:linear-gradient(0deg,rgba(3,5,10,.86),rgba(3,5,10,.4))}
+.bs.smart-bs{grid-template-columns:repeat(6,1fr)}
 .bc{position:relative;min-width:0;padding:12px 16px 8px;border-left:1px solid var(--hair);display:grid;grid-template-rows:12px 30px 14px;row-gap:5px}
+.bc.smart{padding:8px 14px 6px;grid-template-rows:11px 24px 11px 4px;row-gap:3px}
+.bc.smart .v{font-size:20px;line-height:24px}
+.bc.smart .s{font-size:9px;line-height:11px}
+.smartbar{display:flex;height:4px;background:rgba(255,255,255,.07);overflow:hidden}
+.smartbar i{display:block;height:100%;width:0;background:#63C08E;transition:width .4s ease}
+.smartbar i:nth-child(2){background:#C96358}
+.smartbar i.rest{flex:1;width:auto;background:rgba(255,255,255,.07)}
+.bc.smart .v{color:#63C08E}
+.bc.smart .s{color:#C96358}
 .bc:first-child{border-left:0;padding-left:0}
 .bc .l{font-size:9px;letter-spacing:.2em;color:var(--mute);white-space:nowrap}
 .bc .l i{font-style:normal;font-family:var(--cjk);letter-spacing:.06em;margin-left:6px}
@@ -1333,13 +1343,13 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    </button>
   </div>
 
-  <section class="bs">
-   <div class="bc"><span class="l">OI<i>持仓量</i></span><span class="v" id="bOi">—</span><span class="s" id="bOiS">5M / 15M</span></div>
-   <div class="bc"><span class="l">PRICE<i>价格</i></span><span class="v" id="bPrice">—</span><span class="s" id="bPriceS">5M / 15M</span></div>
-   <div class="bc big"><span class="l">VOLUME<i>成交量</i></span><span class="v" id="bVol">—</span><span class="s" id="bVolS">相对均量</span></div>
-   <div class="bc"><span class="l">FUNDING<i>资金费率</i></span><span class="v" id="bFund">—</span><span class="s" id="bFundS">8H</span></div>
-   <div class="bc"><span class="l">DEPTH<i>盘口深度</i></span><span class="v" id="bDepth">—</span><span class="s" id="bDepthS">买 / 卖</span></div>
-   <div class="bc"><span class="l">RISK<i>风险</i></span><span class="v" id="bRisk">—</span><span class="s" id="bRiskS">FLAGS</span></div>
+  <section class="bs smart-bs">
+   <div class="bc smart"><span class="l">大户持仓<i>交易员</i></span><span class="v" id="bSmTopPos">—</span><span class="s" id="bSmTopPosS">空 —</span><div class="smartbar"><i id="bSmTopPosL"></i><i id="bSmTopPosR"></i></div></div>
+   <div class="bc smart"><span class="l">大户账户<i>交易员</i></span><span class="v" id="bSmTopAcc">—</span><span class="s" id="bSmTopAccS">空 —</span><div class="smartbar"><i id="bSmTopAccL"></i><i id="bSmTopAccR"></i></div></div>
+   <div class="bc smart"><span class="l">主动买卖<i>交易员</i></span><span class="v" id="bSmActive">—</span><span class="s" id="bSmActiveS">卖 —</span><div class="smartbar"><i id="bSmActiveL"></i><i id="bSmActiveR"></i></div></div>
+   <div class="bc smart"><span class="l">全市场多空<i>巨鲸</i></span><span class="v" id="bSmGlobal">—</span><span class="s" id="bSmGlobalS">空 —</span><div class="smartbar"><i id="bSmGlobalL"></i><i id="bSmGlobalR"></i></div></div>
+   <div class="bc smart big"><span class="l">主动买入<i>巨鲸</i></span><span class="v" id="bSmBuy">—</span><span class="s" id="bSmBuyS">USDT</span><div class="smartbar"><i id="bSmBuyBar"></i><i class="rest"></i></div></div>
+   <div class="bc smart big"><span class="l">主动卖出<i>巨鲸</i></span><span class="v" id="bSmSell">—</span><span class="s" id="bSmSellS">USDT</span><div class="smartbar"><i class="buy" id="bSmSellBar"></i><i class="rest"></i></div></div>
    <canvas id="spark" hidden></canvas>
   </section>
 
@@ -5501,6 +5511,7 @@ function renderSpark(){
 }
 let fps = 60, fpsN = 0, fpsT = 0, lowT = 0, autoNote = '';
 function renderBottom(iOverride){
+  if (window.__NOVA_VISUAL) return;
   if (window.__NOVA_VISUAL) {
     const key = window.__NOVA_SELECTED || 'focus';
     const live = window.__NOVA_BOTTOM && window.__NOVA_BOTTOM[key];
@@ -11385,9 +11396,30 @@ requestAnimationFrame(frame);
       el.setAttribute('aria-hidden', 'true');
       try { window.speechSynthesis.cancel(); } catch (e) {}
     };
+    const renderSmart = (sm) => {
+      if (!sm) return;
+      const pct = (v) => `${Number(v || 0).toFixed(1)}%`;
+      const setBar = (id, value, total) => {
+        const el = sr.querySelector('#' + id);
+        if (el) el.style.width = total > 0 ? `${Math.max(0, Math.min(100, value / total * 100))}%` : '0%';
+      };
+      const set = (id, text) => { const el = sr.querySelector('#' + id); if (el) el.textContent = text; };
+      set('bSmTopPos', `多 ${pct(sm.topPosLong)}`); set('bSmTopPosS', `空 ${pct(sm.topPosShort)}`);
+      setBar('bSmTopPosL', sm.topPosLong, 100); setBar('bSmTopPosR', sm.topPosShort, 100);
+      set('bSmTopAcc', `多 ${pct(sm.topAccLong)}`); set('bSmTopAccS', `空 ${pct(sm.topAccShort)}`);
+      setBar('bSmTopAccL', sm.topAccLong, 100); setBar('bSmTopAccR', sm.topAccShort, 100);
+      set('bSmActive', `买 ${fmtWan(sm.buyUsdt)}`); set('bSmActiveS', `卖 ${fmtWan(sm.sellUsdt)}`);
+      setBar('bSmActiveL', sm.buyUsdt, (sm.buyUsdt || 0) + (sm.sellUsdt || 0));
+      setBar('bSmActiveR', sm.sellUsdt, (sm.buyUsdt || 0) + (sm.sellUsdt || 0));
+      set('bSmGlobal', `多 ${pct(sm.globalLong)}`); set('bSmGlobalS', `空 ${pct(sm.globalShort)}`);
+      setBar('bSmGlobalL', sm.globalLong, 100); setBar('bSmGlobalR', sm.globalShort, 100);
+      set('bSmBuy', fmtWan(sm.buyUsdt)); set('bSmSell', fmtWan(sm.sellUsdt));
+      setBar('bSmBuyBar', 1, 1); setBar('bSmSellBar', 1, 1);
+    };
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
       window.__MOSS_LIVE_ACTIVE = true;
+      renderSmart(live.smart);
       const rows = [...live.rows].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
       const gainRows = rows.filter(r => (r.change24h || 0) >= 0).slice(0, 3);
       const gainSet = new Set(gainRows.map(r => r.symbol));

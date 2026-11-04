@@ -417,6 +417,62 @@ internal sealed class MainForm : Form
         return (focus, all);
     }
 
+    private async Task<object?> FetchSmartAsync(string? symbol, double price)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) return null;
+        double ReadLast(JsonElement root, string field)
+        {
+            if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() == 0) return 0;
+            return DStr(root[root.GetArrayLength() - 1], field);
+        }
+
+        double topPosLong = 0, topPosShort = 0, topAccLong = 0, topAccShort = 0;
+        double globalLong = 0, globalShort = 0, buyVol = 0, sellVol = 0, buySellRatio = 0;
+        try
+        {
+            using var d = await GetJsonAsync($"https://fapi.binance.com/futures/data/topLongShortPositionRatio?symbol={symbol}&period=15m&limit=2");
+            topPosLong = ReadLast(d.RootElement, "longAccount") * 100;
+            topPosShort = ReadLast(d.RootElement, "shortAccount") * 100;
+        }
+        catch { }
+        try
+        {
+            using var d = await GetJsonAsync($"https://fapi.binance.com/futures/data/topLongShortAccountRatio?symbol={symbol}&period=15m&limit=2");
+            topAccLong = ReadLast(d.RootElement, "longAccount") * 100;
+            topAccShort = ReadLast(d.RootElement, "shortAccount") * 100;
+        }
+        catch { }
+        try
+        {
+            using var d = await GetJsonAsync($"https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol={symbol}&period=15m&limit=2");
+            globalLong = ReadLast(d.RootElement, "longAccount") * 100;
+            globalShort = ReadLast(d.RootElement, "shortAccount") * 100;
+        }
+        catch { }
+        try
+        {
+            using var d = await GetJsonAsync($"https://fapi.binance.com/futures/data/takerlongshortRatio?symbol={symbol}&period=15m&limit=2");
+            buyVol = ReadLast(d.RootElement, "buyVol") * price;
+            sellVol = ReadLast(d.RootElement, "sellVol") * price;
+            buySellRatio = ReadLast(d.RootElement, "buySellRatio");
+        }
+        catch { }
+
+        return new
+        {
+            symbol,
+            topPosLong,
+            topPosShort,
+            topAccLong,
+            topAccShort,
+            globalLong,
+            globalShort,
+            buyUsdt = buyVol,
+            sellUsdt = sellVol,
+            buySellRatio
+        };
+    }
+
     private async Task PullLiveAsync()
     {
         if (_liveBusy) return;
@@ -516,11 +572,14 @@ internal sealed class MainForm : Form
                 };
             }).ToList();
 
+            var smartRow = rows.FirstOrDefault(r => r.Focus) ?? rows.FirstOrDefault();
+            var smart = await FetchSmartAsync(smartRow?.Symbol, smartRow?.Price ?? 0);
             var payload = new
             {
                 updatedAt = DateTime.Now.ToString("HH:mm:ss"),
                 source = "BINANCE USDⓈ-M FUTURES",
-                rows
+                rows,
+                smart
             };
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             try
