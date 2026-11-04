@@ -636,6 +636,20 @@ body{background:var(--page);overflow:hidden}
 .nv-alert-pager{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:8px;font:500 9px/1 var(--mono);color:#8a7b62}
 .nv-alert-pager button{background:transparent;border:1px solid rgba(232,160,32,.25);color:#c9a35a;font:600 9px/1 var(--cjk);padding:5px 8px;cursor:pointer}
 .nv-alert-pager button:disabled{opacity:.3;cursor:default}
+.nv-signal-counts{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.nv-signal-counts span{font:600 9px/1 var(--mono);color:#c9a35a;border:1px solid rgba(232,160,32,.22);background:rgba(232,160,32,.05);padding:5px 7px}
+.nv-signal-history{border-top:1px solid rgba(232,160,32,.12)}
+.nv-signal-record{padding:10px 0;border-bottom:1px solid rgba(232,160,32,.1)}
+.nv-signal-record .st{font:600 11px/1 var(--mono);color:#8a7b62;margin-bottom:6px}
+.nv-signal-record .sm{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.nv-signal-record .sm b{font:700 15px/1 var(--mono);color:#f2f0e8}
+.nv-signal-record .sm em{font:700 13px/1 var(--mono);font-style:normal}
+.nv-signal-record .sm em.long{color:#63C08E}
+.nv-signal-record .sm em.short{color:#C96358}
+.nv-signal-record .sm span{font:500 9px/1 var(--cjk);color:#9a8a70;margin-left:auto}
+.nv-signal-record .sg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 12px;margin-top:8px}
+.nv-signal-record .sg div{display:flex;justify-content:space-between;gap:6px;font:500 9px/1.3 var(--cjk);color:#80735e}
+.nv-signal-record .sg b{font:600 9.5px/1.3 var(--mono);color:#d8cdb8}
 .nv-ar-time{font:600 12px/1 var(--mono);color:#8a7b62;margin-bottom:7px}
 .nv-ar-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .nv-ar-top{margin-bottom:7px}
@@ -855,6 +869,32 @@ linear-gradient(var(--nv-edge),var(--nv-edge)) right bottom / 2px 18px no-repeat
 .nv-row-foot{position:relative;z-index:1;display:flex;justify-content:space-between;gap:8px;margin-top:3px;font:500 8px/1 var(--cjk);color:#80735e;white-space:nowrap}
 .nv-row-foot b{font:600 9px/1 var(--mono);color:#d8cdb8}
 .nv-mod.focus .nv-row-oi,.nv-mod.focus .nv-row-foot{color:#8f8168}
+.signal-feed{cursor:pointer;flex:1;min-height:0;background:linear-gradient(180deg,rgba(232,160,32,.05),rgba(0,0,0,.08))}
+.signal-feed:hover{border-color:rgba(255,192,67,.7)!important;box-shadow:0 0 24px rgba(232,160,32,.12)}
+.nv-sigfeed{height:calc(100% - 34px);padding:8px 10px;display:flex;flex-direction:column;min-height:0}
+.nv-sigfeed-empty{flex:1;display:flex;align-items:center;justify-content:center;border:1px dashed rgba(232,160,32,.15);font:500 10px/1.5 var(--cjk);color:#756a58;text-align:center}
+.nv-sigfeed-card{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 10px;border:1px solid rgba(232,160,32,.25);background:linear-gradient(115deg,rgba(232,160,32,.1),rgba(4,4,3,.72));overflow:hidden}
+.nv-sigfeed-card.short{background:linear-gradient(115deg,rgba(201,99,88,.12),rgba(4,4,3,.72));border-color:rgba(201,99,88,.35)}
+.nv-sigfeed-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.nv-sigfeed-sym{font:700 16px/1 var(--mono);color:#f7ecd0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-sigfeed-chg{font:700 19px/1 var(--mono);color:#63C08E;white-space:nowrap}
+.signal-feed.short .nv-sigfeed-chg{color:#C96358}
+.nv-sigfeed-price{margin-top:5px;font:600 10px/1 var(--mono);color:#a99a7e}
+.nv-sigfeed-side{margin-top:7px;font:700 12px/1 var(--cjk);color:#63C08E;letter-spacing:.06em}
+.signal-feed.short .nv-sigfeed-side{color:#C96358}
+.nv-sigfeed-win{display:flex;align-items:center;gap:8px;margin-top:8px}
+.nv-sigfeed-win span{font:500 8px/1 var(--cjk);color:#8a7b62;white-space:nowrap}
+.nv-sigfeed-win b{font:700 16px/1 var(--mono);color:#63C08E;white-space:nowrap}
+.signal-feed.short .nv-sigfeed-win b{color:#C96358}
+.nv-sigfeed-bar{flex:1;height:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.nv-sigfeed-bar i{display:block;height:100%;background:linear-gradient(90deg,rgba(99,192,142,.35),#63C08E)}
+.signal-feed.short .nv-sigfeed-bar i{background:linear-gradient(90deg,rgba(201,99,88,.3),#C96358)}
+.nv-sigfeed-oi{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin-top:8px;padding-top:7px;border-top:1px solid rgba(232,160,32,.12)}
+.nv-sigfeed-oi div{display:flex;justify-content:space-between;gap:5px;font:500 8px/1.3 var(--cjk);color:#80735e;white-space:nowrap}
+.nv-sigfeed-oi b{font:600 8.5px/1.3 var(--mono);color:#d8cdb8}
+.nv-sigfeed-oi b.up{color:#63C08E}
+.nv-sigfeed-oi b.down{color:#C96358}
+.nv-sigfeed-foot{margin-top:5px;font:500 7px/1 var(--cjk);color:#6f6453;letter-spacing:.06em}
 .nv-row.fresh{background:linear-gradient(110deg,rgba(232,160,32,.3),rgba(232,160,32,.05) 34%,rgba(255,192,67,.18) 56%,rgba(232,160,32,.04) 76%,rgba(232,160,32,.22));background-size:220% 220%;border-color:rgba(255,192,67,.65);box-shadow:inset 0 0 26px rgba(232,160,32,.09);animation:nvalertflow 6s ease-in-out infinite}
 .nv-row.flash{animation:nvrowflash .58s ease-out}
 @keyframes nvrowflash{0%{filter:contrast(1.8) brightness(1.9)}100%{filter:contrast(1) brightness(1)}}
@@ -1187,24 +1227,10 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
      </div>
     </div>
    </section>
-   <section class="nv-mod nv-fx imported losses">
-    <div class="nv-mod-h"><b>▼ 24H 弱势榜</b><small><span id="nvLossCount">3</span> 条 · 实时排序</small></div>
-    <div class="nv-rows">
-     <div class="nv-row loss" data-price="0.2384">
-      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>FLUIDUSDT</span><span class="nv-price">0.2384</span><span class="nv-change down">-9.8%</span></div>
-      <div class="nv-row-oi"><span>OI <b>6.6M USDT</b></span><span>5M <b class="down">-3.1%</b></span><span>15M <b class="down">-12.4%</b></span></div>
-      <div class="nv-row-foot"><span>VOL 24H <b>66.3M</b></span><span>ΔOI <b class="down">-842K USDT</b></span></div>
-     </div>
-     <div class="nv-row loss" data-price="1.247">
-      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>MASKUSDT</span><span class="nv-price">1.247</span><span class="nv-change down">-6.4%</span></div>
-      <div class="nv-row-oi"><span>OI <b>158M USDT</b></span><span>5M <b class="down">-1.8%</b></span><span>15M <b class="down">-7.2%</b></span></div>
-      <div class="nv-row-foot"><span>VOL 24H <b>88.2M</b></span><span>ΔOI <b class="down">-1.6M USDT</b></span></div>
-     </div>
-     <div class="nv-row loss" data-price="0.0312">
-      <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>IDOLUSDT</span><span class="nv-price">0.0312</span><span class="nv-change down">-4.1%</span></div>
-      <div class="nv-row-oi"><span>OI <b>2.4M USDT</b></span><span>5M <b class="down">-0.9%</b></span><span>15M <b class="down">-3.8%</b></span></div>
-      <div class="nv-row-foot"><span>VOL 24H <b>31.2M</b></span><span>ΔOI <b class="down">-128K USDT</b></span></div>
-     </div>
+   <section class="nv-mod nv-fx signal-feed" id="nvSignalFeed" role="button" tabindex="0">
+    <div class="nv-mod-h"><b>◉ SIGNAL FEED</b><small>建仓信号 · 点击历史</small></div>
+    <div class="nv-sigfeed" id="nvSigFeed">
+     <div class="nv-sigfeed-empty">等待新的建仓信号</div>
     </div>
    </section>
   </div>
@@ -1308,7 +1334,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div><div class="nv-d-k" id="nvDKind">★ FOCUS · 自选主监控</div><div class="nv-d-title" id="nvDTitle">BLESS</div><div class="nv-d-stage" id="nvDStage">开仓信号 · 97.0</div></div>
   <button class="nv-d-x" type="button" data-nv-close>×</button>
  </div>
- <div class="nv-tabs"><button class="on" type="button" data-nv-tab="current">当前详情</button><button type="button" data-nv-tab="history">历史监控</button><button type="button" data-nv-tab="alerts">异动历史</button></div>
+ <div class="nv-tabs"><button class="on" type="button" data-nv-tab="current">当前详情</button><button type="button" data-nv-tab="history">历史监控</button><button type="button" data-nv-tab="alerts">异动历史</button><button type="button" data-nv-tab="signals">建仓信号</button></div>
  <div class="nv-d-body">
   <div class="nv-pane" data-pane="current">
   <div class="nv-now">
@@ -1339,6 +1365,9 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div class="nv-pane" data-pane="alerts" hidden>
    <div class="nv-d-sec"><h4>POSITION ALERTS HISTORY</h4><div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIAUSDT</span><b>OI +49.5%</b></div></div><div class="nv-alert-pager"><button type="button" data-alert-page="prev">上一页</button><span id="nvAlertPage">1 / 1</span><button type="button" data-alert-page="next">下一页</button></div></div>
    <div class="nv-d-sec"><h4>口径</h4><p>记录持仓快速增加/减少的异动快照，不构成交易建议。</p></div>
+  </div>
+  <div class="nv-pane" data-pane="signals" hidden>
+   <div class="nv-d-sec"><h4>SIGNAL HISTORY</h4><div class="nv-signal-counts" id="nvSignalCounts"></div><div class="nv-signal-history" id="nvSignalHistory"></div></div>
   </div>
  </div>
 </div>
@@ -11116,6 +11145,71 @@ requestAnimationFrame(frame);
     renderAlertFeed();
     renderAlertHistory();
     { const first = alertFeed && alertFeed.firstElementChild; if (first) markAlertFresh(first); }
+    const SIGNAL_KEY = 'moss-signal-log-v1', SIGNAL_TTL = 24 * 60 * 60 * 1000;
+    let signalLog = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(SIGNAL_KEY) || '[]');
+      if (Array.isArray(saved)) signalLog = saved.filter(a => a && a.ts && Date.now() - a.ts < SIGNAL_TTL);
+    } catch (e) {}
+    const saveSignals = () => { try { localStorage.setItem(SIGNAL_KEY, JSON.stringify(signalLog.slice(0, 500))); } catch (e) {} };
+    const renderSignalFeed = (sig) => {
+      const mod = sr.querySelector('#nvSignalFeed');
+      const feed = sr.querySelector('#nvSigFeed');
+      if (!feed || !sig) return;
+      const up = sig.side === 'long';
+      const price = Number(sig.r.price || 0);
+      const priceText = price ? price.toFixed(price < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
+      const delta = Number(sig.r.oiNotional || 0) * Number(sig.oi15 || 0) / (100 + Number(sig.oi15 || 0));
+      mod.classList.toggle('short', !up);
+      feed.innerHTML = `<div class="nv-sigfeed-card ${up ? 'long' : 'short'}">
+<div class="nv-sigfeed-top"><b class="nv-sigfeed-sym">${sig.r.symbol || sig.r.baseAsset}</b><em class="nv-sigfeed-chg">${sig.chg >= 0 ? '+' : ''}${Number(sig.chg).toFixed(2)}%</em></div>
+<div class="nv-sigfeed-price">${priceText} USDT</div>
+<div class="nv-sigfeed-side">${up ? '建议建多 · LONG' : '建议建空 · SHORT'}</div>
+<div class="nv-sigfeed-win"><span>策略胜率</span><b>${sig.win}%</b><div class="nv-sigfeed-bar"><i style="width:${sig.win}%"></i></div></div>
+<div class="nv-sigfeed-oi">
+ <div><span>当前 OI</span><b>${fmtWan(sig.r.oiNotional)}</b></div>
+ <div><span>15M 增量</span><b class="${delta >= 0 ? 'up' : 'down'}">${delta >= 0 ? '+' : '-'}${fmtWan(Math.abs(delta))}</b></div>
+ <div><span>5M OI</span><b class="${sig.oi5 >= 0 ? 'up' : 'down'}">${sign(sig.oi5)}%</b></div>
+ <div><span>15M OI</span><b class="${sig.oi15 >= 0 ? 'up' : 'down'}">${sign(sig.oi15)}%</b></div>
+</div>
+<div class="nv-sigfeed-foot">点击查看全部信号历史</div></div>`;
+    };
+    const renderSignalHistory = () => {
+      const box = sr.querySelector('#nvSignalHistory');
+      if (!box) return;
+      const counts = {};
+      signalLog.forEach(a => { counts[a.symbol] = (counts[a.symbol] || 0) + 1; });
+      const summary = sr.querySelector('#nvSignalCounts');
+      if (summary) summary.innerHTML = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([s, n]) => `<span>${s} × ${n}</span>`).join('');
+      box.innerHTML = signalLog.slice(0, 500).map(a => {
+        const color = a.side === 'short' ? '#C96358' : '#63C08E';
+        return `<div class="nv-signal-record"><div class="st">${a.time}</div><div class="sm"><b>${a.symbol}</b><em class="${a.side}" style="color:${color}">${a.side === 'long' ? '建议建多' : '建议建空'} ${Number(a.chg).toFixed(2)}%</em><span>该币累计建议 ${counts[a.symbol]} 次</span></div><div class="sg"><div><span>价格</span><b>${a.price} USDT</b></div><div><span>胜率</span><b>${a.win}%</b></div><div><span>策略分</span><b>${a.score ? Number(a.score).toFixed(1) : '—'}</b></div><div><span>当前 OI</span><b>${fmtWan(a.oi)}</b></div><div><span>5M / 15M OI</span><b>${sign(a.oi5)}% / ${sign(a.oi15)}%</b></div><div><span>15M 增量</span><b>${a.delta >= 0 ? '+' : '-'}${fmtWan(Math.abs(a.delta))}</b></div><div><span>止盈</span><b>${a.target}</b></div><div><span>止损</span><b>${a.stop}</b></div><div><span>建议次数</span><b>${counts[a.symbol]} 次</b></div></div></div>`;
+      }).join('');
+    };
+    const recordSignal = (sig) => {
+      if (location.search.includes('demo')) return;
+      const delta = Number(sig.r.oiNotional || 0) * Number(sig.oi15 || 0) / (100 + Number(sig.oi15 || 0));
+      signalLog.unshift({
+        ts: Date.now(), time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+        symbol: sig.r.symbol || sig.r.baseAsset, price: Number(sig.r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''),
+        chg: sig.chg, side: sig.side, win: sig.win, score: sig.score, oi: sig.r.oiNotional,
+        oi5: sig.oi5, oi15: sig.oi15, delta, target: sig.targetText, stop: sig.stopText
+      });
+      signalLog = signalLog.filter(a => Date.now() - a.ts < SIGNAL_TTL).slice(0, 500);
+      saveSignals(); renderSignalHistory();
+    };
+    const openSignalHistory = () => {
+      showTab('signals');
+      sr.querySelector('#nvDKind').textContent = '◉ SIGNAL FEED · 建仓信号';
+      sr.querySelector('#nvDTitle').textContent = 'SIGNAL HISTORY';
+      sr.querySelector('#nvDStage').textContent = `24 小时 · ${signalLog.length} 条 · 点击代币查看详情`;
+      renderSignalHistory();
+      drawer.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+      freshPanel(drawer, 'focus');
+    };
+    { const latest = signalLog[0]; if (latest) renderSignalFeed({ r: { symbol: latest.symbol, price: latest.price, oiNotional: latest.oi }, chg: latest.chg, side: latest.side, win: latest.win, oi5: latest.oi5, oi15: latest.oi15 }); }
+    renderSignalHistory();
     const calcSignal = (r) => {
       const chg = Number(r.change24h || 0);
       const oi5 = Number(r.oi5m || 0);
@@ -11218,6 +11312,8 @@ requestAnimationFrame(frame);
       document.querySelector('#nvSigBar').style.width = `${sig.win}%`;
       window.__MOSS_SIGNAL_ROW = row || null;
       window.__MOSS_SIGNAL_LANE = lane || 'gain';
+      recordSignal(sig);
+      renderSignalFeed(sig);
       ping('focus');
       setTimeout(() => { signalChime(); speakSignal(sig); }, 180);
     };
@@ -11530,8 +11626,12 @@ requestAnimationFrame(frame);
           : { symbol: 'ARIAUSDT', price: 0.12066, change24h: 25.3, oiNotional: 12990000, oi5m: 6.2, oi15m: 49.5, quoteVolume24h: 51100000, score: 97, stage: 'entry', pullback: 2.1 }), row, short ? 'loss' : 'gain');
       }, 1400);
     }
-    cards.forEach(card => card.addEventListener('click', () => {
-      window.__NOVA_SELECTED = card.dataset.nvCard;
+    const signalFeedMod = sr.querySelector('#nvSignalFeed');
+    signalFeedMod && signalFeedMod.addEventListener('click', openSignalHistory);
+    signalFeedMod && signalFeedMod.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSignalHistory(); }
+    });
+    cards.forEach(card => card.addEventListener('click', () => {      window.__NOVA_SELECTED = card.dataset.nvCard;
       const lane = card.dataset.nvCard === 'focus' ? 'focus' : 'imported';
       const mod = sr.querySelector(lane === 'focus' ? '.nv-mod.focus' : '.nv-mod.imported');
       const cardSymbol = (card.dataset.liveSymbol || card.querySelector('.nv-c-sym')?.textContent || '').trim().toUpperCase();
