@@ -11966,6 +11966,7 @@ requestAnimationFrame(frame);
   };
   let meta = null;
   let tickers = [];
+  let wanted = null;
   let timer = null;
   async function enrich(row, symbolInfo) {
     const s = row.symbol;
@@ -12036,11 +12037,15 @@ requestAnimationFrame(frame);
           .filter(x => x.contractType === 'PERPETUAL' && x.quoteAsset === 'USDT' && x.status === 'TRADING' && !x.symbol.includes('TRADIFI'))
           .map(x => [x.symbol, x]));
         tickers = await get('/fapi/v1/ticker/24hr');
+        try {
+          const w = await fetch('watchlist.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null);
+          if (w && Array.isArray(w.symbols) && w.symbols.length) wanted = new Set(w.symbols);
+        } catch (e) {}
       } else {
         tickers = await get('/fapi/v1/ticker/24hr');
       }
       const rows = tickers
-        .filter(t => meta.has(t.symbol) && num(t.quoteVolume) > 0)
+        .filter(t => meta.has(t.symbol) && num(t.quoteVolume) > 0 && (!wanted || wanted.has(t.symbol)))
         .map(t => {
           const info = meta.get(t.symbol);
           return {
@@ -12052,11 +12057,11 @@ requestAnimationFrame(frame);
             largeUsdt: 0, largeMultiple: 0, largeSide: ''
           };
         })
-        .sort((a, b) => b.quoteVolume24h - a.quoteVolume24h)
-        .slice(0, 24);
-      const focus = rows.slice(0, 6);
-      await Promise.all(focus.map(r => enrich(r, meta.get(r.symbol))));
-      await Promise.all(rows.slice(6, 12).map(r => enrich(r, null)));
+        .sort((a, b) => b.quoteVolume24h - a.quoteVolume24h);
+      const byChangeDesc = [...rows].sort((a, b) => b.change24h - a.change24h);
+      const byChangeAsc = [...rows].sort((a, b) => a.change24h - b.change24h);
+      const detailRows = [...new Set([...rows.slice(0, 24), ...byChangeDesc.slice(0, 3), ...byChangeAsc.slice(0, 3)])];
+      await Promise.all(detailRows.map(r => enrich(r, rows.indexOf(r) < 6 ? meta.get(r.symbol) : null)));
       rows.sort((a, b) => b.score - a.score);
       const payload = { updatedAt: timeNow(), source: 'BINANCE USDⓈ-M FUTURES · WEB', rows, fearGreed: null };
       window.__MOSS_LIVE = payload;
