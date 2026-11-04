@@ -11526,6 +11526,16 @@ requestAnimationFrame(frame);
         if (meta) meta.innerHTML = `<i class="nv-stage ${stageClass(r.stage)}">${r.stage === 'entry' ? '开仓信号' : r.stage === 'watch' ? '重点候选' : '观察'}</i><b>${Number(r.score || 0).toFixed(1)}</b> · ${live.updatedAt} 数据`;
         const score = card.querySelector('.nv-c-score'); if (score) score.textContent = Number(r.score || 0).toFixed(1);
         card.dataset.liveSymbol = r.symbol;
+        const changed = card.dataset.liveTime && card.dataset.liveTime !== live.updatedAt;
+        card.dataset.liveTime = live.updatedAt;
+        if (lane === 'focus' && window.__MOSS_CARD_READY && changed) {
+          meteorTo(card, 'focus', 900, () => {
+            card.classList.add('hot', 'flash');
+            setTimeout(() => card.classList.remove('hot'), 6000);
+            setTimeout(() => card.classList.remove('flash'), 650);
+          });
+        }
+        if (lane === 'focus') window.__MOSS_CARD_READY = true;
       };
       updCard('focus', gainRows[0]);
       updCard('imported', lossRows[0]);
