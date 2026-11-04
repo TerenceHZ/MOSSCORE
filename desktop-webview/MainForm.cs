@@ -262,7 +262,7 @@ internal sealed class MainForm : Form
                 || (Environment.ProcessPath ?? string.Empty).IndexOf("DEMO", StringComparison.OrdinalIgnoreCase) >= 0;
             var shortDemo = Environment.GetCommandLineArgs().Any(a => string.Equals(a, "--demo-short", StringComparison.OrdinalIgnoreCase))
                 || (Environment.ProcessPath ?? string.Empty).IndexOf("SHORT", StringComparison.OrdinalIgnoreCase) >= 0;
-            var uri = new Uri(page).AbsoluteUri + (demo ? (shortDemo ? "?v=20261102-alerts&demo=short#neural" : "?v=20261102-alerts&demo=1#neural") : "?v=20261102-alerts#neural");
+            var uri = new Uri(page).AbsoluteUri + (demo ? (shortDemo ? "?v=20261104-focus&demo=short#neural" : "?v=20261104-focus&demo=1#neural") : "?v=20261104-focus#neural");
             File.AppendAllText(log, $"[{DateTime.Now:O}] navigating {uri}\r\n");
             _web.CoreWebView2.Navigate(uri);
         }
