@@ -11621,9 +11621,11 @@ requestAnimationFrame(frame);
         }
         if (lane === 'focus') window.__MOSS_CARD_READY = true;
       };
-      updCard('focus', gainRows[0]);
+      const focusRows = rows.filter(r => r.focus);
+      const focusPick = focusRows[0] || gainRows[0];
+      updCard('focus', focusPick);
       updCard('imported', lossRows[0]);
-      const f = gainRows[0], im = lossRows[0];
+      const f = focusPick, im = lossRows[0];
       const alertPrev = window.__MOSS_ALERT_PREV || {};
       const maybeAlert = (r, announce = true) => {
         if (!r) return;
@@ -11967,8 +11969,9 @@ requestAnimationFrame(frame);
   let meta = null;
   let tickers = [];
   let wanted = null;
+  let focusSet = null;
   let timer = null;
-  async function enrich(row, symbolInfo) {
+  async function enrich(row, deep = true) {
     const s = row.symbol;
     try {
       const oi = await get('/fapi/v1/openInterest?symbol=' + s);
@@ -11992,6 +11995,7 @@ requestAnimationFrame(frame);
         if (prev > 0) { row.oi24h = (now - prev) / prev * 100; row.oi24hDelta = now - prev; }
       }
     } catch (e) {}
+    if (deep) {
     try {
       const k = await get('/fapi/v1/klines?symbol=' + s + '&interval=1m&limit=48');
       if (Array.isArray(k) && k.length >= 48) {
@@ -12024,10 +12028,10 @@ requestAnimationFrame(frame);
         }
       }
     } catch (e) {}
+    }
     row.score = Math.max(0, Math.min(100, 50 + row.change24h * .7 + (row.oi15m || 0) * .6 + (row.quoteVolume24h > 1e8 ? 8 : 4)));
     row.stage = row.score >= 72 ? 'entry' : row.score >= 55 ? 'watch' : 'low';
     row.stageLabel = row.stage === 'entry' ? '开仓信号' : row.stage === 'watch' ? '重点候选' : '观察';
-    row.focus = !!symbolInfo && row.symbol === symbolInfo.symbol;
   }
   async function load() {
     try {
@@ -12040,6 +12044,8 @@ requestAnimationFrame(frame);
         try {
           const w = await fetch('watchlist.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null);
           if (w && Array.isArray(w.symbols) && w.symbols.length) wanted = new Set(w.symbols);
+          const f = await fetch('focus.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null);
+          if (f && Array.isArray(f.focus) && f.focus.length) focusSet = new Set(f.focus);
         } catch (e) {}
       } else {
         tickers = await get('/fapi/v1/ticker/24hr');
@@ -12060,8 +12066,11 @@ requestAnimationFrame(frame);
         .sort((a, b) => b.quoteVolume24h - a.quoteVolume24h);
       const byChangeDesc = [...rows].sort((a, b) => b.change24h - a.change24h);
       const byChangeAsc = [...rows].sort((a, b) => a.change24h - b.change24h);
-      const detailRows = [...new Set([...rows.slice(0, 24), ...byChangeDesc.slice(0, 3), ...byChangeAsc.slice(0, 3)])];
-      await Promise.all(detailRows.map(r => enrich(r, rows.indexOf(r) < 6 ? meta.get(r.symbol) : null)));
+      rows.forEach(r => { r.focus = !!focusSet && focusSet.has(r.symbol); });
+      const focusRows = rows.filter(r => r.focus);
+      const deepRows = [...new Set([...rows.slice(0, 24), ...byChangeDesc.slice(0, 3), ...byChangeAsc.slice(0, 3)])];
+      const detailRows = [...new Set([...focusRows, ...deepRows])];
+      await Promise.all(detailRows.map(r => enrich(r, deepRows.includes(r))));
       rows.sort((a, b) => b.score - a.score);
       const payload = { updatedAt: timeNow(), source: 'BINANCE USDⓈ-M FUTURES · WEB', rows, fearGreed: null };
       window.__MOSS_LIVE = payload;

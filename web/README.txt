@@ -34,4 +34,5 @@ Windows：
 - 网页版依赖浏览器 WebGL、WebAudio 和语音合成；建议用 Chrome。
 - 服务只监听 127.0.0.1，不对外网开放。
 - watchlist.json 是导入的代币名单，当前包含 517 个有效 USDT 永续合约。
-- 网页版会读取 watchlist.json，只监控名单内的代币。
+- focus.json 是自选名单，当前包含 86 个自选代币。
+- 网页版会读取 watchlist.json 和 focus.json，只监控名单内的代币，并优先加载自选币的 OI。

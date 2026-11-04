@@ -643,7 +643,7 @@ internal sealed class MainForm : Form
             var selected = candidates
                 .OrderByDescending(x => watchlist.Focus.Contains(x.Symbol))
                 .ThenByDescending(x => x.Volume)
-                .Take(400)
+                .Take(520)
                 .ToList();
 
             var focusSymbols = watchlist.Focus.Count > 0
