@@ -1401,8 +1401,8 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div class="nv-d-sec"><h4>数据</h4><p id="nvDData">数据源：公开行情快照 · 最后更新 17:00:15 · 当前为延时快照。</p></div>
   </div>
   <div class="nv-pane" data-pane="history" hidden>
-   <div class="nv-d-sec"><h4>近 7 天触发</h4><div class="nv-history" id="nvDHistList"><div><span>今天 15:42 · 开仓信号</span><b>97.0</b></div><div><span>今天 11:08 · 重点候选</span><b>84.2</b></div><div><span>昨天 22:16 · 初筛观察</span><b>72.1</b></div><div><span>11-01 09:31 · 重新进入监控</span><b>68.4</b></div></div></div>
-   <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts"><div><span>触发次数</span><b>4</b></div><div><span>升级</span><b>2</b></div><div><span>降级</span><b>1</b></div><div><span>OI 快增</span><b>1</b></div></div></div>
+   <div class="nv-d-sec"><h4>近 24 小时监控</h4><div class="nv-history" id="nvDHistList"><div><span>暂无建仓信号记录</span><b>—</b></div></div></div>
+   <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts" id="nvDHistStats"><div><span>信号次数</span><b id="nvHistCount">0</b></div><div><span>多单</span><b id="nvHistLong">0</b></div><div><span>空单</span><b id="nvHistShort">0</b></div><div><span>最新胜率</span><b id="nvHistWin">—</b></div></div></div>
   </div>
   <div class="nv-pane" data-pane="alerts" hidden>
    <div class="nv-d-sec"><h4>POSITION ALERTS HISTORY</h4><div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIAUSDT</span><b>OI +49.5%</b></div></div><div class="nv-alert-pager"><button type="button" data-alert-page="prev">上一页</button><span id="nvAlertPage">1 / 1</span><button type="button" data-alert-page="next">下一页</button></div></div>
@@ -11524,8 +11524,17 @@ requestAnimationFrame(frame);
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
       if (!hl) return;
-      const rows = captureLog.length ? captureLog : [['今天 15:42 · 开仓信号','97.0'],['今天 11:08 · 重点候选','84.2'],['昨天 22:16 · 初筛观察','72.1']];
-      hl.innerHTML = rows.map(([a,b]) => `<div><span>${a}</span><b>${typeof b === 'string' ? b : '—'}</b></div>`).join('');
+      const symbol = window.__NOVA_HISTORY_SYMBOL || '';
+      const recs = signalLog.filter(a => a.symbol === symbol);
+      if (!recs.length) {
+        hl.innerHTML = `<div><span>${symbol ? '近 24 小时暂无建仓信号' : '暂无建仓信号记录'}</span><b>—</b></div>`;
+      } else {
+        hl.innerHTML = recs.map(a => `<div><span>${a.time} · ${a.side === 'long' ? '建多' : '建空'} ${Number(a.chg).toFixed(2)}%</span><b>${a.win}%</b></div>`).join('');
+      }
+      const count = sr.querySelector('#nvHistCount'); if (count) count.textContent = recs.length;
+      const longs = sr.querySelector('#nvHistLong'); if (longs) longs.textContent = recs.filter(a => a.side === 'long').length;
+      const shorts = sr.querySelector('#nvHistShort'); if (shorts) shorts.textContent = recs.filter(a => a.side === 'short').length;
+      const win = sr.querySelector('#nvHistWin'); if (win) win.textContent = recs.length ? `${recs[0].win}%` : '—';
     };
     const msRows = [...sr.querySelectorAll('.p-heat .nv-msrow')];
     let msTotal = 1.2;
@@ -11550,6 +11559,7 @@ requestAnimationFrame(frame);
       showTab('current');
       sr.querySelector('#nvDKind').textContent = d.kind;
       sr.querySelector('#nvDTitle').textContent = d.title;
+      window.__NOVA_HISTORY_SYMBOL = d.title;
       sr.querySelector('#nvDStage').textContent = d.stage;
       const why = sr.querySelector('#nvDWhy'); if (why) why.textContent = d.why;
       const facts = sr.querySelector('#nvDFacts'); if (facts) facts.innerHTML = d.facts.map(([a,b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
@@ -11587,6 +11597,8 @@ requestAnimationFrame(frame);
       const price = row.dataset.price ? `${row.dataset.price} USDT` : '—';
       sr.querySelector('#nvDKind').textContent = lane === 'focus' ? '▲ 24H 涨幅榜 · 当前详情' : '▼ 24H 弱势榜 · 当前详情';
       sr.querySelector('#nvDTitle').textContent = sym;
+      window.__NOVA_HISTORY_SYMBOL = sym;
+      renderCaptureLog();
       sr.querySelector('#nvDStage').textContent = `24H ${changeDisp}`;
       const chgEl = sr.querySelector('#nvDChange');
       chgEl.textContent = changeDisp; chgEl.className = 'nv-now-chg ' + (up ? 'up' : 'down'); chgEl.style.color = color;
