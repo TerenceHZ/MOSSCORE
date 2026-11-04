@@ -841,6 +841,7 @@ linear-gradient(var(--nv-edge),var(--nv-edge)) right bottom / 2px 18px no-repeat
 .nv-row::before{width:3px;opacity:.9}
 .nv-row.gain::before{background:#63C08E;box-shadow:0 0 12px rgba(99,192,142,.42)}
 .nv-row.loss::before{background:#C96358;box-shadow:0 0 12px rgba(201,99,88,.38)}
+.nv-row.weak::before{background:#8f8168;box-shadow:0 0 10px rgba(143,129,104,.3)}
 .nv-row::after{display:none}
 .nv-row-head{position:relative;z-index:1;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .nv-row .nv-sym{font:700 14px/1 var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1182,7 +1183,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
     </div>
    </section>
    <section class="nv-mod nv-fx imported losses">
-    <div class="nv-mod-h"><b>▼ 24H 跌幅榜</b><small><span id="nvLossCount">3</span> 条 · 实时排序</small></div>
+    <div class="nv-mod-h"><b>▼ 24H 弱势榜</b><small><span id="nvLossCount">3</span> 条 · 实时排序</small></div>
     <div class="nv-rows">
      <div class="nv-row loss" data-price="0.2384">
       <div class="nv-row-head"><span class="nv-sym"><i class="nv-tag">○</i>FLUIDUSDT</span><span class="nv-price">0.2384</span><span class="nv-change down">-9.8%</span></div>
@@ -11202,7 +11203,12 @@ requestAnimationFrame(frame);
       window.__MOSS_LIVE_ACTIVE = true;
       const rows = [...live.rows].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
       const gainRows = rows.filter(r => (r.change24h || 0) >= 0).slice(0, 3);
-      const lossRows = rows.filter(r => (r.change24h || 0) < 0).sort((a, b) => (a.change24h || 0) - (b.change24h || 0)).slice(0, 3);
+      const gainSet = new Set(gainRows.map(r => r.symbol));
+      const negativeRows = rows.filter(r => (r.change24h || 0) < 0).sort((a, b) => (a.change24h || 0) - (b.change24h || 0));
+      const negativeSet = new Set(negativeRows.map(r => r.symbol));
+      const weakFill = rows.filter(r => !gainSet.has(r.symbol) && !negativeSet.has(r.symbol))
+        .sort((a, b) => (a.change24h || 0) - (b.change24h || 0));
+      const lossRows = negativeRows.concat(weakFill).slice(0, 3);
       const stageClass = (s) => s === 'entry' ? 'entry' : s === 'watch' ? 'watch' : 'low';
       const fillRows = (mod, list, kind) => {
         if (!mod) return;
@@ -11214,7 +11220,8 @@ requestAnimationFrame(frame);
           const oldSymbol = (row.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, '');
           const sameSymbol = oldSymbol === (r.symbol || r.baseAsset);
           const wasFresh = row.classList.contains('fresh') && sameSymbol;
-          row.className = 'nv-row ' + kind + (wasFresh ? ' fresh' : '');
+          const rowKind = kind === 'loss' && (r.change24h || 0) >= 0 ? 'weak' : kind;
+          row.className = 'nv-row ' + rowKind + (wasFresh ? ' fresh' : '');
           row.dataset.symbol = r.symbol || r.baseAsset || '';
           row.dataset.price = r.price || '';
           row.dataset.chg = r.change24h || 0;
@@ -11399,7 +11406,7 @@ requestAnimationFrame(frame);
       const delta5Disp = `${delta5 >= 0 ? '+' : '-'}${fmtWan(Math.abs(delta5)).replace(' USD', ' USDT')}`;
       const changeDisp = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
       const price = row.dataset.price ? `${row.dataset.price} USDT` : '—';
-      sr.querySelector('#nvDKind').textContent = lane === 'focus' ? '▲ 24H 涨幅榜 · 当前详情' : '▼ 24H 跌幅榜 · 当前详情';
+      sr.querySelector('#nvDKind').textContent = lane === 'focus' ? '▲ 24H 涨幅榜 · 当前详情' : '▼ 24H 弱势榜 · 当前详情';
       sr.querySelector('#nvDTitle').textContent = sym;
       sr.querySelector('#nvDStage').textContent = `24H ${changeDisp}`;
       const chgEl = sr.querySelector('#nvDChange');
