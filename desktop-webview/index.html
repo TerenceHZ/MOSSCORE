@@ -11342,11 +11342,16 @@ requestAnimationFrame(frame);
       const best = candidates.sort((a, b) => b.sig.win - a.sig.win)[0];
       const key = best ? `${best.sig.r.symbol}-${best.sig.side}` : '';
       const signalEl = document.querySelector('#nvSignal');
-      if (best && !signalEl.classList.contains('open') && (!seen[key] || Date.now() - seen[key] > 30 * 60 * 1000)) {
+      const firstSignalPass = !window.__MOSS_SIGNAL_BASELINE;
+      const lastSeen = best ? (seen[key] || 0) : 0;
+      if (best) {
         seen[key] = Date.now();
         window.__MOSS_SIGNAL_SEEN = seen;
-        setTimeout(() => showSignal(best.sig, best.row, best.lane), 1100);
+        if (!firstSignalPass && !signalEl.classList.contains('open') && !lastSeen) {
+          setTimeout(() => showSignal(best.sig, best.row, best.lane), 1100);
+        }
       }
+      window.__MOSS_SIGNAL_BASELINE = true;
     };
     window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
