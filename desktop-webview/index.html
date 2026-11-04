@@ -1085,6 +1085,11 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 @keyframes nvsigpulse{0%,100%{border-color:rgba(232,160,32,.55);box-shadow:0 30px 100px rgba(0,0,0,.7),inset 0 0 60px rgba(232,160,32,.04)}50%{border-color:rgba(255,192,67,.9);box-shadow:0 30px 100px rgba(0,0,0,.7),inset 0 0 70px rgba(232,160,32,.08),0 0 30px rgba(232,160,32,.12)}}
 .nv-sig-h{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid rgba(232,160,32,.24);background:linear-gradient(90deg,rgba(232,160,32,.13),transparent 72%)}
 .nv-sig-h span{font:700 11px/1 var(--mono);letter-spacing:.18em;color:#ffc043}
+.nv-sig-clock{display:flex;align-items:baseline;gap:7px;margin-left:auto;margin-right:10px;padding:5px 9px;border:1px solid rgba(255,192,67,.55);background:rgba(232,160,32,.1);box-shadow:0 0 14px rgba(232,160,32,.12)}
+.nv-sig-clock small{font:600 7px/1 var(--mono);letter-spacing:.12em;color:#b9a887}
+.nv-sig-clock b{font:700 20px/1 var(--mono);color:#ffc043;font-variant-numeric:tabular-nums}
+.nv-sig-clock.urgent{border-color:rgba(201,99,88,.7);background:rgba(201,99,88,.12);animation:nvsigpulse .8s ease-in-out infinite}
+.nv-sig-clock.urgent b{color:#C96358}
 .nv-sig-x{background:none;border:1px solid rgba(232,160,32,.3);color:#b9a887;width:26px;height:26px;font:600 15px/1 var(--mono);cursor:pointer}
 .nv-sig-hero{display:flex;justify-content:space-between;align-items:flex-end;padding:18px 18px 8px}
 .nv-sig-hero b{display:block;font:700 30px/1 var(--mono);color:#f7ecd0}
@@ -1339,7 +1344,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 </div>
 <div class="nv-signal" id="nvSignal" aria-hidden="true">
  <div class="nv-signal-card">
-  <div class="nv-sig-h"><span>⚠ MOSS SIGNAL · 建仓警报</span><button class="nv-sig-x" type="button" data-signal-close>×</button></div>
+  <div class="nv-sig-h"><span>⚠ MOSS SIGNAL · 建仓警报</span><div class="nv-sig-clock"><small>AUTO CLOSE</small><b id="nvSigTimer">05:00</b></div><button class="nv-sig-x" type="button" data-signal-close>×</button></div>
   <div class="nv-sig-hero"><div><b id="nvSigSym">ARIAUSDT</b><span id="nvSigPrice">0.12066</span></div><em id="nvSigChg">+25.30%</em></div>
   <div class="nv-sig-side" id="nvSigSide">建议建多 · LONG</div>
   <div class="nv-sig-grid">
@@ -11170,11 +11175,29 @@ requestAnimationFrame(frame);
         window.speechSynthesis.speak(u);
       } catch (e) {}
     };
+    let signalTimerId = null;
     const showSignal = (sig, row, lane) => {
       const el = document.querySelector('#nvSignal');
       if (!el || !sig) return;
       el.className = 'nv-signal open ' + sig.side;
       el.setAttribute('aria-hidden', 'false');
+      clearInterval(signalTimerId);
+      const timerEl = document.querySelector('#nvSigTimer');
+      const clockEl = timerEl && timerEl.parentElement;
+      const deadline = Date.now() + 5 * 60 * 1000;
+      const renderTimer = () => {
+        const left = Math.max(0, deadline - Date.now());
+        const m = Math.floor(left / 60000);
+        const s = Math.floor((left % 60000) / 1000);
+        if (timerEl) timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        if (clockEl) clockEl.classList.toggle('urgent', left <= 60000);
+        if (left <= 0) {
+          clearInterval(signalTimerId);
+          hideSignal();
+        }
+      };
+      renderTimer();
+      signalTimerId = setInterval(renderTimer, 1000);
       const color = sig.side === 'long' ? '#63C08E' : '#C96358';
       document.querySelector('#nvSigSym').textContent = sig.r.symbol || sig.r.baseAsset || '—';
       document.querySelector('#nvSigPrice').textContent = `${Number(sig.r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USDT`;
@@ -11199,6 +11222,9 @@ requestAnimationFrame(frame);
       setTimeout(() => { signalChime(); speakSignal(sig); }, 180);
     };
     const hideSignal = () => {
+      clearInterval(signalTimerId);
+      const timerEl = document.querySelector('#nvSigTimer');
+      if (timerEl) { timerEl.textContent = '05:00'; timerEl.parentElement?.classList.remove('urgent'); }
       const el = document.querySelector('#nvSignal');
       if (!el) return;
       el.classList.remove('open');
