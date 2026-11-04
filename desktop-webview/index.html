@@ -795,12 +795,14 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .p-heat,.p-feed{border-width:.5px!important}
 .lt{display:none!important}
 .moss-pop{display:none!important}
-.nv-regime{position:absolute;left:50%;top:20px;transform:translateX(-50%);width:760px;z-index:12;text-align:center;pointer-events:none}
-.nv-regime .nv-k{font:600 8px/1 var(--mono);letter-spacing:.28em;color:#7a6c55}
-.nv-regime .nv-main{display:flex;align-items:baseline;justify-content:center;gap:12px;margin-top:7px;white-space:nowrap}
-.nv-regime .nv-badge{font:700 15px/1 var(--cjk);letter-spacing:.08em;color:#ffc043;border:1px solid rgba(232,160,32,.55);padding:4px 9px;background:rgba(232,160,32,.06)}
-.nv-regime .nv-score{font:800 26px/1 var(--mono);color:#ffc043;letter-spacing:-.04em}
-.nv-regime .nv-meta{font:500 9px/1.4 var(--mono);color:#8f826e;letter-spacing:.05em;margin-top:6px;white-space:nowrap}
+.nv-regime{position:absolute;left:414px;top:80px;width:108px;z-index:12;text-align:left;padding:10px 10px 9px;border:1px solid rgba(232,160,32,.28);background:linear-gradient(135deg,rgba(12,12,10,.94),rgba(5,6,8,.72));box-shadow:inset 0 0 24px rgba(232,160,32,.035),0 0 24px rgba(0,0,0,.35);backdrop-filter:blur(8px);pointer-events:none}
+.nv-regime::before{content:"";position:absolute;left:0;top:0;width:34px;height:1px;background:#e8a020;box-shadow:0 0 8px rgba(232,160,32,.6)}
+.nv-regime .nv-k{font:600 7.5px/1.45 var(--mono);letter-spacing:.18em;color:#7a6c55;white-space:normal}
+.nv-regime .nv-main{display:flex;align-items:baseline;justify-content:flex-start;flex-wrap:wrap;gap:5px 7px;margin-top:8px;white-space:normal}
+.nv-regime .nv-badge{font:700 11px/1 var(--cjk);letter-spacing:.06em;color:#ffc043;border:1px solid rgba(232,160,32,.42);background:rgba(232,160,32,.08);padding:3px 5px}
+.nv-regime .nv-score{font:800 23px/1 var(--mono);color:#ffc043;letter-spacing:-.04em}
+.nv-regime .nv-meta{display:flex;flex-direction:column;width:100%;gap:1px;margin-top:2px;font:500 8px/1.55 var(--mono);color:#8f826e;letter-spacing:.03em;white-space:normal}
+.nv-regime .nv-meta span{display:block;white-space:nowrap}
 .nv-regime .nv-meta b{color:#d8cdb8;font-weight:500}
 .nv-left{position:absolute;left:24px;top:236px;bottom:262px;width:384px;display:flex;flex-direction:column;gap:8px;z-index:8;min-height:0}
 .nv-mod{position:relative;display:flex;flex-direction:column;min-height:0;border:1px solid rgba(232,160,32,.22);background:linear-gradient(180deg,rgba(5,6,8,.72),rgba(3,4,6,.55));overflow:hidden;cursor:pointer;pointer-events:auto}
@@ -1219,7 +1221,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-sig-foot div{display:flex;gap:7px}
 .nv-sig-foot button{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a;font:600 10px/1 var(--cjk);padding:8px 12px;cursor:pointer}
 .nv-sig-foot button:first-child{background:rgba(232,160,32,.1);color:#ffc043}
-@media(max-width:1500px){.nv-regime{width:640px}.nv-left{width:340px}.nv-card,.nv-card.focus{width:340px}}
+@media(max-width:1500px){.nv-regime{left:372px;width:104px}.nv-left{width:340px}.nv-card,.nv-card.focus{width:340px}}
 </style>
 
 <canvas class="gl" id="gl" aria-label="神经星环：13 个智能体神经团，脉冲沿突触束在它们之间传递任务。拖动可转动视角，点击神经团可聚焦"></canvas>
@@ -1243,7 +1245,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 
   <div class="nv-regime">
    <div class="nv-k">MARKET REGIME · 大盘势头</div>
-   <div class="nv-main"><span class="nv-badge">弱势</span><span class="nv-score">49.3</span><span class="nv-meta">BTC 24h <b>+0.24%</b> · 流动性 <b>18.6/20</b> · 完整度 <b>90%</b> · 置信度 <b>高</b></span></div>
+   <div class="nv-main"><span class="nv-badge">弱势</span><span class="nv-score">49.3</span><div class="nv-meta"><span>BTC 24h <b>+0.24%</b></span><span>流动性 <b>18.6/20</b></span><span>完整度 <b>90%</b></span><span>置信度 <b>高</b></span></div></div>
   </div>
 
   <div class="tools pe">
