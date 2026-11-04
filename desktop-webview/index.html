@@ -11484,7 +11484,20 @@ requestAnimationFrame(frame);
     }
     cards.forEach(card => card.addEventListener('click', () => {
       window.__NOVA_SELECTED = card.dataset.nvCard;
-      open(card.dataset.nvCard);
+      const lane = card.dataset.nvCard === 'focus' ? 'focus' : 'imported';
+      const mod = sr.querySelector(lane === 'focus' ? '.nv-mod.focus' : '.nv-mod.imported');
+      const cardSymbol = (card.dataset.liveSymbol || card.querySelector('.nv-c-sym')?.textContent || '').trim().toUpperCase();
+      const row = mod ? [...mod.querySelectorAll('.nv-row')].find(r => {
+        const s = (r.dataset.symbol || r.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, '').trim().toUpperCase();
+        return s === cardSymbol || s.startsWith(cardSymbol) || cardSymbol.startsWith(s);
+      }) : null;
+      if (row) {
+        row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+        setTimeout(() => row.classList.remove('flash'), 650);
+        openRow(row, lane);
+      } else {
+        open(lane);
+      }
     }));
     sr.querySelectorAll('.nv-row').forEach(row => row.addEventListener('click', (e) => {
       e.stopPropagation();
