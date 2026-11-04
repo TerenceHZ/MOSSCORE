@@ -950,9 +950,17 @@ linear-gradient(var(--nv-c),var(--nv-c)) left bottom/13px 1px no-repeat,
 linear-gradient(var(--nv-c),var(--nv-c)) left bottom/1px 13px no-repeat,
 linear-gradient(var(--nv-c),var(--nv-c)) right bottom/13px 1px no-repeat,
 linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity:.34;filter:drop-shadow(0 0 5px var(--nv-c));animation:nvcorner 5.4s ease-in-out infinite}
-.nv-card.focus{--nv-c:#e8a020;width:384px;border-color:rgba(232,160,32,.7);background:linear-gradient(135deg,rgba(28,20,7,.86),rgba(5,5,4,.7));box-shadow:inset 0 0 24px rgba(232,160,32,.05)}
+.nv-card.focus{--nv-c:#e8a020;width:384px;border-color:rgba(232,160,32,.7);background:linear-gradient(135deg,rgba(28,20,7,.86),rgba(5,5,4,.7));box-shadow:inset 0 0 24px rgba(232,160,32,.05);padding:0;display:block}
 .nv-card .nv-c-h{display:flex;justify-content:space-between;font:600 7.5px/1 var(--mono);letter-spacing:.16em;color:#8a7b62}
-.nv-card.focus .nv-c-h{color:#e8a020}
+.nv-card.focus .nv-c-h{position:absolute!important;left:13px;top:10px;right:60px;z-index:3;font-size:8.5px;color:#e8a020}
+.nv-card.focus .nv-c-sym{position:absolute!important;left:13px;top:25px;right:100px;margin:0;font-size:24px;color:#ffc043;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nv-f-chg{position:absolute!important;right:14px;top:28px;z-index:2;font:700 17px/1 var(--mono);color:#63C08E;white-space:nowrap}
+.nv-f-price{position:absolute!important;left:13px;top:57px;z-index:2;font:600 15px/1 var(--mono);color:#f2f0e8;white-space:nowrap}
+.nv-f-vol{position:absolute!important;right:14px;top:59px;z-index:2;font:500 9.5px/1 var(--mono);color:#a99a7e;white-space:nowrap}
+.nv-f-oi15{position:absolute!important;left:13px;top:79px;z-index:2;font:600 10px/1 var(--mono);color:#d8cdb8;white-space:nowrap}
+.nv-f-oi{position:absolute!important;left:13px;bottom:32px;z-index:2;font:600 10.5px/1 var(--mono);color:#d8cdb8;white-space:nowrap}
+.nv-f-oi24{position:absolute!important;right:14px;bottom:32px;z-index:2;font:600 10.5px/1 var(--mono);color:#d8cdb8;white-space:nowrap}
+.nv-f-time{position:absolute!important;left:13px;bottom:9px;z-index:2;font:500 8.5px/1 var(--mono);color:#7b6d58;white-space:nowrap}
 .nv-card .nv-c-sym{font:700 22px/1 var(--mono);margin-top:8px;color:#f2f0e8;letter-spacing:.02em}
 .nv-card.focus .nv-c-sym{font-size:24px;color:#ffc043}
 .nv-card .nv-c-meta{display:flex;align-items:baseline;gap:7px;margin-top:6px;font:500 8px/1 var(--mono);color:#8a7b62}
@@ -1334,11 +1342,14 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    </button>
    <button class="nv-card focus" type="button" data-nv-card="focus">
     <span class="nv-c-h">★ FOCUS · 自选主监控</span>
-    <span class="nv-c-sym">BLESS/USDT</span>
-    <span class="nv-c-meta"><i class="nv-stage entry">开仓信号</i><b>97.0</b> · 15:42:31 抓取</span>
-    <span class="nv-c-score">97.0</span>
-    <span class="nv-c-arrow">↗</span>
-    <span class="nv-c-probe"><span>巡检 <i>6</i></span><span>读文档 <i>1,836</i></span><span>抓 BUG <i>3</i></span><span>审校打回 <i>38</i></span></span>
+    <span class="nv-c-sym" id="nvFocusSym">CLANKER/USDT</span>
+    <span class="nv-f-chg" id="nvFocusChg">+—%</span>
+    <span class="nv-f-price" id="nvFocusPrice">—</span>
+    <span class="nv-f-vol" id="nvFocusVol">24H量 —</span>
+    <span class="nv-f-oi15" id="nvFocusOi15">15M OI —</span>
+    <span class="nv-f-oi" id="nvFocusOi">当前 OI —</span>
+    <span class="nv-f-oi24" id="nvFocusOi24">24H OI —</span>
+    <span class="nv-f-time" id="nvFocusTime">抓取 —</span>
     <i class="nv-hotbg" aria-hidden="true"></i><i class="nv-flow" aria-hidden="true"></i><i class="nv-flash" aria-hidden="true"></i>
    </button>
   </div>
@@ -11521,10 +11532,24 @@ requestAnimationFrame(frame);
       const updCard = (lane, r) => {
         const card = sr.querySelector(`[data-nv-card="${lane}"]`);
         if (!card || !r) return;
-        const sym = card.querySelector('.nv-c-sym'); if (sym) sym.textContent = pairName(r.symbol || r.baseAsset);
-        const meta = card.querySelector('.nv-c-meta');
-        if (meta) meta.innerHTML = `<i class="nv-stage ${stageClass(r.stage)}">${r.stage === 'entry' ? '开仓信号' : r.stage === 'watch' ? '重点候选' : '观察'}</i><b>${Number(r.score || 0).toFixed(1)}</b> · ${live.updatedAt} 数据`;
-        const score = card.querySelector('.nv-c-score'); if (score) score.textContent = Number(r.score || 0).toFixed(1);
+        if (lane === 'focus') {
+          const set = (id, text) => { const el = sr.querySelector('#' + id); if (el) el.textContent = text; };
+          const chgColor = Number(r.change24h || 0) >= 0 ? '#63C08E' : '#C96358';
+          set('nvFocusSym', pairName(r.symbol || r.baseAsset));
+          set('nvFocusPrice', `${Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USDT`);
+          set('nvFocusChg', `${sign(r.change24h)}%`);
+          const chgEl = sr.querySelector('#nvFocusChg'); if (chgEl) chgEl.style.color = chgColor;
+          set('nvFocusVol', `24H量 ${fmtQv(r.quoteVolume24h)}`);
+          const oi15 = Number(r.oi15m || 0);
+          const d15 = Math.abs(Number(r.oiNotional || 0) * oi15 / (100 + oi15));
+          set('nvFocusOi15', `15M OI ${oi15 >= 0 ? '+' : '-'}${fmtWan(d15)} (${sign(oi15)}%)`);
+          const oi15El = sr.querySelector('#nvFocusOi15'); if (oi15El) oi15El.style.color = oi15 >= 0 ? '#63C08E' : '#C96358';
+          set('nvFocusOi', `当前 OI ${fmtWan(r.oiNotional)}`);
+          const oi24 = Number(r.oi24h || 0), d24 = Number(r.oi24hDelta || 0);
+          set('nvFocusOi24', `24H OI ${d24 >= 0 ? '+' : '-'}${fmtWan(Math.abs(d24))} (${sign(oi24)}%)`);
+          const oi24El = sr.querySelector('#nvFocusOi24'); if (oi24El) oi24El.style.color = d24 >= 0 ? '#63C08E' : '#C96358';
+          set('nvFocusTime', `抓取 ${live.updatedAt}`);
+        }
         card.dataset.liveSymbol = r.symbol;
         const changed = card.dataset.liveTime && card.dataset.liveTime !== live.updatedAt;
         card.dataset.liveTime = live.updatedAt;

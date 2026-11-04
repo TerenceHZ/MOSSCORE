@@ -65,6 +65,8 @@ internal sealed class MainForm : Form
         public double OiNotional { get; set; }
         public double Oi5m { get; set; }
         public double Oi15m { get; set; }
+        public double Oi24h { get; set; }
+        public double Oi24hDelta { get; set; }
         public double Pullback { get; set; }
         public double Score { get; set; }
         public double VolRatio3m { get; set; }
@@ -387,6 +389,26 @@ internal sealed class MainForm : Form
         if (double.IsNaN(oi5) || double.IsInfinity(oi5)) oi5 = 0;
         if (double.IsNaN(oi15) || double.IsInfinity(oi15)) oi15 = 0;
 
+        double oi24h = 0, oi24hDelta = 0;
+        try
+        {
+            using var d24 = await GetJsonAsync(
+                $"https://fapi.binance.com/futures/data/openInterestHist?symbol={symbol}&period=1h&limit=25");
+            var arr24 = d24.RootElement;
+            if (arr24.ValueKind == JsonValueKind.Array && arr24.GetArrayLength() >= 2)
+            {
+                var len24 = arr24.GetArrayLength();
+                var now24 = DStr(arr24[len24 - 1], "sumOpenInterestValue");
+                var prev24 = DStr(arr24[0], "sumOpenInterestValue");
+                if (prev24 > 0)
+                {
+                    oi24h = (now24 - prev24) / prev24 * 100;
+                    oi24hDelta = now24 - prev24;
+                }
+            }
+        }
+        catch { }
+
         double volRatio3m = 0, change3m = 0, largeUsdt = 0, largeMultiple = 0, change30s = 0;
         var largeSide = "";
         try
@@ -463,6 +485,8 @@ internal sealed class MainForm : Form
             OiNotional = oiNotional,
             Oi5m = oi5,
             Oi15m = oi15,
+            Oi24h = oi24h,
+            Oi24hDelta = oi24hDelta,
             Pullback = 0,
             Score = score,
             VolRatio3m = volRatio3m,
