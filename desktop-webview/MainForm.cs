@@ -49,6 +49,7 @@ internal sealed class MainForm : Form
     private readonly HttpClient _liveHttp = new() { Timeout = TimeSpan.FromSeconds(90) };
     private System.Windows.Forms.Timer? _liveTimer;
     private bool _liveBusy;
+    private DateTime _binanceCooldownUntil = DateTime.MinValue;
     private HashSet<string>? _binanceSymbols;
     private int _savedW;
     private int _savedH;
@@ -601,6 +602,7 @@ internal sealed class MainForm : Form
 
     private async Task PullLiveAsync()
     {
+        if (DateTime.Now < _binanceCooldownUntil) return;
         if (_liveBusy) return;
         _liveBusy = true;
         try
@@ -655,7 +657,7 @@ internal sealed class MainForm : Form
                 .Select(s => candidates.FirstOrDefault(x => x.Symbol == s))
                 .Where(x => x.Symbol != null)
                 .OrderByDescending(x => x.Volume)
-                .Take(18)
+                .Take(12)
                 .Select(x => x.Symbol);
             var oiSymbols = new HashSet<string>(detailFocus, StringComparer.OrdinalIgnoreCase);
             foreach (var m in movers) oiSymbols.Add(m.Symbol);
@@ -723,6 +725,8 @@ internal sealed class MainForm : Form
         }
         catch (Exception ex)
         {
+            if (ex.Message.Contains("418") || ex.Message.Contains("429"))
+                _binanceCooldownUntil = DateTime.Now.AddMinutes(15);
             try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"), $"[{DateTime.Now:O}] binance: {ex.Message}\r\n"); } catch { }
         }
         finally
