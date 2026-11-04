@@ -651,7 +651,13 @@ internal sealed class MainForm : Form
                 : new HashSet<string>(candidates.OrderByDescending(x => x.Volume).Take(8).Select(x => x.Symbol), StringComparer.OrdinalIgnoreCase);
             var movers = candidates.OrderByDescending(x => x.Change).Take(3)
                 .Concat(candidates.OrderBy(x => x.Change).Take(3));
-            var oiSymbols = new HashSet<string>(focusSymbols, StringComparer.OrdinalIgnoreCase);
+            var detailFocus = focusSymbols
+                .Select(s => candidates.FirstOrDefault(x => x.Symbol == s))
+                .Where(x => x.Symbol != null)
+                .OrderByDescending(x => x.Volume)
+                .Take(18)
+                .Select(x => x.Symbol);
+            var oiSymbols = new HashSet<string>(detailFocus, StringComparer.OrdinalIgnoreCase);
             foreach (var m in movers) oiSymbols.Add(m.Symbol);
             var selectedSymbols = new HashSet<string>(selected.Select(x => x.Symbol), StringComparer.OrdinalIgnoreCase);
             oiSymbols.IntersectWith(selectedSymbols);
