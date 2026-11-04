@@ -1069,6 +1069,8 @@ background-size:180% 180%,220% 220%}
 .nv-fresh>.nv-winflash{animation:nvwinflash .66s ease-out}
 @keyframes nvwinflash{0%{opacity:0}12%{opacity:.45}35%{opacity:.12}100%{opacity:0}}
 .nv-fresh::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;z-index:6;background:linear-gradient(90deg,transparent,var(--nv-fc),transparent);transform-origin:left;animation:nvline 900s linear forwards;opacity:.8}
+.nv-meteor-glow{animation:nvMeteorGlow 3.8s ease-in-out infinite}
+@keyframes nvMeteorGlow{0%,100%{box-shadow:inset 0 0 22px rgba(232,160,32,.05),0 0 12px rgba(232,160,32,.12)}50%{box-shadow:inset 0 0 44px rgba(232,160,32,.13),0 0 26px rgba(232,160,32,.38)}}
 .nv-trace-tools{display:flex;align-items:center;gap:5px}
 .nv-trace-tools b{font:500 8px/1 var(--mono);color:#6b7685;font-weight:500;margin-right:2px}
 .nv-trace-tools button{background:transparent;border:1px solid rgba(232,160,32,.18);color:#8a7b62;font:600 7px/1 var(--mono);padding:2px 4px;cursor:pointer}
@@ -11060,6 +11062,11 @@ requestAnimationFrame(frame);
     };
     const meteorTo = (el, tone, duration, done) => {
       if (!el || !nr) return;
+      const markMeteorGlow = () => {
+        el.classList.add('nv-meteor-glow');
+        clearTimeout(el._nvMeteorGlow);
+        el._nvMeteorGlow = setTimeout(() => el.classList.remove('nv-meteor-glow'), 900000);
+      };
       const b = board.getBoundingClientRect();
       const from = center(eye, { x: b.left + b.width / 2, y: b.top + b.height / 2 });
       const to = center(el, from);
@@ -11068,6 +11075,7 @@ requestAnimationFrame(frame);
       const arrive = () => {
         if (landed) return; landed = true;
         shot.remove();
+        markMeteorGlow();
         if (done) done();
       };
       const anim = shot.animate([
