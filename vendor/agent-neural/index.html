@@ -11137,13 +11137,16 @@ requestAnimationFrame(frame);
     const saveAlerts = () => { try { localStorage.setItem(ALERT_KEY, JSON.stringify(alertLog.slice(0, 500))); } catch (e) {} };
     const alertItemHtml = (a) => {
       const color = Number(a.chg || 0) >= 0 ? '#63C08E' : '#C96358';
+      const oiColor = Number(a.pct || 0) >= 0 ? '#63C08E' : '#C96358';
+      const volColor = Number(a.change3m || 0) >= 0 ? '#63C08E' : '#C96358';
+      const s30Color = Number(a.change30s || 0) >= 0 ? '#63C08E' : '#C96358';
       const kind = a.type || 'oi';
       const head = `<div class="nv-alert-top"><b>${pairName(a.symbol)}</b><span>${Math.abs(a.pct || 0) >= 10 ? '🔥🔥🔥' : '🔥'}</span></div>`;
       if (kind === 'volume') {
         return `<div class="nv-alertitem" data-key="${a.ts}-${a.symbol}">${head}
-<div class="nv-alert-tag" style="color:${color}">3分钟放量 ${Number(a.volRatio || 0).toFixed(1)}×</div>
+<div class="nv-alert-tag" style="color:${volColor}">3分钟放量 ${Number(a.volRatio || 0).toFixed(1)}×</div>
 <div class="nv-alert-price">${a.price}</div>
-<div class="nv-alert-line">3分钟放量超过10倍，${Number(a.change3m) >= 0 ? '上涨' : '下跌'} <em style="color:${color}">${Math.abs(Number(a.change3m || 0)).toFixed(1)}%</em></div>
+<div class="nv-alert-line">3分钟放量超过10倍，${Number(a.change3m) >= 0 ? '上涨' : '下跌'} <em style="color:${volColor}">${Math.abs(Number(a.change3m || 0)).toFixed(1)}%</em></div>
 <div class="nv-alert-time">${a.time}</div></div>`;
       }
       if (kind === 'large') {
@@ -11152,13 +11155,13 @@ requestAnimationFrame(frame);
 <div class="nv-alert-tag" style="color:${buy ? '#63C08E' : '#C96358'}">特大主动${buy ? '买' : '卖'}</div>
 <div class="nv-alert-price">${a.price}</div>
 <div class="nv-alert-line">单笔${buy ? '买入' : '卖出'}量 <b>${fmtWan(a.largeUsdt)}</b>，超出平均 <b>${Number(a.largeMultiple || 0).toFixed(0)} 倍</b></div>
-<div class="nv-alert-line">半分钟价格变动 <em style="color:${color}">${Number(a.change30s) >= 0 ? '+' : ''}${Number(a.change30s || 0).toFixed(2)}%</em></div>
+<div class="nv-alert-line">半分钟价格变动 <em style="color:${s30Color}">${Number(a.change30s) >= 0 ? '+' : ''}${Number(a.change30s || 0).toFixed(2)}%</em></div>
 <div class="nv-alert-time">${a.time}</div></div>`;
       }
       return `<div class="nv-alertitem" data-key="${a.ts}-${a.symbol}">${head}
-<div class="nv-alert-tag" style="color:${color}">合约持仓 ${a.dir}</div>
+<div class="nv-alert-tag" style="color:${oiColor}">合约持仓 ${a.dir}</div>
 <div class="nv-alert-price">${a.price}</div>
-<div class="nv-alert-line">15分钟持仓量${a.pct >= 0 ? '增加' : '减少'} <b>${fmtWan(a.delta)}</b> <em style="color:${color}">(${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%)</em></div>
+<div class="nv-alert-line">15分钟持仓量${a.pct >= 0 ? '增加' : '减少'} <b>${fmtWan(a.delta)}</b> <em style="color:${oiColor}">(${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%)</em></div>
 <div class="nv-alert-line">当前持仓量 <b>${fmtWan(a.oi)}</b></div>
 <div class="nv-alert-time">${a.time}</div></div>`;
     };
@@ -11198,18 +11201,21 @@ requestAnimationFrame(frame);
         const up = Number(a.chg || 0) >= 0;
         const cls = up ? 'up' : 'down';
         const color = up ? '#63C08E' : '#C96358';
+        const oiColor = Number(a.pct || 0) >= 0 ? '#63C08E' : '#C96358';
+        const volColor = Number(a.change3m || 0) >= 0 ? '#63C08E' : '#C96358';
+        const s30Color = Number(a.change30s || 0) >= 0 ? '#63C08E' : '#C96358';
         const pair = pairName(a.symbol);
         if ((a.type || 'oi') === 'volume') {
-          return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-row nv-ar-top"><b class="nv-ar-pair">${pair}</b><span class="nv-ar-price">价格：${a.price}</span><em class="nv-ar-chg ${cls}" style="color:${color}">${up ? '涨幅' : '跌幅'} ${sign(a.chg)}%</em></div><div class="nv-ar-row nv-ar-bottom"><span>3分钟放量 ${Number(a.volRatio || 0).toFixed(1)}×</span><span>3分钟${Number(a.change3m) >= 0 ? '上涨' : '下跌'} ${Math.abs(Number(a.change3m || 0)).toFixed(1)}%</span><em class="nv-ar-oi ${cls}" style="color:${color}">VOLUME SPIKE</em></div></div>`;
+          return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-row nv-ar-top"><b class="nv-ar-pair">${pair}</b><span class="nv-ar-price">价格：${a.price}</span><em class="nv-ar-chg ${cls}" style="color:${color}">${up ? '涨幅' : '跌幅'} ${sign(a.chg)}%</em></div><div class="nv-ar-row nv-ar-bottom"><span>3分钟放量 ${Number(a.volRatio || 0).toFixed(1)}×</span><span>3分钟${Number(a.change3m) >= 0 ? '上涨' : '下跌'} ${Math.abs(Number(a.change3m || 0)).toFixed(1)}%</span><em class="nv-ar-oi ${cls}" style="color:${volColor}">VOLUME SPIKE</em></div></div>`;
         }
         if ((a.type || 'oi') === 'large') {
           const buy = a.largeSide === 'buy';
-          return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-row nv-ar-top"><b class="nv-ar-pair">${pair}</b><span class="nv-ar-price">价格：${a.price}</span><em class="nv-ar-chg ${buy ? 'up' : 'down'}" style="color:${buy ? '#63C08E' : '#C96358'}">特大主动${buy ? '买' : '卖'}</em></div><div class="nv-ar-row nv-ar-bottom"><span>单笔${buy ? '买入' : '卖出'}量：${fmtWan(a.largeUsdt)}</span><span>超出平均 ${Number(a.largeMultiple || 0).toFixed(0)} 倍</span><em class="nv-ar-oi ${cls}" style="color:${color}">30S ${Number(a.change30s) >= 0 ? '+' : ''}${Number(a.change30s || 0).toFixed(2)}%</em></div></div>`;
+          return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-row nv-ar-top"><b class="nv-ar-pair">${pair}</b><span class="nv-ar-price">价格：${a.price}</span><em class="nv-ar-chg ${buy ? 'up' : 'down'}" style="color:${buy ? '#63C08E' : '#C96358'}">特大主动${buy ? '买' : '卖'}</em></div><div class="nv-ar-row nv-ar-bottom"><span>单笔${buy ? '买入' : '卖出'}量：${fmtWan(a.largeUsdt)}</span><span>超出平均 ${Number(a.largeMultiple || 0).toFixed(0)} 倍</span><em class="nv-ar-oi" style="color:${s30Color}">30S ${Number(a.change30s) >= 0 ? '+' : ''}${Number(a.change30s || 0).toFixed(2)}%</em></div></div>`;
         }
         const oi = fmtWan(a.oi);
         const inc = `${a.pct >= 0 ? '+' : '-'}${fmtWan(Math.abs(Number(a.delta || 0)))}`;
         const oiPct = `${a.dir} / ${a.pct >= 0 ? '+' : ''}${Number(a.pct).toFixed(1)}%`;
-        return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-row nv-ar-top"><b class="nv-ar-pair">${pair}</b><span class="nv-ar-price">价格：${a.price}</span><em class="nv-ar-chg ${cls}" style="color:${color}">${up ? '涨幅' : '跌幅'} ${sign(a.chg)}%</em></div><div class="nv-ar-row nv-ar-bottom"><span>当前持仓：${oi}</span><span>15分钟增量：${inc}</span><em class="nv-ar-oi ${cls}" style="color:${color}">${oiPct}</em></div></div>`;
+        return `<div class="nv-alert-record"><div class="nv-ar-time">${a.time}</div><div class="nv-ar-row nv-ar-top"><b class="nv-ar-pair">${pair}</b><span class="nv-ar-price">价格：${a.price}</span><em class="nv-ar-chg ${cls}" style="color:${color}">${up ? '涨幅' : '跌幅'} ${sign(a.chg)}%</em></div><div class="nv-ar-row nv-ar-bottom"><span>当前持仓：${oi}</span><span>15分钟增量：${inc}</span><em class="nv-ar-oi" style="color:${oiColor}">${oiPct}</em></div></div>`;
       }).join('');
       const label = sr.querySelector('#nvAlertPage');
       if (label) label.textContent = `${alertHistoryPage + 1} / ${pages}`;
