@@ -572,14 +572,11 @@ internal sealed class MainForm : Form
                 };
             }).ToList();
 
-            var smartRow = rows.FirstOrDefault(r => r.Focus) ?? rows.FirstOrDefault();
-            var smart = await FetchSmartAsync(smartRow?.Symbol, smartRow?.Price ?? 0);
             var payload = new
             {
                 updatedAt = DateTime.Now.ToString("HH:mm:ss"),
                 source = "BINANCE USDⓈ-M FUTURES",
-                rows,
-                smart
+                rows
             };
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             try
