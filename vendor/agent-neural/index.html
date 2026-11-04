@@ -967,6 +967,16 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card-signal .nv-sigcard-bar{position:absolute!important;left:13px;right:78px;bottom:25px;height:3px;background:rgba(255,255,255,.08);z-index:2;overflow:hidden}
 .nv-card-signal .nv-sigcard-bar i{display:block;height:100%;background:linear-gradient(90deg,rgba(99,192,142,.3),#63C08E)}
 .nv-card-signal.short .nv-sigcard-bar i{background:linear-gradient(90deg,rgba(201,99,88,.3),#C96358)}
+.nv-card-signal .nv-hotbg{opacity:1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.38),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.28) 38%,transparent 62%,rgba(255,255,255,.08) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite}
+.nv-card-signal.short .nv-hotbg{background:radial-gradient(70% 120% at 16% 0%,rgba(201,99,88,.42),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(201,99,88,.3) 38%,transparent 62%,rgba(255,255,255,.06) 80%,transparent 96%);background-size:180% 180%,220% 220%}
+.nv-card-signal .nv-flow{opacity:1}
+.nv-card-signal .nv-flow::before{background:conic-gradient(from 0deg,transparent 0 24%,rgba(99,192,142,.15) 32%,#63C08E 37%,#fff 39%,rgba(99,192,142,.06) 43%,transparent 54%,transparent 70%,rgba(99,192,142,.55) 77%,transparent 83%);animation:nvborderflow 4s linear infinite}
+.nv-card-signal.short .nv-flow::before{background:conic-gradient(from 0deg,transparent 0 24%,rgba(201,99,88,.18) 32%,#C96358 37%,#ffd7d2 39%,rgba(201,99,88,.06) 43%,transparent 54%,transparent 70%,rgba(201,99,88,.55) 77%,transparent 83%)}
+.nv-sigcard-progress{position:absolute;left:0;right:0;top:0;height:2px;z-index:3;pointer-events:none;background:rgba(99,192,142,.12);overflow:hidden}
+.nv-sigcard-progress::after{content:"";position:absolute;top:0;left:-40%;width:35%;height:100%;background:linear-gradient(90deg,transparent,#63C08E,#fff,#63C08E,transparent);animation:nvprogress 2.6s linear infinite}
+.nv-card-signal.short .nv-sigcard-progress{background:rgba(201,99,88,.13)}
+.nv-card-signal.short .nv-sigcard-progress::after{background:linear-gradient(90deg,transparent,#C96358,#ffd7d2,#C96358,transparent)}
+@keyframes nvprogress{to{left:110%}}
 .nv-card-signal .nv-c-probe{grid-template-columns:repeat(3,1fr);font-size:7.5px}
 .nv-card-signal .nv-c-probe i{color:#d8cdb8}
 .nv-card:hover{border-color:rgba(232,160,32,.85)}
@@ -1297,6 +1307,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
     <span class="nv-sigcard-bar" id="nvCardSigBar"><i></i></span>
     <span class="nv-c-arrow">›</span>
     <span class="nv-c-probe" id="nvCardSigProbe"><span>点击查看信号历史</span></span>
+    <i class="nv-sigcard-progress" aria-hidden="true"></i>
     <i class="nv-hotbg" aria-hidden="true"></i><i class="nv-flow" aria-hidden="true"></i><i class="nv-flash" aria-hidden="true"></i>
    </button>
    <button class="nv-card focus" type="button" data-nv-card="focus">
