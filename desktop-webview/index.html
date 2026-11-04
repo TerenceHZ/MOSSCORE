@@ -1113,6 +1113,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-tabs{display:flex;gap:2px;padding:10px 22px 0;border-bottom:1px solid rgba(232,160,32,.14)}
 .nv-tabs button{background:transparent;border:1px solid transparent;border-bottom:0;color:#8a7b62;font:600 11.5px/1 var(--cjk);letter-spacing:.08em;padding:10px 13px;cursor:pointer}
 .nv-tabs button.on{color:#ffc043;border-color:rgba(232,160,32,.28);background:rgba(232,160,32,.06)}
+.nv-drawer.signal-only .nv-tabs button:not([data-nv-tab="signals"]){display:none}
 .nv-pane[hidden]{display:none}
 .nv-drawer .nv-d-sec{margin-bottom:18px}
 .nv-drawer .nv-d-sec h4{font:600 12px/1 var(--mono);letter-spacing:.16em;color:#9a8a70;margin:0 0 9px}
@@ -11232,6 +11233,7 @@ requestAnimationFrame(frame);
     };
     const openSignalHistory = () => {
       showTab('signals');
+      drawer.classList.add('signal-only');
       sr.querySelector('#nvDKind').textContent = '◉ SIGNAL FEED · 建仓信号';
       sr.querySelector('#nvDTitle').textContent = 'SIGNAL HISTORY';
       sr.querySelector('#nvDStage').textContent = `24 小时 · ${signalLog.length} 条 · 点击代币查看详情`;
@@ -11537,6 +11539,7 @@ requestAnimationFrame(frame);
     setTimeout(() => { if (!window.__MOSS_LIVE_ACTIVE) fire('focus'); }, 30000);
     setInterval(() => { if (!window.__MOSS_LIVE_ACTIVE) { auto = 1 - auto; fire(auto ? 'imported' : 'focus'); } }, 180000);
     const open = (key) => {
+      drawer.classList.remove('signal-only');
       const d = data[key] || data.focus;
       showTab('current');
       sr.querySelector('#nvDKind').textContent = d.kind;
@@ -11552,6 +11555,7 @@ requestAnimationFrame(frame);
       freshPanel(drawer, 'focus');
     };
     const openRow = (row, lane) => {
+      drawer.classList.remove('signal-only');
       open(lane);
       const sym = (row.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, '');
       const changeText = row.querySelector('.nv-change')?.textContent || '0%';
@@ -11625,6 +11629,7 @@ requestAnimationFrame(frame);
       showTab('current');
     };
     const openAlerts = () => {
+      drawer.classList.remove('signal-only');
       alertHistoryPage = 0;
       showTab('alerts');
       sr.querySelector('#nvDKind').textContent = 'POSITION ALERTS · 持仓异动';
@@ -11635,7 +11640,7 @@ requestAnimationFrame(frame);
       drawer.setAttribute('aria-hidden', 'false');
       freshPanel(drawer, 'focus');
     };
-    const shut = () => { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); };
+    const shut = () => { drawer.classList.remove('open'); drawer.classList.remove('signal-only'); drawer.setAttribute('aria-hidden', 'true'); };
     const signalEl = document.querySelector('#nvSignal');
     document.querySelectorAll('[data-signal-close]').forEach(btn => btn.addEventListener('click', hideSignal));
     const signalDetail = document.querySelector('[data-signal-detail]');
