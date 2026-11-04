@@ -11345,9 +11345,12 @@ requestAnimationFrame(frame);
       const firstSignalPass = !window.__MOSS_SIGNAL_BASELINE;
       const lastSeen = best ? (seen[key] || 0) : 0;
       if (best) {
+        const repeatMs = 15 * 60 * 1000;
+        const shouldRepeat = !firstSignalPass && !signalEl.classList.contains('open')
+          && (!lastSeen || Date.now() - lastSeen >= repeatMs);
         seen[key] = Date.now();
         window.__MOSS_SIGNAL_SEEN = seen;
-        if (!firstSignalPass && !signalEl.classList.contains('open') && !lastSeen) {
+        if (shouldRepeat) {
           setTimeout(() => showSignal(best.sig, best.row, best.lane), 1100);
         }
       }
