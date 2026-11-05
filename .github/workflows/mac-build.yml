@@ -1,0 +1,42 @@
+name: Build macOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Configure data source
+        env:
+          MOSS_DATA_SOURCE: ${{ secrets.MOSS_DATA_SOURCE }}
+        run: |
+          if [ -z "$MOSS_DATA_SOURCE" ]; then
+            echo "Missing repository secret MOSS_DATA_SOURCE"
+            exit 1
+          fi
+          printf '%s' "$MOSS_DATA_SOURCE" > mac-electron/data-source.json
+      - name: Install dependencies
+        working-directory: mac-electron
+        run: npm install --no-audit --no-fund
+      - name: Package arm64
+        working-directory: mac-electron
+        run: npm run pack:arm64
+      - name: Package x64
+        working-directory: mac-electron
+        run: npm run pack:x64
+      - name: Archive apps
+        run: |
+          cd mac-electron/dist
+          ditto -c -k --sequesterRsrc --keepParent "MOSS CORE-darwin-arm64/MOSS CORE.app" "MOSS-CORE-mac-arm64.zip"
+          ditto -c -k --sequesterRsrc --keepParent "MOSS CORE-darwin-x64/MOSS CORE.app" "MOSS-CORE-mac-x64.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MOSS-CORE-macOS
+          path: |
+            mac-electron/dist/MOSS-CORE-mac-arm64.zip
+            mac-electron/dist/MOSS-CORE-mac-x64.zip
