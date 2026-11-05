@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #050504; color: #f2f0e8; }
+  body {
+    width: 1200px; height: 760px; padding: 34px 40px;
+    font-family: "Microsoft YaHei", "Noto Sans SC", Arial, sans-serif;
+    background:
+      radial-gradient(700px 420px at 18% 18%, rgba(232,160,32,.08), transparent 68%),
+      radial-gradient(600px 400px at 82% 80%, rgba(232,160,32,.05), transparent 70%),
+      #050504;
+    overflow: hidden;
+  }
+  .top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+  .eyebrow { font: 600 9px/1 Arial; letter-spacing: .24em; color: #8a7b62; }
+  h1 { font: 700 22px/1.2 "Microsoft YaHei", Arial; letter-spacing: .06em; margin: 7px 0 0; color: #f2f0e8; }
+  h1 span { color: #e8a020; }
+  .note { font: 400 10px/1.7 "Microsoft YaHei"; color: #7d725f; text-align: right; }
+  .stage { display: grid; grid-template-columns: 384px 1fr; gap: 44px; align-items: start; }
+
+  .panel {
+    width: 384px; border: 1px solid rgba(232,160,32,.5);
+    background: linear-gradient(180deg, rgba(8,7,4,.94), rgba(3,3,2,.9));
+    box-shadow: 0 0 40px rgba(232,160,32,.06), inset 0 0 40px rgba(232,160,32,.02);
+  }
+  .panel-h {
+    height: 36px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 11px; border-bottom: 1px solid rgba(232,160,32,.22);
+    background: linear-gradient(90deg, rgba(232,160,32,.12), transparent 72%);
+  }
+  .panel-h b { font: 700 10px/1 Arial; letter-spacing: .14em; color: #e8a020; }
+  .panel-h small { font: 500 8px/1 "Microsoft YaHei"; color: #756a58; }
+  .rows { padding: 5px; display: grid; gap: 4px; }
+
+  .row {
+    position: relative; min-height: 126px; padding: 10px 10px 9px 14px;
+    border: 1px solid rgba(232,160,32,.24);
+    background: linear-gradient(115deg, rgba(12,10,5,.82), rgba(4,4,3,.78));
+    overflow: hidden;
+  }
+  .row::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: #e8a020; box-shadow: 0 0 12px rgba(232,160,32,.6); opacity: .8;
+  }
+  .row.fresh {
+    border-color: rgba(255,192,67,.7);
+    background:
+      linear-gradient(115deg, rgba(232,160,32,.3), rgba(232,160,32,.04) 35%, rgba(255,192,67,.16) 58%, rgba(232,160,32,.03) 78%, rgba(232,160,32,.2));
+    background-size: 220% 220%;
+  }
+  .row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .sym { font: 700 16px/1 Arial; color: #f7ecd0; letter-spacing: .02em; }
+  .sym i { font: 500 10px/1 "Microsoft YaHei"; font-style: normal; color: #e8a020; margin-right: 5px; }
+  .chg { font: 700 20px/1 Arial; color: #ffc043; letter-spacing: -.02em; }
+  .negative { color: #ff6b5e; }
+  .meta { display: flex; justify-content: space-between; gap: 7px; margin-top: 8px; padding-top: 7px; border-top: 1px solid rgba(232,160,32,.12); }
+  .meta div { min-width: 0; }
+  .meta span { display: block; font: 500 8px/1 "Microsoft YaHei"; color: #786b57; margin-bottom: 4px; }
+  .meta b { display: block; font: 600 11px/1 Arial; color: #e5d8bb; white-space: nowrap; }
+  .meta em { font-style: normal; font-size: 9px; color: #e8a020; }
+  .line { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font: 500 9px/1 "Microsoft YaHei"; color: #93856c; }
+  .line b { color: #e4d4a8; font-weight: 600; }
+  .line em { font-style: normal; color: #e8a020; }
+
+  .zoom-wrap { position: relative; height: 560px; }
+  .zoom-label {
+    position: absolute; left: 0; top: 0; font: 600 9px/1 Arial; letter-spacing: .18em;
+    color: #8a7b62; background: #050504; padding: 4px 7px; border: 1px solid rgba(232,160,32,.25);
+  }
+  .zoom { position: absolute; left: 0; top: 30px; width: 384px; transform: scale(1.48); transform-origin: top left; }
+  .zoom .row { min-height: 138px; }
+  .callouts { position: absolute; left: 600px; top: 38px; width: 160px; display: grid; gap: 18px; }
+  .co { font: 400 10px/1.5 "Microsoft YaHei"; color: #8f816b; }
+  .co b { display: block; font: 600 10px/1 Arial; color: #e8a020; letter-spacing: .1em; margin-bottom: 2px; }
+  .co::before { content: ""; position: absolute; width: 48px; height: 1px; background: rgba(232,160,32,.4); }
+  .legend { position: absolute; left: 600px; bottom: 42px; font: 400 9px/1.6 "Microsoft YaHei"; color: #6f6453; }
+  .footer { position: absolute; left: 40px; bottom: 24px; font: 500 8px/1 Arial; letter-spacing: .16em; color: #5f5647; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div>
+      <div class="eyebrow">MOSS CORE · LEFT WINDOW LAYOUT TEST</div>
+      <h1>单条代币信息 · <span>384px 面板实测</span></h1>
+    </div>
+    <div class="note">一屏 3 条 · 字体放大<br>每行独立小窗 · 24H 涨幅排序</div>
+  </div>
+
+  <div class="stage">
+    <section class="panel">
+      <div class="panel-h"><b>▲ 24H 涨幅榜</b><small>3 条 · 实时排序</small></div>
+      <div class="rows">
+        <article class="row fresh">
+          <div class="row-head"><div class="sym"><i>★</i>ARIAUSDT</div><div class="chg">+25.3%</div></div>
+          <div class="meta">
+            <div><span>当前 OI</span><b>1299万</b></div>
+            <div><span>5M OI</span><b>+6.2%</b></div>
+            <div><span>15M OI</span><b><em>+49.5%</em></b></div>
+          </div>
+          <div class="line"><span>成交量 24H</span><b>5110万 USD</b></div>
+          <div class="line"><span>持仓增量 15M</span><b>+430.2万 USD</b><em>+49.5%</em></div>
+        </article>
+
+        <article class="row">
+          <div class="row-head"><div class="sym"><i>★</i>BTWUSDT</div><div class="chg">+18.7%</div></div>
+          <div class="meta">
+            <div><span>当前 OI</span><b>5110万</b></div>
+            <div><span>5M OI</span><b>+2.4%</b></div>
+            <div><span>15M OI</span><b><em>+23.4%</em></b></div>
+          </div>
+          <div class="line"><span>成交量 24H</span><b>1.28亿 USD</b></div>
+          <div class="line"><span>持仓增量 15M</span><b>+968.0万 USD</b><em>+23.4%</em></div>
+        </article>
+
+        <article class="row">
+          <div class="row-head"><div class="sym"><i>○</i>SOPHUSDT</div><div class="chg">+12.4%</div></div>
+          <div class="meta">
+            <div><span>当前 OI</span><b>663万</b></div>
+            <div><span>5M OI</span><b>+0.8%</b></div>
+            <div><span>15M OI</span><b><em>+9.6%</em></b></div>
+          </div>
+          <div class="line"><span>成交量 24H</span><b>4420万 USD</b></div>
+          <div class="line"><span>持仓增量 15M</span><b>+58.2万 USD</b><em>+9.6%</em></div>
+        </article>
+      </div>
+    </section>
+
+    <div class="zoom-wrap">
+      <div class="zoom-label">SINGLE ROW · 1.48X</div>
+      <div class="zoom">
+        <article class="row fresh">
+          <div class="row-head"><div class="sym"><i>★</i>ARIAUSDT</div><div class="chg">+25.3%</div></div>
+          <div class="meta">
+            <div><span>当前 OI</span><b>1299万</b></div>
+            <div><span>5M OI</span><b>+6.2%</b></div>
+            <div><span>15M OI</span><b><em>+49.5%</em></b></div>
+          </div>
+          <div class="line"><span>成交量 24H</span><b>5110万 USD</b></div>
+          <div class="line"><span>持仓增量 15M</span><b>+430.2万 USD</b><em>+49.5%</em></div>
+        </article>
+      </div>
+      <div class="callouts">
+        <div class="co"><b>01 · 代币 + 涨幅</b>名称和 24H 涨幅一眼看到</div>
+        <div class="co"><b>02 · OI 明细</b>当前 OI / 5M / 15M 变化</div>
+        <div class="co"><b>03 · 成交量</b>24H 合约成交额</div>
+        <div class="co"><b>04 · 持仓增量</b>15M USD + 百分比</div>
+      </div>
+      <div class="legend">★ 重点　○ 导入<br>新鲜态：整行金光 + 底部 15 分钟进度线</div>
+    </div>
+  </div>
+
+  <div class="footer">MOSS CORE // LEFT WINDOW CONTENT DENSITY TEST</div>
+</body>
+</html>
