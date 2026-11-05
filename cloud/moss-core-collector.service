@@ -1,0 +1,21 @@
+[Unit]
+Description=MOSS CORE central market collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=moss
+Group=moss
+WorkingDirectory=/opt/moss-core
+ExecStart=/usr/bin/python3 /opt/moss-core/collector.py
+Restart=always
+RestartSec=10
+Environment=MOSS_BIND=127.0.0.1
+Environment=MOSS_PORT=8787
+Environment=MOSS_POLL=60
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

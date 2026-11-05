@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading;
@@ -600,11 +601,63 @@ internal sealed class MainForm : Form
         };
     }
 
+    private static (string Url, string Token)? LoadRemoteSource()
+    {
+        try
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "data-source.json");
+            if (!File.Exists(path)) return null;
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            var root = doc.RootElement;
+            if (root.TryGetProperty("mode", out var mode) && mode.GetString() != "remote") return null;
+            var url = root.TryGetProperty("url", out var u) ? u.GetString()?.Trim() : null;
+            var token = root.TryGetProperty("token", out var t) ? t.GetString()?.Trim() : null;
+            if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(token)) return null;
+            return (url.TrimEnd('/'), token);
+        }
+        catch { return null; }
+    }
+
+    private async Task PullRemoteLiveAsync((string Url, string Token) source)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, source.Url + "/snapshot");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", source.Token);
+        using var resp = await _liveHttp.SendAsync(req);
+        resp.EnsureSuccessStatusCode();
+        var json = await resp.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(json) || json[0] != '{') throw new InvalidOperationException("invalid remote snapshot");
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(LiveCachePath)!);
+            await File.WriteAllTextAsync(LiveCachePath, json);
+        }
+        catch { }
+        await _web.ExecuteScriptAsync("window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));");
+    }
+
     private async Task PullLiveAsync()
     {
         if (DateTime.Now < _binanceCooldownUntil) return;
         if (_liveBusy) return;
         _liveBusy = true;
+        var remote = LoadRemoteSource();
+        if (remote != null)
+        {
+            try
+            {
+                await PullRemoteLiveAsync(remote.Value);
+                return;
+            }
+            catch (Exception ex)
+            {
+                try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"), $"[{DateTime.Now:O}] remote: {ex.Message}\r\n"); } catch { }
+                return;
+            }
+            finally
+            {
+                _liveBusy = false;
+            }
+        }
         try
         {
             using var tickerDoc = await GetJsonAsync("https://fapi.binance.com/fapi/v1/ticker/24hr");
