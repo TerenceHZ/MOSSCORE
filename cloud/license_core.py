@@ -172,6 +172,27 @@ def reset_code(code):
         return True
 
 
+def set_code_status(code_id, enabled):
+    init()
+    with connect() as db:
+        row = db.execute("SELECT id FROM codes WHERE id=?", (int(code_id),)).fetchone()
+        if not row:
+            return False
+        db.execute("UPDATE codes SET revoked=? WHERE id=?", (0 if enabled else 1, int(code_id)))
+        return True
+
+
+def delete_code(code_id):
+    init()
+    with connect() as db:
+        row = db.execute("SELECT id FROM codes WHERE id=?", (int(code_id),)).fetchone()
+        if not row:
+            return False
+        db.execute("DELETE FROM devices WHERE code_id=?", (int(code_id),))
+        db.execute("DELETE FROM codes WHERE id=?", (int(code_id),))
+        return True
+
+
 def list_codes():
     init()
     with connect() as db:

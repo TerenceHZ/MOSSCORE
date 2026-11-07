@@ -96,6 +96,11 @@ button.ghost{background:#171b20;color:#c9bda6;border:1px solid #3b3324}
 button.copy{padding:7px 10px;font-size:11px;font-weight:500;background:#2a2113;color:#e8c27a;border:1px solid #6b5225;white-space:nowrap}
 button.copy:hover{background:#3a2c16;color:#ffe0a0}
 button.copy:disabled{opacity:.35;cursor:default}
+button.toggle{background:#172019;color:#9dd8b3;border-color:#315c43}
+button.toggle:hover{background:#1c2b21;color:#c5f3d8}
+button.danger{background:#241313;color:#e0a39b;border-color:#66332d}
+button.danger:hover{background:#331919;color:#ffc7bd}
+td.actions{white-space:nowrap}td.actions button{margin-right:5px}
 .table-wrap{width:100%;overflow-x:auto}
 table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px;min-width:760px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #1f2328;white-space:nowrap}
 td.code-cell{font-family:Consolas,monospace;color:#e5c27e;letter-spacing:.04em}td.muted-cell{color:#6f6352}
@@ -146,6 +151,17 @@ async function resetCode(){
   const r=await api('/admin/api/reset',{code});
   alert(r.ok?'已解绑，可以让新电脑重新激活':'未找到该邀请码');loadList();
 }
+async function toggleCode(id, revoked){
+  const enabled=!!revoked;
+  if(!confirm(enabled?'确定启用这个邀请码？':'停用后，该码绑定的客户端会立即失效。确定停用？'))return;
+  const r=await api('/admin/api/toggle',{id,enabled});
+  alert(r.ok?(enabled?'已启用':'已停用'):'操作失败');loadList();
+}
+async function deleteCode(id){
+  if(!confirm('确定永久删除这个邀请码？\\n绑定设备会立即失效，且无法恢复。'))return;
+  const r=await api('/admin/api/delete',{id});
+  alert(r.ok?'已删除':'删除失败');loadList();
+}
 async function loadList(){
   const r=await api('/admin/api/list',{});
   const tb=document.getElementById('list');tb.innerHTML='';
@@ -160,10 +176,17 @@ async function loadList(){
     for(const v of [c.max_devices,c.expires_at?new Date(c.expires_at).toLocaleDateString():'永久',c.revoked?'停用':'启用',c.active_devices]){
       const td=document.createElement('td');td.textContent=v==null?'':v;tr.appendChild(td);
     }
-    const op=document.createElement('td');
+    const op=document.createElement('td');op.className='actions';
     const btn=document.createElement('button');btn.className='copy';btn.textContent='复制';btn.disabled=!full;
     if(full)btn.addEventListener('click',()=>copyText(full,btn));
-    op.appendChild(btn);tr.appendChild(op);
+    op.appendChild(btn);
+    const toggle=document.createElement('button');toggle.className='copy toggle';toggle.textContent=c.revoked?'启用':'停用';
+    toggle.addEventListener('click',()=>toggleCode(c.id,!!c.revoked));
+    op.appendChild(toggle);
+    const del=document.createElement('button');del.className='copy danger';del.textContent='删除';
+    del.addEventListener('click',()=>deleteCode(c.id));
+    op.appendChild(del);
+    tr.appendChild(op);
     tb.appendChild(tr);
   }
 }
@@ -497,6 +520,24 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if path == "/admin/api/reset":
                 ok = license_core.reset_code(str(data.get("code", "")))
+                self.send_json({"ok": ok})
+                return
+            if path == "/admin/api/toggle":
+                try:
+                    code_id = int(data.get("id"))
+                except (TypeError, ValueError):
+                    self.send_json({"ok": False, "error": "invalid_id"}, 400)
+                    return
+                ok = license_core.set_code_status(code_id, bool(data.get("enabled")))
+                self.send_json({"ok": ok})
+                return
+            if path == "/admin/api/delete":
+                try:
+                    code_id = int(data.get("id"))
+                except (TypeError, ValueError):
+                    self.send_json({"ok": False, "error": "invalid_id"}, 400)
+                    return
+                ok = license_core.delete_code(code_id)
                 self.send_json({"ok": ok})
                 return
             self.send_json({"ok": False, "error": "not found"}, 404)
