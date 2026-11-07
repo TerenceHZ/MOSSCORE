@@ -818,9 +818,9 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-fng-main{display:flex;align-items:baseline;gap:7px;margin-top:7px}
 .nv-fng-main b{font:800 27px/1 var(--mono);color:var(--fng);letter-spacing:-.04em}
 .nv-fng-main span{font:600 10px/1 var(--cjk);color:var(--fng)}
-.nv-fng-gauge{position:relative;height:5px;margin-top:9px;background:linear-gradient(90deg,#C96358,#e8a020 38%,#d8c56a 55%,#63C08E 78%,#42a978);box-shadow:0 0 10px rgba(232,160,32,.12)}
-.nv-fng-gauge i{position:absolute;top:-3px;width:2px;height:11px;background:#fff;box-shadow:0 0 7px #fff;transform:translateX(-1px)}
-.nv-fng-scale{display:flex;justify-content:space-between;margin-top:4px;font:500 6.5px/1 var(--cjk);color:#746a59}
+.nv-fng-gauge{position:relative;height:6px;margin-top:9px;background:linear-gradient(90deg,#e88370,#e8a020 38%,#d8c56a 55%,#63C08E 78%,#42a978);box-shadow:0 0 10px rgba(232,160,32,.12)}
+.nv-fng-gauge i{position:absolute;top:-4px;width:3px;height:14px;background:#fff;box-shadow:0 0 0 1px rgba(2,3,6,.85),0 0 8px rgba(255,255,255,.95);transform:translateX(-1px)}
+.nv-fng-scale{display:flex;justify-content:space-between;margin-top:4px;font:500 6.5px/1 var(--cjk);color:#746a59}.nv-fng-scale span:first-child{color:#f0a18e;text-shadow:0 0 7px rgba(255,146,125,.25)}
 .nv-fng-prev{margin-top:8px;padding-top:6px;border-top:1px solid rgba(232,160,32,.12);font:500 8px/1.3 var(--mono);color:#8f826e;white-space:nowrap}
 .nv-left{position:absolute;left:24px;top:236px;bottom:262px;width:384px;display:flex;flex-direction:column;gap:8px;z-index:8;min-height:0}
 .nv-mod{position:relative;display:flex;flex-direction:column;min-height:0;border:1px solid rgba(232,160,32,.22);background:linear-gradient(180deg,rgba(5,6,8,.72),rgba(3,4,6,.55));overflow:hidden;cursor:pointer;pointer-events:auto}
@@ -1269,11 +1269,11 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-info-x:hover{color:#ffd27a;border-color:rgba(232,160,32,.6)}
 .nv-info-body{margin-top:19px}
 .nv-info-hero{display:flex;align-items:baseline;gap:12px;padding-bottom:15px;border-bottom:1px solid rgba(232,160,32,.15)}
-.nv-info-hero b{font:800 46px/1 var(--mono);color:#ffc043;letter-spacing:-.04em}
+.nv-info-hero b{font:800 46px/1 var(--mono);color:#ffc043;letter-spacing:-.04em}.nv-info-hero b.fear{color:#ff927d;text-shadow:0 0 14px rgba(255,120,96,.22)}
 .nv-info-hero span{font:600 13px/1 var(--cjk);color:#c3a878}
-.nv-info-scale{position:relative;height:6px;margin:17px 0 6px;background:linear-gradient(90deg,#c96358,#e8a020 42%,#d8c56a 58%,#63c08e);overflow:hidden}
-.nv-info-scale i{position:absolute;top:-4px;width:2px;height:14px;background:#fff;box-shadow:0 0 8px #fff;transform:translateX(-50%)}
-.nv-info-scale-l{display:flex;justify-content:space-between;font:500 7px/1 var(--mono);letter-spacing:.1em;color:#79664c}
+.nv-info-scale{position:relative;height:7px;margin:17px 0 6px;background:linear-gradient(90deg,#e88370,#e8a020 42%,#d8c56a 58%,#63c08e);overflow:hidden}
+.nv-info-scale i{position:absolute;top:-4px;width:3px;height:16px;background:#fff;box-shadow:0 0 0 1px rgba(2,3,6,.82),0 0 10px rgba(255,255,255,.95);transform:translateX(-50%)}
+.nv-info-scale-l{display:flex;justify-content:space-between;font:500 7px/1 var(--mono);letter-spacing:.1em;color:#79664c}.nv-info-scale-l span:first-child{color:#f0a18e;text-shadow:0 0 7px rgba(255,146,125,.2)}
 .nv-info-dual{display:flex;height:8px;margin:17px 0 8px;background:#7a2c25;overflow:hidden}
 .nv-info-dual i{display:block;height:100%;background:linear-gradient(90deg,#63c08e,#b0e0c5);box-shadow:0 0 10px rgba(99,192,142,.35)}
 .nv-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(232,160,32,.13);border:1px solid rgba(232,160,32,.13);margin-top:17px}
@@ -11617,9 +11617,9 @@ requestAnimationFrame(frame);
         const prev = d.previous != null ? Number(d.previous) : null;
         kick.textContent = 'FEAR & GREED · DAILY';
         title.textContent = '恐慌贪婪指数';
-        body.innerHTML = `<div class="nv-info-hero"><b>${Number.isFinite(value) ? Math.round(value) : '—'}</b><span>${esc(label)}</span></div>
+        body.innerHTML = `<div class="nv-info-hero"><b class="fear">${Number.isFinite(value) ? Math.round(value) : '—'}</b><span>${esc(label)}</span></div>
           <div class="nv-info-scale"><i style="left:${value}%"></i></div><div class="nv-info-scale-l"><span>极度恐慌 0</span><span>极度贪婪 100</span></div>
-          <div class="nv-info-grid"><div><span>当前指数</span><b>${Number.isFinite(value) ? Math.round(value) : '—'}</b></div><div><span>昨日</span><b>${prev != null ? prev : '—'}</b></div><div><span>日变化</span><b class="${prev != null && value < prev ? 'red' : 'green'}">${prev != null ? (value - prev >= 0 ? '+' : '') + (value - prev) : '—'}</b></div><div><span>更新日期</span><b>${esc(d.date || '—')}</b></div></div>
+          <div class="nv-info-grid"><div><span>当前指数</span><b class="red">${Number.isFinite(value) ? Math.round(value) : '—'}</b></div><div><span>昨日</span><b>${prev != null ? prev : '—'}</b></div><div><span>日变化</span><b class="${prev != null && value < prev ? 'red' : 'green'}">${prev != null ? (value - prev >= 0 ? '+' : '') + (value - prev) : '—'}</b></div><div><span>更新日期</span><b>${esc(d.date || '—')}</b></div></div>
           <p class="nv-info-p">恐慌贪婪指数综合波动率、市场动量、社交媒体、调查、BTC 主导率与搜索趋势，用 <b>0–100</b> 表示市场情绪。越低代表越恐慌，越高代表越贪婪；它反映情绪，不是价格预测。</p>
           <div class="nv-info-src">SOURCE · ALTERNATIVE.ME / CRYPTO FEAR &amp; GREED INDEX · DAILY</div>`;
       }
@@ -11642,7 +11642,7 @@ requestAnimationFrame(frame);
       if (changed) pulseBox(sr.querySelector('#nvFng'));
       const v = Math.max(0, Math.min(100, Number(fg.value || 0)));
       const labelMap = { 'Extreme Fear': '极度恐慌', 'Fear': '恐慌', 'Neutral': '中性', 'Greed': '贪婪', 'Extreme Greed': '极度贪婪' };
-      const color = v <= 25 ? '#C96358' : v <= 45 ? '#e8a020' : v <= 55 ? '#d8c56a' : v <= 75 ? '#63C08E' : '#42a978';
+      const color = v <= 25 ? '#ff927d' : v <= 45 ? '#e8a020' : v <= 55 ? '#d8c56a' : v <= 75 ? '#63C08E' : '#42a978';
       const box = sr.querySelector('#nvFng');
       if (box) box.style.setProperty('--fng', color);
       const val = sr.querySelector('#nvFngValue'); if (val) val.textContent = String(Math.round(v));
