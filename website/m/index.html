@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#030407">
+<title>MOSS CORE · MOBILE</title>
+<link rel="icon" href="../assets/moss-icon.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<div class="m-grain" aria-hidden="true"></div>
+<div class="m-glow" id="mGlow" aria-hidden="true"></div>
+
+<header class="m-top">
+  <div class="m-brand">
+    <span class="m-mark"><i></i><b></b></span>
+    <div><b>MOSS CORE</b><small>MOBILE TERMINAL</small></div>
+  </div>
+  <div class="m-top-right">
+    <span class="m-live"><i></i> LIVE</span>
+    <button class="m-avatar" id="mAvatar" aria-label="账户">M</button>
+  </div>
+</header>
+
+<main class="m-main" id="mTop">
+  <section class="m-intro">
+    <div class="m-eyebrow">SG NODE · <span id="mClock">16:33:00</span></div>
+    <h1>异动<br><span>雷达</span></h1>
+    <p>全市场合约 · 持仓 · 大单 · 建仓信号</p>
+    <div class="m-preview-tag"><i></i> PREVIEW FEED · 模拟数据</div>
+  </section>
+
+  <section class="m-orbit-section">
+    <div class="m-orbit-card">
+      <div class="m-orbit-head"><span>NEURAL CORE</span><b>● 517 / 86</b></div>
+      <canvas id="mOrbit" aria-label="MOSS CORE 星环"></canvas>
+      <div class="m-orbit-center"><span>REGIME</span><b>49.3</b><i>WEAK</i></div>
+      <div class="m-orbit-tag ot-1">TRACE <b>ACTIVE</b></div>
+      <div class="m-orbit-tag ot-2">SIGNAL <b>LOCKED</b></div>
+      <div class="m-orbit-tag ot-3">OI <b>+18.4M</b></div>
+      <div class="m-orbit-foot"><span>FEAR &amp; GREED <b>34</b></span><span>SYNC <b>60s</b></span></div>
+    </div>
+  </section>
+
+  <section class="m-kpis">
+    <div><span>FOCUS</span><b>86</b><small>自选</small></div>
+    <div><span>24H HOT</span><b>+48.06%</b><small>ELSA</small></div>
+    <div><span>OI FLOW</span><b>+18.4M</b><small>15M</small></div>
+  </section>
+
+  <div class="m-tabs" id="mTabs">
+    <button class="on" data-tab="focus">自选 <b>86</b></button>
+    <button data-tab="signal">信号 <b>03</b></button>
+    <button data-tab="movers">榜单 <b>24</b></button>
+  </div>
+
+  <section class="m-panel on" id="panel-focus">
+    <div class="m-section-title"><div><span>01 / FOCUS</span><b>自选主监控</b></div><button id="mRefresh">刷新 ↻</button></div>
+    <div class="m-focus-list" id="mFocusList"></div>
+  </section>
+
+  <section class="m-panel" id="panel-signal">
+    <div class="m-section-title"><div><span>02 / SIGNALS</span><b>建仓信号</b></div><span class="m-mini-count">03 ACTIVE</span></div>
+    <div class="m-signal-hero" id="mSignalHero">
+      <div class="m-signal-kicker">ENTRY SIGNAL <i></i></div>
+      <div class="m-signal-main"><b>ARIA</b><span>/ USDT</span><em>LONG</em></div>
+      <div class="m-signal-price"><span>ENTRY</span><b>0.12066</b></div>
+      <div class="m-signal-tags"><span>OI +49.5%</span><span>15M</span><span>SCORE 92</span></div>
+      <div class="m-signal-bar"><i></i><b>92%</b></div>
+      <div class="m-signal-foot"><span>止盈 0.1327</span><span>止损 0.1146</span><button id="mSignalDetail">详情 ↗</button></div>
+    </div>
+    <div class="m-signal-list" id="mSignalList"></div>
+  </section>
+
+  <section class="m-panel" id="panel-movers">
+    <div class="m-section-title"><div><span>03 / MARKET</span><b>全市场榜单</b></div><span class="m-mini-count">24H</span></div>
+    <div class="m-movers-tabs"><button class="on">涨幅</button><button>跌幅</button><button>OI</button></div>
+    <div class="m-movers-list" id="mMoversList"></div>
+  </section>
+
+  <section class="m-foot-note">
+    <span>MOSS CORE MOBILE</span><span>PREVIEW · 550C</span>
+  </section>
+</main>
+
+<nav class="m-nav" aria-label="移动端导航">
+  <button class="on" data-nav="top">
+    <svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>概览</span>
+  </button>
+  <button data-nav="focus">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span>自选</span>
+  </button>
+  <button data-nav="signal">
+    <svg viewBox="0 0 24 24"><path d="M4 18 9 9l4 5 7-11"/><path d="M4 21h16"/></svg><span>信号</span>
+  </button>
+  <button data-nav="me">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4.5-7 8-7s7 2 8 7"/></svg><span>我的</span>
+  </button>
+</nav>
+
+<div class="m-sheet-backdrop" id="mSheetBackdrop"></div>
+<section class="m-sheet" id="mSheet" aria-modal="true" role="dialog">
+  <div class="m-sheet-handle"></div>
+  <button class="m-sheet-close" id="mSheetClose">×</button>
+  <div class="m-sheet-head"><span id="mSheetKicker">FOCUS DETAIL</span><b id="mSheetTitle">ARIA / USDT</b><em id="mSheetBadge">LONG</em></div>
+  <div class="m-sheet-price"><span>MARK PRICE</span><b id="mSheetPrice">0.12066</b><em id="mSheetChange">+25.30%</em></div>
+  <div class="m-sheet-chart"><canvas id="mSheetChart"></canvas></div>
+  <div class="m-sheet-grid">
+    <div><span>OI 15M</span><b id="mSheetOi">+49.5%</b></div>
+    <div><span>SCORE</span><b id="mSheetScore">92</b></div>
+    <div><span>VOL 24H</span><b id="mSheetVol">$24.1M</b></div>
+    <div><span>FUNDING</span><b class="green">+0.010%</b></div>
+  </div>
+  <div class="m-sheet-tags" id="mSheetTags"><span>持仓异动</span><span>主动买入</span><span>放量</span></div>
+  <div class="m-sheet-note">演示界面 · 数据接入后与桌面端同步</div>
+</section>
+
+<script src="mobile.js"></script>
+</body>
+</html>

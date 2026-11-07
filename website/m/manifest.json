@@ -1,0 +1,17 @@
+{
+  "name": "MOSS CORE Mobile",
+  "short_name": "MOSS CORE",
+  "description": "MOSS CORE 移动端异动监测原型",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#030407",
+  "theme_color": "#e8a020",
+  "icons": [
+    {
+      "src": "../assets/moss-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
