@@ -90,33 +90,54 @@ def admin_dashboard():
 input,select{padding:10px;background:#11151a;border:1px solid #3b3324;color:#fff;font:13px Consolas,monospace}
 button{padding:10px 18px;border:0;background:#e8a020;color:#171006;font-weight:700;cursor:pointer}
 button.ghost{background:#171b20;color:#c9bda6;border:1px solid #3b3324}
-#code{margin-top:16px;padding:14px;border:1px dashed #8a6a2a;background:#12100a;color:#ffc043;font:700 20px Consolas,monospace;letter-spacing:.08em;display:none}
-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #1f2328}
+#code{margin-top:16px;padding:12px 14px;border:1px dashed #8a6a2a;background:#12100a;color:#ffc043;font:700 20px Consolas,monospace;letter-spacing:.08em;display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#code.visible{display:flex}
+#code .code-value{word-break:break-all}
+button.copy{padding:7px 10px;font-size:11px;font-weight:500;background:#2a2113;color:#e8c27a;border:1px solid #6b5225;white-space:nowrap}
+button.copy:hover{background:#3a2c16;color:#ffe0a0}
+button.copy:disabled{opacity:.35;cursor:default}
+.table-wrap{width:100%;overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px;min-width:760px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #1f2328;white-space:nowrap}
+td.code-cell{font-family:Consolas,monospace;color:#e5c27e;letter-spacing:.04em}td.muted-cell{color:#6f6352}
 th{color:#827664;font-weight:500}.hint{color:#827664;font-size:12px}.err{color:#e08a7f}
 </style>
 <div class="wrap"><h1>MOSS CORE · 管理后台</h1><div class="sub">生成邀请码 · 查看设备 · 解绑换机</div>
 <div class="panel"><div class="row"><div><label>有效期（天）</label><input id="days" type="number" value="365" min="1" style="width:130px"></div>
 <div><label>可绑定设备数</label><input id="devices" type="number" value="1" min="1" style="width:130px"></div>
 <button onclick="createCode()">生成邀请码</button><button class="ghost" onclick="loadList()">刷新列表</button>
-<button class="ghost" onclick="logout()">退出</button></div><div id="code"></div></div>
+<button class="ghost" onclick="logout()">退出</button></div><div id="code"><span class="code-value" id="codeText"></span><button class="copy" id="copyGenerated" onclick="copyGenerated()">复制</button></div></div>
 <div class="panel"><div class="row"><div style="flex:1"><label>解绑邀请码</label><input id="resetCode" placeholder="MOSS-XXXX-XXXX-XXXX" style="width:100%"></div>
 <button onclick="resetCode()">解绑旧设备</button></div><div class="hint" style="margin-top:10px">解绑后该码可以给新电脑重新激活。</div></div>
-<div class="panel"><div class="row" style="justify-content:space-between"><b>邀请码列表</b><span class="hint">只显示后四位，完整码生成时请保存</span></div>
-<table><thead><tr><th>ID</th><th>后四位</th><th>设备数</th><th>有效期</th><th>状态</th><th>已绑定</th></tr></thead><tbody id="list"></tbody></table></div></div>
+<div class="panel"><div class="row" style="justify-content:space-between"><b>邀请码列表</b><span class="hint">完整邀请码仅管理员可见，可直接复制</span></div>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>邀请码</th><th>设备数</th><th>有效期</th><th>状态</th><th>已绑定</th><th>操作</th></tr></thead><tbody id="list"></tbody></table></div></div></div>
 <script>
 async function api(path, body){
   const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
   if(r.status===401){location='/admin';throw new Error('unauthorized')}
   return await r.json();
 }
+async function copyText(text, btn){
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+  }
+  const old=btn.textContent;btn.textContent='已复制';setTimeout(()=>btn.textContent=old,1400);
+}
+let generatedCode='';
 async function createCode(){
-  document.getElementById('code').style.display='none';
+  const el=document.getElementById('code');el.classList.remove('visible');
   const days=Number(document.getElementById('days').value||365);
   const devices=Number(document.getElementById('devices').value||1);
   const r=await api('/admin/api/create',{days,devices});
-  const el=document.getElementById('code');
-  if(!r.ok){el.textContent='生成失败：'+(r.error||'unknown');el.style.display='block';return}
-  el.textContent=r.code;el.style.display='block';loadList();
+  if(!r.ok){document.getElementById('codeText').textContent='生成失败：'+(r.error||'unknown');el.classList.add('visible');return}
+  generatedCode=r.code;
+  document.getElementById('codeText').textContent=r.code;
+  el.classList.add('visible');loadList();
+}
+async function copyGenerated(){
+  if(!generatedCode)return;
+  await copyText(generatedCode,document.getElementById('copyGenerated'));
 }
 async function resetCode(){
   const code=document.getElementById('resetCode').value.trim();
@@ -130,8 +151,19 @@ async function loadList(){
   const tb=document.getElementById('list');tb.innerHTML='';
   for(const c of (r.codes||[])){
     const tr=document.createElement('tr');
-    const cells=[c.id,c.code_hint,c.max_devices,c.expires_at?new Date(c.expires_at).toLocaleDateString():'永久',c.revoked?'停用':'启用',c.active_devices];
-    for(const v of cells){const td=document.createElement('td');td.textContent=v==null?'':v;tr.appendChild(td)}
+    const id=document.createElement('td');id.textContent=c.id;tr.appendChild(id);
+    const codeTd=document.createElement('td');codeTd.className='code-cell';
+    const full=c.code_plain||'';
+    codeTd.textContent=full||`旧码 · 仅后四位 ${c.code_hint}`;
+    if(!full)codeTd.classList.add('muted-cell');
+    tr.appendChild(codeTd);
+    for(const v of [c.max_devices,c.expires_at?new Date(c.expires_at).toLocaleDateString():'永久',c.revoked?'停用':'启用',c.active_devices]){
+      const td=document.createElement('td');td.textContent=v==null?'':v;tr.appendChild(td);
+    }
+    const op=document.createElement('td');
+    const btn=document.createElement('button');btn.className='copy';btn.textContent='复制';btn.disabled=!full;
+    if(full)btn.addEventListener('click',()=>copyText(full,btn));
+    op.appendChild(btn);tr.appendChild(op);
     tb.appendChild(tr);
   }
 }

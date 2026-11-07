@@ -64,6 +64,9 @@ def init():
         );
         CREATE INDEX IF NOT EXISTS idx_devices_code ON devices(code_id);
         """)
+        cols = {row["name"] for row in db.execute("PRAGMA table_info(codes)").fetchall()}
+        if "code_plain" not in cols:
+            db.execute("ALTER TABLE codes ADD COLUMN code_plain TEXT")
 
 
 def create_code(max_devices=1, days=365):
@@ -74,8 +77,8 @@ def create_code(max_devices=1, days=365):
     expires = iso(now() + timedelta(days=days)) if days else None
     with connect() as db:
         db.execute(
-            "INSERT INTO codes(code_hash, code_hint, max_devices, expires_at, created_at) VALUES(?,?,?,?,?)",
-            (digest(normalize_code(code)), code[-4:], int(max_devices), expires, iso(now())),
+            "INSERT INTO codes(code_hash, code_hint, code_plain, max_devices, expires_at, created_at) VALUES(?,?,?,?,?,?)",
+            (digest(normalize_code(code)), code[-4:], code, int(max_devices), expires, iso(now())),
         )
     return code
 
@@ -173,7 +176,7 @@ def list_codes():
     init()
     with connect() as db:
         return [dict(r) for r in db.execute(
-            "SELECT c.id,c.code_hint,c.max_devices,c.expires_at,c.revoked,c.created_at,"
+            "SELECT c.id,c.code_hint,c.code_plain,c.max_devices,c.expires_at,c.revoked,c.created_at,"
             "(SELECT COUNT(*) FROM devices d WHERE d.code_id=c.id AND d.revoked=0) active_devices "
             "FROM codes c ORDER BY c.id DESC"
         ).fetchall()]
