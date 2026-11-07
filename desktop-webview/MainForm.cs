@@ -34,6 +34,10 @@ internal static class Program
             {
                 try { File.AppendAllText(log, $"[{DateTime.Now:O}] domain: {e.ExceptionObject}\r\n"); } catch { }
             };
+            using (var activation = new ActivationForm())
+            {
+                if (activation.ShowDialog() != DialogResult.OK) return;
+            }
             Application.Run(new MainForm());
             File.AppendAllText(log, $"[{DateTime.Now:O}] main end\r\n");
         }
@@ -670,9 +674,9 @@ internal sealed class MainForm : Form
             var root = doc.RootElement;
             if (root.TryGetProperty("mode", out var mode) && mode.GetString() != "remote") return null;
             var url = root.TryGetProperty("url", out var u) ? u.GetString()?.Trim() : null;
-            var token = root.TryGetProperty("token", out var t) ? t.GetString()?.Trim() : null;
-            if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(token)) return null;
-            return (url.TrimEnd('/'), token);
+            var token = root.TryGetProperty("token", out var t) ? t.GetString()?.Trim() : "";
+            if (string.IsNullOrWhiteSpace(url)) return null;
+            return (url.TrimEnd('/'), token ?? "");
         }
         catch { return null; }
     }
@@ -680,7 +684,11 @@ internal sealed class MainForm : Form
     private async Task PullRemoteLiveAsync((string Url, string Token) source)
     {
         using var req = new HttpRequestMessage(HttpMethod.Get, source.Url + "/snapshot");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", source.Token);
+        var bearer = LicenseService.LicenseKey;
+        if (!string.IsNullOrWhiteSpace(bearer))
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
+        else if (!string.IsNullOrWhiteSpace(source.Token))
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", source.Token);
         using var resp = await _liveHttp.SendAsync(req);
         resp.EnsureSuccessStatusCode();
         var json = await resp.Content.ReadAsStringAsync();

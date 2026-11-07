@@ -20,6 +20,8 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import license_core
+
 ROOT = Path(__file__).resolve().parent
 WATCHLIST = ROOT / "watchlist.json"
 TOKEN_FILE = ROOT / "token.txt"
@@ -288,22 +290,69 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.end_headers()
 
+    def do_POST(self):
+        try:
+            if "chunked" in (self.headers.get("Transfer-Encoding", "").lower()):
+                parts = []
+                while True:
+                    line = self.rfile.readline().strip()
+                    if not line:
+                        break
+                    size = int(line.split(b";", 1)[0], 16)
+                    if size == 0:
+                        self.rfile.readline()
+                        break
+                    parts.append(self.rfile.read(size))
+                    self.rfile.read(2)
+                body = b"".join(parts)
+            else:
+                length = int(self.headers.get("Content-Length", "0") or 0)
+                body = self.rfile.read(length) if length else b"{}"
+            data = json.loads(body.decode("utf-8") or "{}")
+        except Exception as e:
+            log(f"POST parse error: {e}")
+            self.send_json({"ok": False, "error": "invalid_json"}, 400)
+            return
+        path = urllib.parse.urlparse(self.path).path
+        if path == "/license/activate":
+            code = str(data.get("code", "")).strip()
+            device_id = str(data.get("device_id", "")).strip()
+            device_name = str(data.get("device_name", "")).strip()
+            result, status = license_core.activate(code, device_id, device_name)
+            self.send_json(result, status)
+            return
+        if path == "/license/validate":
+            key = str(data.get("license", "")).strip()
+            row = license_core.validate_license(key)
+            if row is None:
+                self.send_json({"ok": False, "error": "invalid_license"}, 401)
+            else:
+                self.send_json({"ok": True, "expires_at": row["code_expires_at"], "device_id": row["device_id"]})
+            return
+        if path == "/license/release":
+            key = str(data.get("license", "")).strip()
+            ok = license_core.release(key)
+            self.send_json({"ok": ok}, 200 if ok else 404)
+            return
+        self.send_json({"error": "not found"}, 404)
+
     def do_GET(self):
-        if self.path == "/health":
+        path = urllib.parse.urlparse(self.path).path
+        if path == "/health":
             with _lock:
                 self.send_json({"ok": _status["ok"], "updatedAt": _status["updatedAt"], "lastError": _status["lastError"]})
             return
-        if self.path != "/snapshot":
+        if path != "/snapshot":
             self.send_json({"error": "not found"}, 404)
             return
         auth = self.headers.get("Authorization", "")
         supplied = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
         if not supplied:
             supplied = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("token", [""])[0]
-        if not supplied or supplied != token():
+        if not supplied or (supplied != token() and license_core.validate_license(supplied) is None):
             self.send_json({"error": "unauthorized"}, 401)
             return
         with _lock:
@@ -317,6 +366,7 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
     token()
+    license_core.init()
     t = threading.Thread(target=poll_loop, daemon=True)
     t.start()
     log(f"collector started bind={BIND}:{PORT} poll={POLL_SECONDS}s")
