@@ -814,6 +814,10 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-regime .nv-lsbar i{display:block;width:50%;height:100%;background:linear-gradient(90deg,#63C08E,#a5d9b9);box-shadow:0 0 8px rgba(99,192,142,.45);transition:width .5s ease}
 .nv-fng{position:absolute;right:436px;top:80px;width:118px;z-index:12;padding:10px 10px 9px;border:1px solid rgba(232,160,32,.28);background:linear-gradient(135deg,rgba(12,12,10,.94),rgba(5,6,8,.72));box-shadow:inset 0 0 24px rgba(232,160,32,.035),0 0 24px rgba(0,0,0,.35);backdrop-filter:blur(8px);pointer-events:none;--fng:#e8a020}
 .nv-fng::before{content:"";position:absolute;right:0;top:0;width:34px;height:1px;background:var(--fng);box-shadow:0 0 8px var(--fng)}
+.nv-fng{overflow:hidden;box-shadow:inset 0 -20px 26px -18px var(--fng),inset 0 0 24px rgba(232,160,32,.035),0 0 24px rgba(0,0,0,.35)}
+.nv-fng::after{content:"";position:absolute;left:4%;right:4%;bottom:0;height:34px;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 50% 100%,var(--fng),transparent 72%);opacity:.52;filter:blur(9px);animation:nvFngGlow 4.8s ease-in-out infinite}
+.nv-fng>*{position:relative;z-index:1}
+@keyframes nvFngGlow{0%,100%{opacity:.26;transform:scaleX(.9)}50%{opacity:.58;transform:scaleX(1)}}
 .nv-fng .nv-k{font:600 7.5px/1.45 var(--mono);letter-spacing:.18em;color:#7a6c55;white-space:normal}
 .nv-fng-main{display:flex;align-items:baseline;gap:7px;margin-top:7px}
 .nv-fng-main b{font:800 27px/1 var(--mono);color:var(--fng);letter-spacing:-.04em}
@@ -11637,9 +11641,7 @@ requestAnimationFrame(frame);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeInfo(); });
     const renderFearGreed = (fg) => {
       if (!fg) return;
-      const changed = lastFngValue !== null && Number(fg.value) !== lastFngValue;
       currentFng = fg; lastFngValue = Number(fg.value);
-      if (changed) pulseBox(sr.querySelector('#nvFng'));
       const v = Math.max(0, Math.min(100, Number(fg.value || 0)));
       const labelMap = { 'Extreme Fear': '极度恐慌', 'Fear': '恐慌', 'Neutral': '中性', 'Greed': '贪婪', 'Extreme Greed': '极度贪婪' };
       const color = v <= 25 ? '#ff927d' : v <= 45 ? '#e8a020' : v <= 55 ? '#d8c56a' : v <= 75 ? '#63C08E' : '#42a978';
@@ -11846,7 +11848,7 @@ requestAnimationFrame(frame);
       window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       if (f) { data.focus.title = f.baseAsset || f.symbol; data.focus.stage = `${f.stage === 'entry' ? '开仓信号' : f.stage === 'watch' ? '重点候选' : '观察'} · ${Number(f.score || 0).toFixed(1)}`; data.focus.why = `${f.symbol} 现价 ${f.price}，24H ${sign(f.change24h)}%，5M ${sign(f.change5m)}%。`; }
       if (im) { data.imported.title = im.baseAsset || im.symbol; data.imported.stage = `${im.stage === 'entry' ? '开仓信号' : im.stage === 'watch' ? '重点候选' : '观察'} · ${Number(im.score || 0).toFixed(1)}`; data.imported.why = `${im.symbol} 现价 ${im.price}，24H ${sign(im.change24h)}%，5M ${sign(im.change5m)}%。`; }
-      try { const k = sr.querySelector('.nv-k'); if (k) k.textContent = `MARKET REGIME · SNAPSHOT ${live.updatedAt}`; } catch (e) {}
+
       const runRowEffects = (mod, oldRows, newRows, lane) => {
         if (!mod || !window.__MOSS_ROW_READY) return;
         const oldMap = new Map(oldRows.map(o => [o.symbol, o]));
