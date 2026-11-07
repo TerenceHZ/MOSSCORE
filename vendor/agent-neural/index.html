@@ -636,6 +636,12 @@ body{background:var(--page);overflow:hidden}
 .nv-alert-pager{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:8px;font:500 9px/1 var(--mono);color:#8a7b62}
 .nv-alert-pager button{background:transparent;border:1px solid rgba(232,160,32,.25);color:#c9a35a;font:600 9px/1 var(--cjk);padding:5px 8px;cursor:pointer}
 .nv-alert-pager button:disabled{opacity:.3;cursor:default}
+.nv-alert-cats{display:flex;gap:2px;margin:0 0 7px;border-bottom:1px solid rgba(232,160,32,.14)}
+.nv-alert-cats button{flex:1;min-width:0;padding:8px 4px 7px;border:1px solid transparent;border-bottom:0;background:transparent;color:#8a7b62;font:600 10px/1 var(--cjk);letter-spacing:.03em;white-space:nowrap;cursor:pointer;transition:color .2s,background .2s,border-color .2s}
+.nv-alert-cats button b{display:inline-block;margin-left:4px;font:500 7px/1 var(--mono);color:#6d5e49}
+.nv-alert-cats button.on{color:#ffc043;background:rgba(232,160,32,.07);border-color:rgba(232,160,32,.2);border-bottom-color:transparent}
+.nv-alert-cats button.on b{color:#e8a020}
+.nv-alert-cats button:hover{color:#d8c09a}
 .nv-signal-counts{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
 .nv-signal-counts span{font:600 9px/1 var(--mono);color:#c9a35a;border:1px solid rgba(232,160,32,.22);background:rgba(232,160,32,.05);padding:5px 7px}
 .nv-signal-history{border-top:1px solid rgba(232,160,32,.12)}
@@ -1461,8 +1467,10 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts" id="nvDHistStats"><div><span>信号次数</span><b id="nvHistCount">0</b></div><div><span>多单</span><b id="nvHistLong">0</b></div><div><span>空单</span><b id="nvHistShort">0</b></div><div><span>最新胜率</span><b id="nvHistWin">—</b></div></div></div>
   </div>
   <div class="nv-pane" data-pane="alerts" hidden>
-   <div class="nv-d-sec"><h4>POSITION ALERTS HISTORY</h4><div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIA/USDT</span><b>OI +49.5%</b></div></div><div class="nv-alert-pager"><button type="button" data-alert-page="prev">上一页</button><span id="nvAlertPage">1 / 1</span><button type="button" data-alert-page="next">下一页</button></div></div>
-   <div class="nv-d-sec"><h4>口径</h4><p>记录持仓快速增加/减少的异动快照，不构成交易建议。</p></div>
+   <div class="nv-d-sec"><h4>ALERT HISTORY · 异动历史</h4>
+     <div class="nv-alert-cats" id="nvAlertCats"><button class="on" type="button" data-alert-cat="oi">合约持仓 <b id="nvCatOi">0</b></button><button type="button" data-alert-cat="large">特大订单 <b id="nvCatLarge">0</b></button><button type="button" data-alert-cat="volume">激增放量 <b id="nvCatVolume">0</b></button></div>
+     <div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIA/USDT</span><b>OI +49.5%</b></div></div><div class="nv-alert-pager"><button type="button" data-alert-page="prev">上一页</button><span id="nvAlertPage">1 / 1</span><button type="button" data-alert-page="next">下一页</button></div></div>
+   <div class="nv-d-sec"><h4>口径</h4><p>三类历史分开归档：合约持仓、特大主动订单、3 分钟激增放量；不构成交易建议。</p></div>
   </div>
   <div class="nv-pane" data-pane="signals" hidden>
    <div class="nv-d-sec"><h4>SIGNAL HISTORY</h4><div class="nv-signal-counts" id="nvSignalCounts"></div><div class="nv-signal-history" id="nvSignalHistory"></div></div>
@@ -11248,12 +11256,18 @@ requestAnimationFrame(frame);
       el._freshT = setTimeout(() => el.classList.remove('fresh'), 900000);
       setTimeout(() => el.classList.remove('flash'), 650);
     };
+    let alertCategory = 'oi';
     const renderAlertHistory = () => {
       if (!alertHistory) return;
-      const pages = Math.max(1, Math.ceil(alertLog.length / ALERT_PAGE_SIZE));
+      const counts = { oi: 0, large: 0, volume: 0 };
+      alertLog.forEach(a => { const k = a.type || 'oi'; if (counts[k] != null) counts[k]++; });
+      const setCount = (id, n) => { const el = sr.querySelector('#' + id); if (el) el.textContent = String(n); };
+      setCount('nvCatOi', counts.oi); setCount('nvCatLarge', counts.large); setCount('nvCatVolume', counts.volume);
+      const filtered = alertLog.filter(a => (a.type || 'oi') === alertCategory);
+      const pages = Math.max(1, Math.ceil(filtered.length / ALERT_PAGE_SIZE));
       alertHistoryPage = Math.max(0, Math.min(alertHistoryPage, pages - 1));
       const start = alertHistoryPage * ALERT_PAGE_SIZE;
-      alertHistory.innerHTML = alertLog.slice(start, start + ALERT_PAGE_SIZE).map(a => {
+      alertHistory.innerHTML = filtered.slice(start, start + ALERT_PAGE_SIZE).map(a => {
         const up = Number(a.chg || 0) >= 0;
         const cls = up ? 'up' : 'down';
         const color = up ? '#63C08E' : '#C96358';
@@ -11285,6 +11299,15 @@ requestAnimationFrame(frame);
       const btn = e.target.closest('[data-alert-page]');
       if (!btn || btn.disabled) return;
       alertHistoryPage += btn.dataset.alertPage === 'next' ? 1 : -1;
+      renderAlertHistory();
+    });
+    const alertCats = sr.querySelector('#nvAlertCats');
+    alertCats && alertCats.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-alert-cat]');
+      if (!btn) return;
+      alertCategory = btn.dataset.alertCat;
+      alertHistoryPage = 0;
+      alertCats.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
       renderAlertHistory();
     });
     const pushAlert = (r, liveTime, announce = true, type = 'oi') => {
@@ -11904,8 +11927,11 @@ requestAnimationFrame(frame);
       setDrawerMode('alerts');
       alertHistoryPage = 0;
       showTab('alerts');
-      sr.querySelector('#nvDKind').textContent = 'POSITION ALERTS · 持仓异动';
+      sr.querySelector('#nvDKind').textContent = '◉ ALERT STREAM · 三类异动';
       sr.querySelector('#nvDTitle').textContent = 'ALERT HISTORY';
+      alertCategory = (alertLog[0] && alertLog[0].type) || 'oi';
+      const catBar = sr.querySelector('#nvAlertCats');
+      catBar && catBar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.alertCat === alertCategory));
       sr.querySelector('#nvDStage').textContent = `滚屏记录 · ${alertLog.length} 条 · ${window.__MOSS_LIVE ? 'SNAPSHOT' : '样例'}`;
       renderAlertHistory();
       drawer.classList.add('open');
