@@ -11952,4 +11952,76 @@ requestAnimationFrame(frame);
 </script>
 
 
+<div id="moss-activation" role="dialog" aria-modal="true" aria-label="MOSS CORE 激活">
+  <div class="moss-auth-card">
+    <div class="moss-auth-corner tl"></div><div class="moss-auth-corner tr"></div>
+    <div class="moss-auth-corner bl"></div><div class="moss-auth-corner br"></div>
+    <div class="moss-auth-scan"></div>
+    <div class="moss-auth-kicker">MOSS CORE <span>// SECURE ACCESS</span></div>
+    <div class="moss-auth-title">激活监控终端</div>
+    <div class="moss-auth-sub">首次使用需要绑定邀请码。激活完成后才可进入监控界面。</div>
+    <div class="moss-auth-field">
+      <label for="mossAuthCode">INVITE CODE <em>邀请码</em></label>
+      <input id="mossAuthCode" type="text" maxlength="32" autocomplete="off" spellcheck="false" placeholder="MOSS-XXXX-XXXX-XXXX">
+    </div>
+    <button id="mossAuthBtn" type="button">验证并进入 <span>ENTER</span></button>
+    <div id="mossAuthStatus" class="moss-auth-status">等待验证</div>
+    <div class="moss-auth-foot"><span>DEVICE BINDING</span><span>ONE CODE / ONE MACHINE</span></div>
+    <button id="mossAuthExit" class="moss-auth-exit" type="button">退出</button>
+  </div>
+</div>
+<style>
+#moss-activation{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(2,4,7,.58);backdrop-filter:blur(20px) saturate(.55);-webkit-backdrop-filter:blur(20px) saturate(.55);font-family:var(--mono,Consolas,"SFMono-Regular",monospace);color:#ece5d5}
+#moss-activation[hidden]{display:none!important}
+.moss-auth-card{position:relative;width:min(520px,100%);padding:30px 34px 24px;background:linear-gradient(145deg,rgba(17,16,12,.92),rgba(4,6,9,.9));border:1px solid rgba(232,160,32,.42);box-shadow:0 0 0 1px rgba(232,160,32,.06),0 30px 100px rgba(0,0,0,.72),inset 0 0 50px rgba(232,160,32,.035);clip-path:polygon(0 14px,14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px));overflow:hidden}
+.moss-auth-card::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,#e8a020 18%,#ffe3a3 50%,#e8a020 82%,transparent);opacity:.9;animation:mossAuthLine 4.5s ease-in-out infinite}
+.moss-auth-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.018) 3px 4px);mix-blend-mode:screen}
+.moss-auth-corner{position:absolute;width:24px;height:24px;border-color:#e8a020;border-style:solid;opacity:.85;filter:drop-shadow(0 0 5px rgba(232,160,32,.55));z-index:2}
+.moss-auth-corner.tl{left:8px;top:8px;border-width:1px 0 0 1px}.moss-auth-corner.tr{right:8px;top:8px;border-width:1px 1px 0 0}.moss-auth-corner.bl{left:8px;bottom:8px;border-width:0 0 1px 1px}.moss-auth-corner.br{right:8px;bottom:8px;border-width:0 1px 1px 0}
+.moss-auth-scan{position:absolute;left:0;right:0;height:1px;top:30%;background:linear-gradient(90deg,transparent,rgba(232,160,32,.55),transparent);animation:mossAuthScan 5s linear infinite;pointer-events:none;opacity:.45}
+.moss-auth-kicker{font-size:9px;letter-spacing:.26em;color:#8a7b62}.moss-auth-kicker span{color:#e8a020}
+.moss-auth-title{margin-top:12px;font:700 28px/1.2 "Microsoft YaHei UI",sans-serif;letter-spacing:.08em;color:#fff3d4;text-shadow:0 0 22px rgba(232,160,32,.14)}
+.moss-auth-sub{margin-top:12px;font:400 12px/1.8 "Microsoft YaHei UI",sans-serif;color:#9a8a70;max-width:420px}
+.moss-auth-field{margin-top:24px}.moss-auth-field label{display:block;font-size:9px;letter-spacing:.2em;color:#b8aa91;margin-bottom:8px}.moss-auth-field label em{font-style:normal;font-family:"Microsoft YaHei UI",sans-serif;letter-spacing:.08em;color:#7b6d58;margin-left:8px}
+#mossAuthCode{width:100%;height:48px;box-sizing:border-box;padding:0 14px;background:rgba(2,4,7,.72);border:1px solid rgba(232,160,32,.28);outline:none;color:#ffe0a0;font:600 18px/48px Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;box-shadow:inset 0 0 18px rgba(232,160,32,.035)}
+#mossAuthCode::placeholder{color:#51483a;font-size:13px;letter-spacing:.12em}#mossAuthCode:focus{border-color:rgba(232,160,32,.78);box-shadow:inset 0 0 24px rgba(232,160,32,.08),0 0 18px rgba(232,160,32,.08)}
+#mossAuthBtn{margin-top:16px;width:100%;height:44px;border:1px solid rgba(232,160,32,.7);background:linear-gradient(90deg,rgba(232,160,32,.94),rgba(255,196,67,.98));color:#171006;font:700 13px/1 "Microsoft YaHei UI",sans-serif;letter-spacing:.1em;cursor:pointer;position:relative;overflow:hidden}
+#mossAuthBtn span{font:600 8px/1 Consolas,monospace;opacity:.55;margin-left:8px;letter-spacing:.18em}#mossAuthBtn:disabled{opacity:.5;cursor:wait}#mossAuthBtn:hover:not(:disabled){filter:brightness(1.08)}
+.moss-auth-status{margin-top:12px;min-height:18px;font:500 11px/1.5 "Microsoft YaHei UI",sans-serif;color:#8a7b62}.moss-auth-status.error{color:#e08a7f}.moss-auth-status.loading{color:#e8a020}
+.moss-auth-foot{margin-top:22px;padding-top:12px;border-top:1px solid rgba(232,160,32,.12);display:flex;justify-content:space-between;font-size:7px;letter-spacing:.18em;color:#6b5e4a}
+.moss-auth-exit{margin-top:10px;background:none;border:0;padding:0;color:#6b5e4a;font:500 9px/1 "Microsoft YaHei UI",sans-serif;text-decoration:underline;cursor:pointer}
+@keyframes mossAuthScan{0%{top:-4%;opacity:0}12%{opacity:.5}88%{opacity:.5}100%{top:104%;opacity:0}}
+@keyframes mossAuthLine{0%,100%{opacity:.55}50%{opacity:1}}
+</style>
+<script>
+(function(){
+  const root=document.getElementById('moss-activation');
+  const input=document.getElementById('mossAuthCode');
+  const button=document.getElementById('mossAuthBtn');
+  const status=document.getElementById('mossAuthStatus');
+  const exit=document.getElementById('mossAuthExit');
+  let busy=false;
+  const native=window.chrome && window.chrome.webview;
+  function post(message){ if(!native){ status.textContent='客户端通信不可用'; return; } native.postMessage(JSON.stringify(message)); }
+  function setStatus(text, kind){ status.textContent=text; status.className='moss-auth-status'+(kind?' '+kind:''); }
+  function setShown(show, error, loading){
+    root.hidden=!show;
+    if(show){ busy=!!loading; button.disabled=!!loading; input.disabled=!!loading; if(error)setStatus(error,'error'); else if(!loading)setStatus('等待验证'); else setStatus('正在验证邀请码...','loading'); setTimeout(()=>input.focus(),30); }
+  }
+  window.__MOSS_ACTIVATE_UI={show:setShown,hide:()=>setShown(false)};
+  function submit(){
+    if(busy)return;
+    const code=input.value.trim().toUpperCase();
+    if(code.length<8){setStatus('请输入完整的邀请码。','error');input.focus();return}
+    busy=true;button.disabled=true;input.disabled=true;setStatus('正在连接激活服务器...','loading');
+    post({type:'activate',code});
+  }
+  button.addEventListener('click',submit);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit()}});
+  exit.addEventListener('click',()=>post({type:'quit'}));
+  if(native){ native.addEventListener('message',e=>{let m=e.data;if(typeof m==='string'){try{m=JSON.parse(m)}catch{return}}if(!m)return;if(m.type==='activation-state'){setShown(!!m.show,m.error,m.loading)}}); }
+  setShown(true);
+})();
+</script>
+
 </body></html>

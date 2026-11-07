@@ -34,10 +34,6 @@ internal static class Program
             {
                 try { File.AppendAllText(log, $"[{DateTime.Now:O}] domain: {e.ExceptionObject}\r\n"); } catch { }
             };
-            using (var activation = new ActivationForm())
-            {
-                if (activation.ShowDialog() != DialogResult.OK) return;
-            }
             Application.Run(new MainForm());
             File.AppendAllText(log, $"[{DateTime.Now:O}] main end\r\n");
         }
@@ -59,6 +55,7 @@ internal sealed class MainForm : Form
     private DateTime _lastInjectUtc = DateTime.MinValue;
     private DateTime _lastRecoveryUtc = DateTime.MinValue;
     private System.Threading.Timer? _watchdog;
+    private bool _gateBusy;
     private int _savedW;
     private int _savedH;
 
@@ -240,6 +237,7 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.Settings.IsStatusBarEnabled = false;
             _web.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = true;
             _web.CoreWebView2.Settings.IsZoomControlEnabled = true;
+            _web.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
             var log = Path.Combine(AppContext.BaseDirectory, "boot.log");
             _web.CoreWebView2.NavigationStarting += (_, args) =>
@@ -250,7 +248,7 @@ internal sealed class MainForm : Form
             {
                 try { File.AppendAllText(log, $"[{DateTime.Now:O}] nav done ok={args.IsSuccess} err={args.WebErrorStatus}\r\n"); } catch { }
                 try { _web.ZoomFactor = 1.0; } catch { }
-                if (args.IsSuccess) StartLiveBridge();
+                if (args.IsSuccess) _ = BeginActivationGateAsync();
             };
             _web.CoreWebView2.ProcessFailed += (_, args) =>
             {
@@ -290,12 +288,102 @@ internal sealed class MainForm : Form
         }
     }
 
+    private async Task BeginActivationGateAsync()
+    {
+        if (_gateBusy) return;
+        _gateBusy = true;
+        try
+        {
+            var hasLocal = LicenseService.TryLoad();
+            var result = hasLocal
+                ? await LicenseService.ValidateAsync()
+                : (Ok: false, Error: "本机尚未激活。");
+            if (result.Ok)
+            {
+                await SendActivationState(false, "");
+                StartLiveBridge();
+            }
+            else
+            {
+                await SendActivationState(true, hasLocal ? result.Error : "");
+            }
+        }
+        finally
+        {
+            _gateBusy = false;
+        }
+    }
+
+    private async Task SendActivationState(bool show, string error, bool loading = false)
+    {
+        try
+        {
+            if (_web.CoreWebView2 == null) return;
+            var json = JsonSerializer.Serialize(new { type = "activation-state", show, error, loading });
+            _web.CoreWebView2.PostWebMessageAsJson(json);
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"), $"[{DateTime.Now:O}] activation ui: {ex.Message}\r\n"); } catch { }
+        }
+    }
+
+    private void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        try
+        {
+            var raw = e.TryGetWebMessageAsString();
+            if (string.IsNullOrWhiteSpace(raw)) raw = e.WebMessageAsJson;
+            using var doc = JsonDocument.Parse(raw);
+            var root = doc.RootElement;
+            var type = root.TryGetProperty("type", out var t) ? t.GetString() : null;
+            if (type == "quit")
+            {
+                BeginInvoke(new Action(Close));
+                return;
+            }
+            if (type == "activate")
+            {
+                var code = root.TryGetProperty("code", out var c) ? c.GetString() ?? "" : "";
+                _ = HandleActivationAsync(code);
+            }
+        }
+        catch { }
+    }
+
+    private async Task HandleActivationAsync(string code)
+    {
+        if (_gateBusy) return;
+        _gateBusy = true;
+        try
+        {
+            await SendActivationState(true, "", true);
+            var result = await LicenseService.ActivateAsync(code);
+            if (result.Ok)
+            {
+                await SendActivationState(false, "");
+                StartLiveBridge();
+            }
+            else
+            {
+                await SendActivationState(true, result.Error);
+            }
+        }
+        finally
+        {
+            _gateBusy = false;
+        }
+    }
+
     private void StartLiveBridge()
     {
-        if (_liveTimer != null) return;
-        _liveTimer = new System.Windows.Forms.Timer { Interval = 60000 };
-        _liveTimer.Tick += async (_, _) => await PullLiveAsync();
-        _liveTimer.Start();
+        if (_liveTimer == null)
+        {
+            _liveTimer = new System.Windows.Forms.Timer { Interval = 60000 };
+            _liveTimer.Tick += async (_, _) => await PullLiveAsync();
+            _liveTimer.Start();
+        }
         _watchdog ??= new System.Threading.Timer(_ => WatchdogTick(), null, 30000, 30000);
         _ = ResetZoomAsync();
         _ = LoadCachedLiveAsync();
