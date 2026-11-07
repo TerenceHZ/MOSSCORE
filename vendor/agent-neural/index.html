@@ -1242,6 +1242,52 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-sig-foot button{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a;font:600 10px/1 var(--cjk);padding:8px 12px;cursor:pointer}
 .nv-sig-foot button:first-child{background:rgba(232,160,32,.1);color:#ffc043}
 @media(max-width:1500px){.nv-regime{left:372px;width:104px}.nv-left{width:340px}.nv-card,.nv-card.focus{width:340px}}
+
+/* 数据小窗：可点击、3 分钟反差色与流光 */
+.nv-regime,.nv-fng{pointer-events:auto!important;cursor:pointer;transition:background .35s,border-color .35s,box-shadow .35s}
+.nv-regime:hover,.nv-fng:hover{border-color:rgba(255,192,67,.7)!important;box-shadow:0 0 24px rgba(232,160,32,.16)!important}
+.nv-regime.nv-data-pulse,.nv-fng.nv-data-pulse{background:linear-gradient(135deg,#f5cd75,#e8a020 58%,#ffe4a8)!important;border-color:#fff0c0!important;box-shadow:0 0 28px rgba(255,192,67,.55),inset 0 0 22px rgba(255,255,255,.2)!important}
+.nv-data-pulse{position:relative;overflow:hidden}
+.nv-data-pulse::after{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;background:linear-gradient(108deg,transparent 18%,rgba(255,255,255,.72) 47%,transparent 72%);transform:translateX(-125%);animation:nvDataSweep 2.4s linear infinite;mix-blend-mode:screen}
+@keyframes nvDataSweep{to{transform:translateX(125%)}}
+.nv-data-pulse .nv-k,.nv-data-pulse .nv-meta,.nv-data-pulse .nv-meta span,.nv-data-pulse .nv-meta b,.nv-data-pulse .nv-fng-scale,.nv-data-pulse .nv-fng-prev{color:#40280b!important;text-shadow:none!important}
+.nv-data-pulse .nv-score,.nv-data-pulse .nv-badge,.nv-data-pulse .nv-fng-main b,.nv-data-pulse .nv-fng-main span{color:#1b0f02!important;border-color:rgba(35,20,2,.4)!important;text-shadow:none!important}
+.nv-data-pulse .nv-lsbar{background:rgba(64,40,11,.22)!important}
+.nv-data-pulse .nv-fng-gauge{background:rgba(64,40,11,.2)!important}
+.nv-data-pulse .nv-fng-gauge i{background:#241504!important;box-shadow:0 0 8px rgba(36,21,4,.5)!important}
+
+/* 小数据详情弹窗 */
+.nv-info{position:fixed;inset:0;z-index:72;display:flex;align-items:center;justify-content:center;background:rgba(2,3,6,.66);backdrop-filter:blur(12px);opacity:0;transition:opacity .25s ease}
+.nv-info[hidden]{display:none!important}
+.nv-info.on{opacity:1}
+.nv-info-card{position:relative;width:min(420px,calc(100vw - 36px));max-height:calc(100vh - 48px);overflow:auto;padding:20px 22px 18px;background:linear-gradient(145deg,rgba(17,16,12,.98),rgba(5,6,9,.99));border:1px solid rgba(232,160,32,.42);box-shadow:0 30px 90px rgba(0,0,0,.72),inset 0 0 40px rgba(232,160,32,.03);clip-path:polygon(0 12px,12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px));transform:translateY(10px);transition:transform .28s ease}
+.nv-info.on .nv-info-card{transform:none}
+.nv-info-card::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,#e8a020,#ffe3a3,#e8a020,transparent);opacity:.9}
+.nv-info-h{display:flex;flex-direction:column;gap:5px;padding-right:24px}
+.nv-info-k{font:500 6px/1 var(--mono);letter-spacing:.19em;color:#9a7a43}
+.nv-info-title{font:700 20px/1.1 var(--mono);color:#f5e7cc;letter-spacing:.02em}
+.nv-info-x{position:absolute;right:12px;top:10px;width:26px;height:26px;border:1px solid rgba(232,160,32,.25);background:rgba(8,7,4,.5);color:#b99b66;font:300 18px/1 var(--mono);cursor:pointer}
+.nv-info-x:hover{color:#ffd27a;border-color:rgba(232,160,32,.6)}
+.nv-info-body{margin-top:16px}
+.nv-info-hero{display:flex;align-items:baseline;gap:9px;padding-bottom:12px;border-bottom:1px solid rgba(232,160,32,.15)}
+.nv-info-hero b{font:800 34px/1 var(--mono);color:#ffc043;letter-spacing:-.04em}
+.nv-info-hero span{font:600 10px/1 var(--cjk);color:#b59a6b}
+.nv-info-scale{position:relative;height:5px;margin:14px 0 5px;background:linear-gradient(90deg,#c96358,#e8a020 42%,#d8c56a 58%,#63c08e);overflow:hidden}
+.nv-info-scale i{position:absolute;top:-3px;width:2px;height:11px;background:#fff;box-shadow:0 0 8px #fff;transform:translateX(-50%)}
+.nv-info-scale-l{display:flex;justify-content:space-between;font:500 5.5px/1 var(--mono);letter-spacing:.1em;color:#655640}
+.nv-info-dual{display:flex;height:7px;margin:14px 0 7px;background:#7a2c25;overflow:hidden}
+.nv-info-dual i{display:block;height:100%;background:linear-gradient(90deg,#63c08e,#b0e0c5);box-shadow:0 0 10px rgba(99,192,142,.35)}
+.nv-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(232,160,32,.13);border:1px solid rgba(232,160,32,.13);margin-top:14px}
+.nv-info-grid div{background:#080a0e;padding:9px 10px}
+.nv-info-grid span{display:block;font:500 5.5px/1 var(--mono);letter-spacing:.13em;color:#6f5c43}
+.nv-info-grid b{display:block;margin-top:5px;font:600 10px/1.2 var(--mono);color:#e4d1b1}
+.nv-info-grid b.green{color:#63c08e}.nv-info-grid b.red{color:#d76759}
+.nv-info-p{font:400 10px/1.7 var(--cjk);color:#a28f73;margin:14px 0 0}
+.nv-info-p b{color:#e3c899;font-weight:500}
+.nv-info-src{margin-top:13px;padding-top:9px;border-top:1px solid rgba(232,160,32,.12);font:500 5.5px/1.5 var(--mono);letter-spacing:.06em;color:#5e503d}
+.nv-info-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:11px}.nv-info-tags span{font:500 6px/1 var(--mono);color:#9d8256;border:1px solid rgba(232,160,32,.17);padding:4px 5px}
+.nv-regime,.nv-fng{pointer-events:auto!important}
+@media(prefers-reduced-motion:reduce){.nv-data-pulse::after{animation:none!important}}
 </style>
 
 <canvas class="gl" id="gl" aria-label="神经星环：13 个智能体神经团，脉冲沿突触束在它们之间传递任务。拖动可转动视角，点击神经团可聚焦"></canvas>
@@ -1263,7 +1309,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="cap-line"></div>
   </div>
 
-  <div class="nv-fng" id="nvFng" style="--fng:#e8a020">
+  <div class="nv-fng" id="nvFng" role="button" tabindex="0" title="点击查看恐慌贪婪详情" style="--fng:#e8a020">
    <div class="nv-k">FEAR &amp; GREED · 今日</div>
    <div class="nv-fng-main"><b id="nvFngValue">—</b><span id="nvFngLabel">恐慌贪婪</span></div>
    <div class="nv-fng-gauge"><i id="nvFngMark"></i></div>
@@ -1271,7 +1317,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="nv-fng-prev" id="nvFngPrev">昨日 —</div>
   </div>
 
-  <div class="nv-regime">
+  <div class="nv-regime" id="nvRegime" role="button" tabindex="0" title="点击查看全网多空明细">
    <div class="nv-k">GLOBAL L/S · 全网多空</div>
    <div class="nv-main"><span class="nv-badge" id="nvLsBias">均衡</span><span class="nv-score" id="nvLsRatio">—</span><div class="nv-meta"><span>多 <b id="nvLsLong">—</b></span><span>空 <b id="nvLsShort">—</b></span><span>TOP5 5M <b id="nvLsTime">—</b></span></div></div>
    <div class="nv-lsbar"><i id="nvLsBar"></i></div>
@@ -1475,6 +1521,13 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div class="nv-pane" data-pane="signals" hidden>
    <div class="nv-d-sec"><h4>SIGNAL HISTORY</h4><div class="nv-signal-counts" id="nvSignalCounts"></div><div class="nv-signal-history" id="nvSignalHistory"></div></div>
   </div>
+ </div>
+</div>
+<div class="nv-info" id="nvInfo" hidden>
+ <div class="nv-info-card" role="dialog" aria-modal="true" aria-labelledby="nvInfoTitle">
+  <div class="nv-info-h"><div class="nv-info-k" id="nvInfoKick">MARKET DATA</div><div class="nv-info-title" id="nvInfoTitle">数据详情</div></div>
+  <button class="nv-info-x" type="button" data-info-close aria-label="关闭">×</button>
+  <div class="nv-info-body" id="nvInfoBody"></div>
  </div>
 </div>
 <div class="nv-signal" id="nvSignal" aria-hidden="true">
@@ -11534,8 +11587,60 @@ requestAnimationFrame(frame);
       set('bSmBuy', fmtWan(sm.buyUsdt)); set('bSmSell', fmtWan(sm.sellUsdt));
       setBar('bSmBuyBar', 1, 1); setBar('bSmSellBar', 1, 1);
     };
+    let currentFng = null, currentLs = null, lastFngValue = null, lastLsKey = null;
+    const esc = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const pulseBox = (el) => {
+      if (!el) return;
+      el.classList.remove('nv-data-pulse'); void el.offsetWidth; el.classList.add('nv-data-pulse');
+      clearTimeout(el._dataPulseT);
+      el._dataPulseT = setTimeout(() => el.classList.remove('nv-data-pulse'), 180000);
+    };
+    const openInfo = (kind) => {
+      const info = sr.querySelector('#nvInfo'); if (!info) return;
+      const kick = sr.querySelector('#nvInfoKick'), title = sr.querySelector('#nvInfoTitle'), body = sr.querySelector('#nvInfoBody');
+      if (kind === 'ls') {
+        const d = currentLs || {};
+        const long = Number(d.longAccount || 0), short = Number(d.shortAccount || 0), ratio = Number(d.ratio || 0);
+        kick.textContent = 'GLOBAL LONG / SHORT · 5M';
+        title.textContent = '全网合约多空比';
+        body.innerHTML = `<div class="nv-info-hero"><b>${ratio ? ratio.toFixed(2) : '—'}</b><span>${ratio >= 1.15 ? '多头占优' : ratio <= .87 ? '空头占优' : '多空均衡'}</span></div>
+          <div class="nv-info-dual"><i style="width:${Math.max(0, Math.min(100, long))}%"></i></div>
+          <div class="nv-info-scale-l"><span>LONG ${long.toFixed(1)}%</span><span>SHORT ${short.toFixed(1)}%</span></div>
+          <div class="nv-info-grid"><div><span>多头账户</span><b class="green">${long.toFixed(1)}%</b></div><div><span>空头账户</span><b class="red">${short.toFixed(1)}%</b></div><div><span>多空比值</span><b>${ratio ? ratio.toFixed(3) : '—'}</b></div><div><span>更新时间</span><b>${esc(d.updatedAt || '—')} · 5M</b></div></div>
+          <div class="nv-info-tags">${(d.symbols || ['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','DOGEUSDT']).map(x => `<span>${esc(x.replace('USDT',''))}</span>`).join('')}</div>
+          <p class="nv-info-p">当前统计为 <b>TOP5 主力合约账户多空</b> 的等权聚合。多头账户占比高于空头，说明散户账户整体更偏多；数值越高，多头拥挤度越明显。账户比例不等于持仓金额比例，也不构成交易建议。</p>
+          <div class="nv-info-src">SOURCE · BINANCE FUTURES / GLOBAL LONG-SHORT ACCOUNT RATIO · 5M</div>`;
+      } else {
+        const d = currentFng || {};
+        const value = Math.max(0, Math.min(100, Number(d.value || 0)));
+        const labelMap = { 'Extreme Fear': '极度恐慌', 'Fear': '恐慌', 'Neutral': '中性', 'Greed': '贪婪', 'Extreme Greed': '极度贪婪' };
+        const label = labelMap[d.label] || d.label || '恐慌贪婪';
+        const prev = d.previous != null ? Number(d.previous) : null;
+        kick.textContent = 'FEAR & GREED · DAILY';
+        title.textContent = '恐慌贪婪指数';
+        body.innerHTML = `<div class="nv-info-hero"><b>${Number.isFinite(value) ? Math.round(value) : '—'}</b><span>${esc(label)}</span></div>
+          <div class="nv-info-scale"><i style="left:${value}%"></i></div><div class="nv-info-scale-l"><span>极度恐慌 0</span><span>极度贪婪 100</span></div>
+          <div class="nv-info-grid"><div><span>当前指数</span><b>${Number.isFinite(value) ? Math.round(value) : '—'}</b></div><div><span>昨日</span><b>${prev != null ? prev : '—'}</b></div><div><span>日变化</span><b class="${prev != null && value < prev ? 'red' : 'green'}">${prev != null ? (value - prev >= 0 ? '+' : '') + (value - prev) : '—'}</b></div><div><span>更新日期</span><b>${esc(d.date || '—')}</b></div></div>
+          <p class="nv-info-p">恐慌贪婪指数综合波动率、市场动量、社交媒体、调查、BTC 主导率与搜索趋势，用 <b>0–100</b> 表示市场情绪。越低代表越恐慌，越高代表越贪婪；它反映情绪，不是价格预测。</p>
+          <div class="nv-info-src">SOURCE · ALTERNATIVE.ME / CRYPTO FEAR &amp; GREED INDEX · DAILY</div>`;
+      }
+      info.hidden = false;
+      requestAnimationFrame(() => info.classList.add('on'));
+    };
+    const closeInfo = () => {
+      const info = sr.querySelector('#nvInfo'); if (!info) return;
+      info.classList.remove('on');
+      setTimeout(() => { info.hidden = true; }, 220);
+    };
+    sr.querySelector('#nvFng')?.addEventListener('click', () => openInfo('fng'));
+    sr.querySelector('#nvRegime')?.addEventListener('click', () => openInfo('ls'));
+    sr.querySelector('#nvInfo')?.addEventListener('click', (e) => { if (e.target === e.currentTarget || e.target.closest('[data-info-close]')) closeInfo(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeInfo(); });
     const renderFearGreed = (fg) => {
       if (!fg) return;
+      const changed = lastFngValue !== null && Number(fg.value) !== lastFngValue;
+      currentFng = fg; lastFngValue = Number(fg.value);
+      if (changed) pulseBox(sr.querySelector('#nvFng'));
       const v = Math.max(0, Math.min(100, Number(fg.value || 0)));
       const labelMap = { 'Extreme Fear': '极度恐慌', 'Fear': '恐慌', 'Neutral': '中性', 'Greed': '贪婪', 'Extreme Greed': '极度贪婪' };
       const color = v <= 25 ? '#C96358' : v <= 45 ? '#e8a020' : v <= 55 ? '#d8c56a' : v <= 75 ? '#63C08E' : '#42a978';
@@ -11564,6 +11669,10 @@ requestAnimationFrame(frame);
     };
     const renderLongShort = (ls) => {
       if (!ls) return;
+      const lsKey = `${ls.updatedAt || ''}:${ls.ratio || ''}:${ls.longAccount || ''}`;
+      const changed = lastLsKey !== null && lsKey !== lastLsKey;
+      currentLs = ls; lastLsKey = lsKey;
+      if (changed) pulseBox(sr.querySelector('#nvRegime'));
       const long = Math.max(0, Math.min(100, Number(ls.longAccount || 0)));
       const short = Math.max(0, Math.min(100, Number(ls.shortAccount || 0)));
       const ratio = Number(ls.ratio || 0);
