@@ -52,6 +52,9 @@ internal sealed class MainForm : Form
     private bool _liveBusy;
     private DateTime _binanceCooldownUntil = DateTime.MinValue;
     private HashSet<string>? _binanceSymbols;
+    private DateTime _lastInjectUtc = DateTime.MinValue;
+    private DateTime _lastRecoveryUtc = DateTime.MinValue;
+    private System.Threading.Timer? _watchdog;
     private int _savedW;
     private int _savedH;
 
@@ -248,6 +251,7 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.ProcessFailed += (_, args) =>
             {
                 try { File.AppendAllText(log, $"[{DateTime.Now:O}] web process failed {args.ProcessFailedKind}\r\n"); } catch { }
+                try { _web.BeginInvoke(new Action(() => RecoverWebView("renderer failure"))); } catch { }
             };
 
             var page = Path.Combine(AppContext.BaseDirectory, "index.html");
@@ -288,9 +292,67 @@ internal sealed class MainForm : Form
         _liveTimer = new System.Windows.Forms.Timer { Interval = 60000 };
         _liveTimer.Tick += async (_, _) => await PullLiveAsync();
         _liveTimer.Start();
+        _watchdog ??= new System.Threading.Timer(_ => WatchdogTick(), null, 30000, 30000);
         _ = ResetZoomAsync();
         _ = LoadCachedLiveAsync();
         _ = PullLiveAsync();
+    }
+
+    private void WatchdogTick()
+    {
+        try
+        {
+            if (_web.IsDisposed || _web.CoreWebView2 == null) return;
+            if (_lastInjectUtc == DateTime.MinValue) return;
+            if ((DateTime.UtcNow - _lastInjectUtc).TotalMinutes < 5) return;
+            if ((DateTime.UtcNow - _lastRecoveryUtc).TotalMinutes < 5) return;
+            _lastRecoveryUtc = DateTime.UtcNow;
+            _web.BeginInvoke(new Action(() => RecoverWebView("stale data watchdog")));
+        }
+        catch { }
+    }
+
+    private void RecoverWebView(string reason)
+    {
+        try
+        {
+            if (_web.IsDisposed || _web.CoreWebView2 == null) return;
+            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"),
+                $"[{DateTime.Now:O}] recover webview: {reason}\r\n");
+            _lastInjectUtc = DateTime.UtcNow;
+            _web.Reload();
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"),
+                    $"[{DateTime.Now:O}] recover failed: {ex.Message}\r\n");
+            }
+            catch { }
+        }
+    }
+
+    private async Task InjectLiveAsync(string json, string source)
+    {
+        if (_web.IsDisposed || _web.CoreWebView2 == null) return;
+        try
+        {
+            await _web.ExecuteScriptAsync(
+                "window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));window.__MOSS_LAST_APPLY=Date.now();")
+                .WaitAsync(TimeSpan.FromSeconds(12));
+            _lastInjectUtc = DateTime.UtcNow;
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "boot.log"),
+                    $"[{DateTime.Now:O}] inject {source}: {ex.Message}\r\n");
+            }
+            catch { }
+            RecoverWebView("inject timeout/error");
+        }
     }
 
     private async Task ResetZoomAsync()
@@ -315,12 +377,9 @@ internal sealed class MainForm : Form
             var file = File.Exists(cache) ? cache : Path.Combine(AppContext.BaseDirectory, "live-seed.json");
             if (!File.Exists(file)) return;
             var json = await File.ReadAllTextAsync(file);
-            await _web.ExecuteScriptAsync("window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));");
+            await InjectLiveAsync(json, "cache");
         }
-        catch
-        {
-            // The seed is optional; live fetch continues.
-        }
+        catch { }
     }
 
     private static string S(JsonElement e, string name)
@@ -632,7 +691,7 @@ internal sealed class MainForm : Form
             await File.WriteAllTextAsync(LiveCachePath, json);
         }
         catch { }
-        await _web.ExecuteScriptAsync("window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));");
+        await InjectLiveAsync(json, "remote");
     }
 
     private async Task PullLiveAsync()
@@ -774,7 +833,7 @@ internal sealed class MainForm : Form
                 await File.WriteAllTextAsync(LiveCachePath, json);
             }
             catch { }
-            await _web.ExecuteScriptAsync("window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));");
+            await InjectLiveAsync(json, "live");
         }
         catch (Exception ex)
         {
@@ -860,7 +919,7 @@ internal sealed class MainForm : Form
                 await File.WriteAllTextAsync(LiveCachePath, json);
             }
             catch { }
-            await _web.ExecuteScriptAsync("window.__MOSS_LIVE=" + json + ";window.dispatchEvent(new Event('moss:live'));");
+            await InjectLiveAsync(json, "live");
         }
         catch (Exception ex)
         {
