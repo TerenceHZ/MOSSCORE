@@ -814,6 +814,9 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-regime .nv-lsbar i{display:block;width:50%;height:100%;background:#63C08E;box-shadow:0 0 7px rgba(99,192,142,.35);transition:width .5s ease}
 .nv-fng{position:absolute;right:436px;top:80px;width:118px;z-index:12;padding:10px 10px 9px;border:1px solid rgba(232,160,32,.28);background:linear-gradient(135deg,rgba(12,12,10,.94),rgba(5,6,8,.72));box-shadow:inset 0 0 24px rgba(232,160,32,.035),0 0 24px rgba(0,0,0,.35);backdrop-filter:blur(8px);pointer-events:none;--fng:#e8a020}
 .nv-fng::before{content:"";position:absolute;right:0;top:0;width:34px;height:1px;background:var(--fng);box-shadow:0 0 8px var(--fng)}
+.nv-fng{background:linear-gradient(115deg,rgba(6,7,9,.97) 0%,rgba(6,7,9,.9) 32%,color-mix(in srgb,var(--fng) 13%,transparent) 50%,rgba(6,7,9,.9) 68%,rgba(6,7,9,.97) 100%);background-size:240% 100%;animation:nvFngFlow 8s linear infinite}
+@keyframes nvFngFlow{0%{background-position:120% 0}100%{background-position:-120% 0}}
+
 .nv-fng{overflow:hidden;box-shadow:inset 0 -20px 26px -18px var(--fng),inset 0 0 24px rgba(232,160,32,.035),0 0 24px rgba(0,0,0,.35)}
 .nv-fng::after{content:"";position:absolute;left:4%;right:4%;bottom:0;height:34px;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 50% 100%,var(--fng),transparent 72%);opacity:.52;filter:blur(9px);animation:nvFngGlow 4.8s ease-in-out infinite}
 .nv-fng>*{position:relative;z-index:1}
