@@ -6,11 +6,28 @@ license keys are stored as SHA-256 hashes in SQLite.
 """
 import hashlib
 import secrets
+import shutil
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parent / "licenses.db"
+BACKUP_DIR = Path(__file__).resolve().parent / "license-backups"
+
+
+def backup():
+    """Keep a timestamped copy before administrative changes/restarts."""
+    try:
+        if not DB_PATH.exists() or DB_PATH.stat().st_size < 4096:
+            return
+        BACKUP_DIR.mkdir(exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        shutil.copy2(DB_PATH, BACKUP_DIR / f"licenses-{stamp}.db")
+        old = sorted(BACKUP_DIR.glob("licenses-*.db"))
+        for item in old[:-20]:
+            item.unlink(missing_ok=True)
+    except Exception:
+        pass
 
 
 def now():
@@ -164,6 +181,7 @@ def release(license_key):
 
 def reset_code(code):
     init()
+    backup()
     with connect() as db:
         row = _code(db, code)
         if not row:
@@ -174,6 +192,7 @@ def reset_code(code):
 
 def set_code_status(code_id, enabled):
     init()
+    backup()
     with connect() as db:
         row = db.execute("SELECT id FROM codes WHERE id=?", (int(code_id),)).fetchone()
         if not row:
@@ -184,6 +203,7 @@ def set_code_status(code_id, enabled):
 
 def delete_code(code_id):
     init()
+    backup()
     with connect() as db:
         row = db.execute("SELECT id FROM codes WHERE id=?", (int(code_id),)).fetchone()
         if not row:
@@ -191,6 +211,55 @@ def delete_code(code_id):
         db.execute("DELETE FROM devices WHERE code_id=?", (int(code_id),))
         db.execute("DELETE FROM codes WHERE id=?", (int(code_id),))
         return True
+
+
+def stats():
+    init()
+    current = now()
+    online_cutoff = iso(current - timedelta(minutes=5))
+    today_start = iso(current.replace(hour=0, minute=0, second=0, microsecond=0))
+    with connect() as db:
+        base = (
+            "FROM devices d JOIN codes c ON c.id=d.code_id "
+            "WHERE d.revoked=0 AND c.revoked=0 "
+            "AND (c.expires_at IS NULL OR c.expires_at>?)"
+        )
+        active_devices = db.execute(
+            "SELECT COUNT(*) n " + base, (iso(current),)
+        ).fetchone()["n"]
+        online = db.execute(
+            "SELECT COUNT(*) n " + base + " AND d.last_seen>=?",
+            (iso(current), online_cutoff),
+        ).fetchone()["n"]
+        new_today = db.execute(
+            "SELECT COUNT(*) n " + base + " AND d.activated_at>=?",
+            (iso(current), today_start),
+        ).fetchone()["n"]
+        total_codes = db.execute("SELECT COUNT(*) n FROM codes").fetchone()["n"]
+        active_codes = db.execute(
+            "SELECT COUNT(*) n FROM codes WHERE revoked=0 AND (expires_at IS NULL OR expires_at>?)",
+            (iso(current),),
+        ).fetchone()["n"]
+        online_devices = [dict(r) for r in db.execute(
+            "SELECT d.device_name,d.device_id,d.last_seen,d.activated_at,"
+            "c.code_hint,c.code_plain FROM devices d JOIN codes c ON c.id=d.code_id "
+            "WHERE d.revoked=0 AND c.revoked=0 AND (c.expires_at IS NULL OR c.expires_at>?) "
+            "AND d.last_seen>=? ORDER BY d.last_seen DESC LIMIT 30",
+            (iso(current), online_cutoff),
+        ).fetchall()]
+    for d in online_devices:
+        d["device_id"] = (d["device_id"] or "")[:12] + "…"
+        d["code"] = d.pop("code_plain") or ("旧码 · " + d.pop("code_hint"))
+        d.pop("code_hint", None)
+    return {
+        "online": online,
+        "active_devices": active_devices,
+        "new_today": new_today,
+        "active_codes": active_codes,
+        "total_codes": total_codes,
+        "online_devices": online_devices,
+        "window_minutes": 5,
+    }
 
 
 def list_codes():

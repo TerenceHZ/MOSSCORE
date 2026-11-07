@@ -102,6 +102,12 @@ button.danger{background:#241313;color:#e0a39b;border-color:#66332d}
 button.danger:hover{background:#331919;color:#ffc7bd}
 td.actions{white-space:nowrap}td.actions button{margin-right:5px}
 .table-wrap{width:100%;overflow-x:auto}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#2b2418;border:1px solid #3b3324;margin-bottom:18px}
+.stats-grid>div{background:#0b0e12;padding:14px 15px}.stats-grid span{display:block;font-size:10px;letter-spacing:.08em;color:#8b7d68}
+.stats-grid b{display:block;margin-top:7px;font:600 25px/1 Consolas,monospace;color:#ffd27a}.stats-grid small{display:block;margin-top:5px;font-size:10px;color:#695b48}
+.online-head{display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px}.online-head b{font-size:12px;color:#b9a682}.online-head span{font-size:10px;color:#6f624f}
+#onlineList{font-size:11px}#onlineList td{padding:7px 8px;color:#b9a887}#onlineList td:last-child{color:#6f8f78;font-family:Consolas,monospace}
+.empty-online{color:#6f624f;font-size:11px;padding:8px 0}
 table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px;min-width:760px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #1f2328;white-space:nowrap}
 td.code-cell{font-family:Consolas,monospace;color:#e5c27e;letter-spacing:.04em}td.muted-cell{color:#6f6352}
 th{color:#827664;font-weight:500}.hint{color:#827664;font-size:12px}.err{color:#e08a7f}
@@ -113,6 +119,8 @@ th{color:#827664;font-weight:500}.hint{color:#827664;font-size:12px}.err{color:#
 <button class="ghost" onclick="logout()">退出</button></div><div id="code"><span class="code-value" id="codeText"></span><button class="copy" id="copyGenerated" onclick="copyGenerated()">复制</button></div></div>
 <div class="panel"><div class="row"><div style="flex:1"><label>解绑邀请码</label><input id="resetCode" placeholder="MOSS-XXXX-XXXX-XXXX" style="width:100%"></div>
 <button onclick="resetCode()">解绑旧设备</button></div><div class="hint" style="margin-top:10px">解绑后该码可以给新电脑重新激活。</div></div>
+<div class="stats-grid"><div><span>ONLINE COMPUTERS</span><b id="statOnline">0</b><small>最近 5 分钟有数据请求</small></div><div><span>ACTIVE DEVICES</span><b id="statDevices">0</b><small>有效许可证设备</small></div><div><span>NEW TODAY</span><b id="statNew">0</b><small>今天首次激活</small></div><div><span>ACTIVE CODES</span><b id="statCodes">0</b><small>有效邀请码</small></div></div>
+<div class="panel"><div class="online-head"><b>在线电脑</b><span>每 30 秒自动刷新</span></div><div id="onlineList"></div></div>
 <div class="panel"><div class="row" style="justify-content:space-between"><b>邀请码列表</b><span class="hint">完整邀请码仅管理员可见，可直接复制</span></div>
 <div class="table-wrap"><table><thead><tr><th>ID</th><th>邀请码</th><th>设备数</th><th>有效期</th><th>状态</th><th>已绑定</th><th>操作</th></tr></thead><tbody id="list"></tbody></table></div></div></div>
 <script>
@@ -164,6 +172,28 @@ async function deleteCode(id){
 }
 async function loadList(){
   const r=await api('/admin/api/list',{});
+  const st=r.stats||{};
+  document.getElementById('statOnline').textContent=st.online??'0';
+  document.getElementById('statDevices').textContent=st.active_devices??'0';
+  document.getElementById('statNew').textContent=st.new_today??'0';
+  document.getElementById('statCodes').textContent=`${st.active_codes??0} / ${st.total_codes??0}`;
+  const online=document.getElementById('onlineList');online.innerHTML='';
+  const list=st.online_devices||[];
+  if(!list.length){online.innerHTML='<div class="empty-online">暂无在线电脑；客户端每 60 秒上报一次心跳。</div>'}
+  else{
+    const table=document.createElement('table');
+    const head=document.createElement('tr');
+    for(const h of ['设备','邀请码','最后心跳']){const th=document.createElement('th');th.textContent=h;head.appendChild(th)}
+    table.appendChild(head);
+    for(const d of list){
+      const tr=document.createElement('tr');
+      const name=document.createElement('td');name.textContent=d.device_name||'未命名设备';
+      const code=document.createElement('td');code.textContent=d.code||'—';code.style.whiteSpace='nowrap';
+      const seen=document.createElement('td');seen.textContent=d.last_seen?new Date(d.last_seen).toLocaleTimeString('zh-CN',{hour12:false}):'—';
+      tr.append(name,code,seen);table.appendChild(tr);
+    }
+    online.appendChild(table);
+  }
   const tb=document.getElementById('list');tb.innerHTML='';
   for(const c of (r.codes||[])){
     const tr=document.createElement('tr');
@@ -192,6 +222,7 @@ async function loadList(){
 }
 async function logout(){await fetch('/admin/logout',{method:'POST'});location='/admin'}
 loadList();
+setInterval(loadList,30000);
 </script></html>"""
 
 
@@ -516,7 +547,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"ok": True, "code": code})
                 return
             if path == "/admin/api/list":
-                self.send_json({"ok": True, "codes": license_core.list_codes()})
+                self.send_json({"ok": True, "codes": license_core.list_codes(), "stats": license_core.stats()})
                 return
             if path == "/admin/api/reset":
                 ok = license_core.reset_code(str(data.get("code", "")))
@@ -621,6 +652,7 @@ def main():
     TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
     token()
     admin_password()
+    license_core.backup()
     license_core.init()
     t = threading.Thread(target=poll_loop, daemon=True)
     t.start()
