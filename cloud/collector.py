@@ -27,6 +27,118 @@ WATCHLIST = ROOT / "watchlist.json"
 TOKEN_FILE = ROOT / "token.txt"
 SNAPSHOT_FILE = ROOT / "snapshot.json"
 LOG_FILE = ROOT / "collector.log"
+ADMIN_FILE = ROOT / "admin.txt"
+
+ADMIN_SESSIONS = {}
+ADMIN_LOCK = threading.Lock()
+
+
+def admin_password():
+    if ADMIN_FILE.exists():
+        return ADMIN_FILE.read_text(encoding="utf-8").strip()
+    password = secrets.token_urlsafe(18)
+    ADMIN_FILE.write_text(password, encoding="utf-8")
+    try:
+        ADMIN_FILE.chmod(0o600)
+    except OSError:
+        pass
+    return password
+
+
+def admin_cookie_ok(header):
+    for part in (header or "").split(";"):
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        if key.strip() != "moss_admin":
+            continue
+        with ADMIN_LOCK:
+            expires = ADMIN_SESSIONS.get(value.strip())
+            if expires and expires > time.time():
+                return True
+    return False
+
+
+def admin_login_page(error=""):
+    err = f'<div class="err">{error}</div>' if error else ""
+    return f"""<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOSS CORE · 管理后台</title>
+<style>
+*{{box-sizing:border-box}} body{{margin:0;background:#05070a;color:#ece5d5;font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}}
+.wrap{{max-width:430px;margin:12vh auto;padding:28px;border:1px solid #3b3324;background:#090c10;box-shadow:0 0 60px #000}}
+h1{{margin:0 0 6px;color:#e8a020;font:600 22px Consolas,monospace;letter-spacing:.08em}}
+p{{color:#827664;margin:0 0 22px}} label{{display:block;color:#b8aa91;margin:14px 0 6px}}
+input{{width:100%;padding:12px;background:#11151a;border:1px solid #3b3324;color:#fff;font:15px Consolas,monospace;outline:none}}
+button{{margin-top:18px;width:100%;padding:12px;border:0;background:#e8a020;color:#171006;font-weight:700;cursor:pointer}}
+.err{{margin:12px 0;padding:10px;border:1px solid #8a3b33;color:#e08a7f;background:#1a0d0b}}
+</style><div class="wrap"><h1>MOSS CORE</h1><p>邀请码管理后台 · 仅限管理员</p>{err}
+<form method="post" action="/admin/login"><label>管理员密码</label>
+<input type="password" name="password" autofocus autocomplete="current-password">
+<button type="submit">进入后台</button></form></div></html>"""
+
+
+def admin_dashboard():
+    return """<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOSS CORE · 管理后台</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#05070a;color:#ece5d5;font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:960px;margin:36px auto;padding:0 20px}h1{color:#e8a020;font:600 23px Consolas,monospace;letter-spacing:.08em;margin:0 0 6px}
+.sub{color:#827664;margin-bottom:24px}.panel{border:1px solid #3b3324;background:#090c10;padding:20px;margin-bottom:18px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}label{display:block;color:#b8aa91;margin-bottom:6px;font-size:12px}
+input,select{padding:10px;background:#11151a;border:1px solid #3b3324;color:#fff;font:13px Consolas,monospace}
+button{padding:10px 18px;border:0;background:#e8a020;color:#171006;font-weight:700;cursor:pointer}
+button.ghost{background:#171b20;color:#c9bda6;border:1px solid #3b3324}
+#code{margin-top:16px;padding:14px;border:1px dashed #8a6a2a;background:#12100a;color:#ffc043;font:700 20px Consolas,monospace;letter-spacing:.08em;display:none}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #1f2328}
+th{color:#827664;font-weight:500}.hint{color:#827664;font-size:12px}.err{color:#e08a7f}
+</style>
+<div class="wrap"><h1>MOSS CORE · 管理后台</h1><div class="sub">生成邀请码 · 查看设备 · 解绑换机</div>
+<div class="panel"><div class="row"><div><label>有效期（天）</label><input id="days" type="number" value="365" min="1" style="width:130px"></div>
+<div><label>可绑定设备数</label><input id="devices" type="number" value="1" min="1" style="width:130px"></div>
+<button onclick="createCode()">生成邀请码</button><button class="ghost" onclick="loadList()">刷新列表</button>
+<button class="ghost" onclick="logout()">退出</button></div><div id="code"></div></div>
+<div class="panel"><div class="row"><div style="flex:1"><label>解绑邀请码</label><input id="resetCode" placeholder="MOSS-XXXX-XXXX-XXXX" style="width:100%"></div>
+<button onclick="resetCode()">解绑旧设备</button></div><div class="hint" style="margin-top:10px">解绑后该码可以给新电脑重新激活。</div></div>
+<div class="panel"><div class="row" style="justify-content:space-between"><b>邀请码列表</b><span class="hint">只显示后四位，完整码生成时请保存</span></div>
+<table><thead><tr><th>ID</th><th>后四位</th><th>设备数</th><th>有效期</th><th>状态</th><th>已绑定</th></tr></thead><tbody id="list"></tbody></table></div></div>
+<script>
+async function api(path, body){
+  const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+  if(r.status===401){location='/admin';throw new Error('unauthorized')}
+  return await r.json();
+}
+async function createCode(){
+  document.getElementById('code').style.display='none';
+  const days=Number(document.getElementById('days').value||365);
+  const devices=Number(document.getElementById('devices').value||1);
+  const r=await api('/admin/api/create',{days,devices});
+  const el=document.getElementById('code');
+  if(!r.ok){el.textContent='生成失败：'+(r.error||'unknown');el.style.display='block';return}
+  el.textContent=r.code;el.style.display='block';loadList();
+}
+async function resetCode(){
+  const code=document.getElementById('resetCode').value.trim();
+  if(!code)return alert('请输入完整邀请码');
+  if(!confirm('确定解绑这个邀请码的所有旧设备？'))return;
+  const r=await api('/admin/api/reset',{code});
+  alert(r.ok?'已解绑，可以让新电脑重新激活':'未找到该邀请码');loadList();
+}
+async function loadList(){
+  const r=await api('/admin/api/list',{});
+  const tb=document.getElementById('list');tb.innerHTML='';
+  for(const c of (r.codes||[])){
+    const tr=document.createElement('tr');
+    const cells=[c.id,c.code_hint,c.max_devices,c.expires_at?new Date(c.expires_at).toLocaleDateString():'永久',c.revoked?'停用':'启用',c.active_devices];
+    for(const v of cells){const td=document.createElement('td');td.textContent=v==null?'':v;tr.appendChild(td)}
+    tb.appendChild(tr);
+  }
+}
+async function logout(){await fetch('/admin/logout',{method:'POST'});location='/admin'}
+loadList();
+</script></html>"""
+
 
 API = "https://fapi.binance.com"
 FNG = "https://api.alternative.me/fng/?limit=2"
@@ -286,6 +398,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def send_html(self, text, code=200):
+        body = text.encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_OPTIONS(self):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -294,6 +415,60 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
+        path = urllib.parse.urlparse(self.path).path
+        if path == "/admin/login":
+            try:
+                length = int(self.headers.get("Content-Length", "0") or 0)
+                raw = self.rfile.read(length).decode("utf-8") if length else ""
+                form = urllib.parse.parse_qs(raw)
+                password = form.get("password", [""])[0]
+                if not secrets.compare_digest(password, admin_password()):
+                    self.send_html(admin_login_page("密码错误"), 401)
+                    return
+                token = secrets.token_urlsafe(24)
+                with ADMIN_LOCK:
+                    ADMIN_SESSIONS[token] = time.time() + 8 * 3600
+                self.send_response(303)
+                self.send_header("Set-Cookie", f"moss_admin={token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=28800")
+                self.send_header("Location", "/admin")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+            except Exception:
+                self.send_html(admin_login_page("登录失败"), 400)
+            return
+        if path == "/admin/logout":
+            self.send_response(303)
+            self.send_header("Set-Cookie", "moss_admin=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0")
+            self.send_header("Location", "/admin")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        if path.startswith("/admin/api/"):
+            if not admin_cookie_ok(self.headers.get("Cookie", "")):
+                self.send_json({"ok": False, "error": "unauthorized"}, 401)
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0") or 0)
+                data = json.loads(self.rfile.read(length).decode("utf-8") or "{}") if length else {}
+            except Exception:
+                self.send_json({"ok": False, "error": "invalid_json"}, 400)
+                return
+            if path == "/admin/api/create":
+                code = license_core.create_code(
+                    max(1, int(data.get("devices", 1))),
+                    max(1, int(data.get("days", 365))),
+                )
+                self.send_json({"ok": True, "code": code})
+                return
+            if path == "/admin/api/list":
+                self.send_json({"ok": True, "codes": license_core.list_codes()})
+                return
+            if path == "/admin/api/reset":
+                ok = license_core.reset_code(str(data.get("code", "")))
+                self.send_json({"ok": ok})
+                return
+            self.send_json({"ok": False, "error": "not found"}, 404)
+            return
         try:
             if "chunked" in (self.headers.get("Transfer-Encoding", "").lower()):
                 parts = []
@@ -341,6 +516,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urllib.parse.urlparse(self.path).path
+        if path == "/admin":
+            if admin_cookie_ok(self.headers.get("Cookie", "")):
+                self.send_html(admin_dashboard())
+            else:
+                self.send_html(admin_login_page())
+            return
         if path == "/health":
             with _lock:
                 self.send_json({"ok": _status["ok"], "updatedAt": _status["updatedAt"], "lastError": _status["lastError"]})
@@ -366,6 +547,7 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
     token()
+    admin_password()
     license_core.init()
     t = threading.Thread(target=poll_loop, daemon=True)
     t.start()
