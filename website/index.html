@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOSS CORE · 异动监测终端</title>
+<meta name="description" content="MOSS CORE 是全市场合约异动监测终端。实时 OI、放量、主动大单与建仓信号，一屏锁定。">
+<link rel="icon" href="assets/moss-icon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="scanline" aria-hidden="true"></div>
+<div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="MOSS CORE">
+    <span class="brand-mark"><i></i><b></b></span>
+    <span class="brand-copy"><b>MOSS CORE</b><small>NEURAL ANOMALY TERMINAL</small></span>
+  </a>
+  <nav class="nav-links" aria-label="主导航">
+    <a href="#overview">概览</a>
+    <a href="#intel">能力</a>
+    <a href="#terminal">终端</a>
+    <a href="#security">架构</a>
+    <a href="#download">下载</a>
+  </nav>
+  <div class="nav-right">
+    <span class="nav-status"><i></i> SYSTEM ONLINE</span>
+    <a class="btn btn-small" href="#download"><span>DOWNLOAD</span><b>↓</b></a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas" aria-hidden="true"></canvas>
+    <div class="hero-vignette" aria-hidden="true"></div>
+    <div class="hero-meta hero-meta-tl">
+      <span>NEURAL ANOMALY / 03</span>
+      <b>SINGAPORE NODE · <span id="heroClock">00:00:00</span></b>
+    </div>
+    <div class="hero-meta hero-meta-tr">
+      <span>MARKET REGIME</span>
+      <b class="gold">WEAK · 49.3</b>
+    </div>
+
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <div class="eyebrow"><i></i> REAL-TIME CONTRACT INTELLIGENCE</div>
+        <h1>捕捉市场<br><span>未发生之前</span></h1>
+        <p class="hero-lead">全市场合约汇入一个神经星环。持仓异动、放量脉冲、主动大单与建仓信号，在价格启动前完成锁定。</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary magnetic" id="heroDownload" href="#download"><span>下载桌面终端</span><b>WINDOWS</b></a>
+          <a class="btn btn-ghost" href="#terminal"><span>查看实时面板</span><b>↗</b></a>
+        </div>
+        <div class="hero-proof">
+          <div><b data-count="517">0</b><span>USDT 永续合约</span></div>
+          <div><b data-count="86">0</b><span>自选监控池</span></div>
+          <div><b>60<span>s</span></b><span>云端刷新</span></div>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="MOSS CORE 星环数据可视化">
+        <div class="orbit-wrap" id="orbitWrap">
+          <div class="orbit-hud orbit-hud-top"><span>LIVE FEED</span><b>● 517 / 86</b></div>
+          <canvas id="orbitCanvas"></canvas>
+          <div class="orbit-hud orbit-hud-bottom"><span>OI DELTA / 15M</span><b class="gold">+49.5%</b></div>
+          <div class="orbit-core">
+            <span>CORE</span><b>49.3</b><i>REGIME</i>
+          </div>
+          <div class="orbit-label ol-1">TRACE <b>ACTIVE</b></div>
+          <div class="orbit-label ol-2">SIGNAL <b>LOCKED</b></div>
+          <div class="orbit-label ol-3">DEPTH <b>SYNC</b></div>
+        </div>
+        <div class="hero-float-card hfc-1">
+          <span>OI PULSE</span><b>JCT / USDT</b><em>+39.02%</em>
+        </div>
+        <div class="hero-float-card hfc-2">
+          <span>ENTRY SIGNAL</span><b>ARIA / USDT</b><em>LONG · 92%</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-bottom">
+      <div class="ticker"><span>MARKET PULSE</span><div class="ticker-track" id="tickerTrack"></div></div>
+      <div class="scroll-hint"><span>SCROLL TO EXPLORE</span><i></i></div>
+    </div>
+  </section>
+
+  <section class="section overview" id="overview">
+    <div class="section-head reveal">
+      <span class="kicker">01 / SYSTEM OVERVIEW</span>
+      <h2>不是看行情。<br><span>是看行情背后的力量。</span></h2>
+      <p>把分散的价格、持仓、成交与资金流，压缩成可行动的信号。</p>
+    </div>
+    <div class="stat-strip reveal">
+      <div class="stat"><span>INSTRUMENTS</span><b data-count="517">0</b><small>全市场 USDT 永续</small></div>
+      <div class="stat"><span>FOCUS POOL</span><b data-count="86">0</b><small>自选重点监控</small></div>
+      <div class="stat"><span>DATA LAYERS</span><b>04</b><small>价格 / OI / 成交 / 大单</small></div>
+      <div class="stat"><span>UPTIME</span><b>24/7</b><small>云端采集节点</small></div>
+    </div>
+    <div class="manifesto reveal">
+      <div class="manifesto-index">M / 01</div>
+      <p>“市场从不缺少波动。<br>缺少的是<span>在波动发生前</span>，把噪声过滤成方向的能力。”</p>
+      <div class="manifesto-side">MOSS CORE<br><b>BUILT FOR ASYMMETRY</b></div>
+    </div>
+  </section>
+
+  <section class="section intel" id="intel">
+    <div class="section-head reveal">
+      <span class="kicker">02 / INTELLIGENCE LAYERS</span>
+      <h2>四层数据。<br><span>一个判断。</span></h2>
+    </div>
+    <div class="intel-grid">
+      <article class="intel-card tilt reveal" data-tilt>
+        <div class="intel-no">01</div>
+        <div class="intel-icon"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="9"/><path d="M24 2v8M24 38v8M2 24h8M38 24h8"/></svg></div>
+        <h3>SCAN<span>全市场扫描</span></h3>
+        <p>517 个合约按 24H 涨跌幅、成交量与 OI 变化实时排序，强弱分化一眼可见。</p>
+        <div class="intel-meter"><i style="--w:92%"></i><span>MARKET COVERAGE</span><b>92%</b></div>
+      </article>
+      <article class="intel-card tilt reveal" data-tilt>
+        <div class="intel-no">02</div>
+        <div class="intel-icon"><svg viewBox="0 0 48 48"><path d="M4 32 16 20l8 7 20-19"/><path d="M32 8h12v12"/><path d="M4 42h40"/></svg></div>
+        <h3>TRACE<span>OI 持仓追踪</span></h3>
+        <p>15M 与 24H 持仓增量、OI 变化率与价格背离，识别真正的建仓与撤退。</p>
+        <div class="intel-meter"><i style="--w:78%"></i><span>OI SIGNAL CONFIDENCE</span><b>78%</b></div>
+      </article>
+      <article class="intel-card tilt reveal" data-tilt>
+        <div class="intel-no">03</div>
+        <div class="intel-icon"><svg viewBox="0 0 48 48"><path d="M24 4v10M24 34v10M4 24h10M34 24h10"/><circle cx="24" cy="24" r="10"/><circle cx="24" cy="24" r="3"/></svg></div>
+        <h3>PULSE<span>放量与主动大单</span></h3>
+        <p>3 分钟放量超过 10 倍、单笔主动买卖超出均值 200 倍，捕捉资金突然进场。</p>
+        <div class="intel-meter"><i style="--w:86%"></i><span>FLOW SENSITIVITY</span><b>86%</b></div>
+      </article>
+      <article class="intel-card tilt reveal" data-tilt>
+        <div class="intel-no">04</div>
+        <div class="intel-icon"><svg viewBox="0 0 48 48"><path d="M6 36 18 22l8 6 16-18"/><circle cx="18" cy="22" r="3"/><circle cx="26" cy="28" r="3"/></svg></div>
+        <h3>SIGNAL<span>建仓信号</span></h3>
+        <p>多因子评分触发建仓信号，弹窗、中文语音、止盈止损与胜率同屏完成。</p>
+        <div class="intel-meter"><i style="--w:97%"></i><span>ALERT LATENCY</span><b>1.2s</b></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section terminal-section" id="terminal">
+    <div class="section-head reveal">
+      <span class="kicker">03 / LIVE TERMINAL</span>
+      <h2>一屏之内。<br><span>看见整个战场。</span></h2>
+      <p>不是普通 K 线。是持仓、成交、方向、强弱与信号同时运转的监测台。</p>
+    </div>
+
+    <div class="terminal-stage reveal" id="terminalStage">
+      <div class="terminal-glow" aria-hidden="true"></div>
+      <div class="terminal-frame">
+        <div class="tf-top">
+          <div class="tf-brand"><i></i> MOSS CORE <span>/ NEURAL ANOMALY</span></div>
+          <div class="tf-tabs"><b class="on">OVERVIEW</b><b>FLOW</b><b>SIGNALS</b></div>
+          <div class="tf-live"><i></i> LIVE <span id="tfClock">16:00:00</span></div>
+        </div>
+        <div class="tf-body">
+          <aside class="tf-left">
+            <div class="tf-caption">24H 涨幅榜 <span>实时</span></div>
+            <div class="tf-row hot"><b>ELSA<span>/USDT</span></b><em>+48.06%</em><small>OI 10.8M ↑6.1%</small></div>
+            <div class="tf-row"><b>JCT<span>/USDT</span></b><em>+39.02%</em><small>OI 24M ↑5.6%</small></div>
+            <div class="tf-row"><b>CAP<span>/USDT</span></b><em>+29.20%</em><small>OI 25.9M ↑0.2%</small></div>
+            <div class="tf-caption weak">24H 弱势榜 <span>实时</span></div>
+            <div class="tf-row down"><b>HUMA<span>/USDT</span></b><em>-18.55%</em><small>OI 7.9M ↓0.3%</small></div>
+            <div class="tf-row down"><b>UAI<span>/USDT</span></b><em>-46.43%</em><small>OI 4.5M ↑1.3%</small></div>
+          </aside>
+
+          <div class="tf-center">
+            <div class="tf-hud"><span>MARKET REGIME</span><b>WEAK / 49.3</b></div>
+            <canvas id="gaugeCanvas"></canvas>
+            <div class="tf-center-core"><span>NET FLOW</span><b>+$18.4M</b><small>LAST 15 MIN</small></div>
+            <div class="tf-axis"><span>SELL</span><span>NEUTRAL</span><span>BUY</span></div>
+            <div class="tf-chart"><canvas id="flowCanvas"></canvas><span>FLOW MOMENTUM / 60S</span></div>
+          </div>
+
+          <aside class="tf-right">
+            <div class="tf-alert-title"><span>POSITION ALERTS</span><i></i></div>
+            <div class="tf-alert"><b>ARIA / USDT</b><em>LONG</em><span>OI +49.5% · 15M</span><small>ENTRY 0.12066</small><div><i style="--w:92%"></i><strong>92%</strong></div></div>
+            <div class="tf-alert"><b>HYPE / USDT</b><em>WHALE BUY</em><span>102K USDT · 216×</span><small>30S +0.86%</small><div><i style="--w:78%"></i><strong>78%</strong></div></div>
+            <div class="tf-alert small"><b>SOX / USDT</b><em class="green">VOLUME</em><span>3M VOL 12.4× · +5.8%</span></div>
+            <div class="tf-fng"><span>FEAR &amp; GREED</span><b>34</b><em>FEAR</em><div><i></i></div></div>
+          </aside>
+        </div>
+        <div class="tf-bottom">
+          <div><span>OI 24H</span><b>+$2.4M</b></div><div><span>FOCUS SCORE</span><b>97.0</b></div><div><span>ALERT LATENCY</span><b>1.2s</b></div><div><span>DATA NODE</span><b class="green">SYNCED</b></div>
+        </div>
+      </div>
+      <div class="terminal-tag tt-1"><span>OI RADAR</span><b>ACTIVE</b></div>
+      <div class="terminal-tag tt-2"><span>CLOUD SYNC</span><b>60 SEC</b></div>
+    </div>
+
+    <div class="terminal-quote reveal"><span>“</span>当别人还在等价格确认，<b>你已经在看资金留下的痕迹。</b></div>
+  </section>
+
+  <section class="section pipeline">
+    <div class="section-head reveal"><span class="kicker">04 / SIGNAL PIPELINE</span><h2>从全市场噪声。<br><span>到一条可执行的信号。</span></h2></div>
+    <div class="pipeline-track reveal">
+      <div class="pipe-step"><span>01</span><b>INGEST</b><small>全市场行情汇入</small></div>
+      <div class="pipe-line"><i></i></div>
+      <div class="pipe-step"><span>02</span><b>FILTER</b><small>OI / 放量 / 大单</small></div>
+      <div class="pipe-line"><i></i></div>
+      <div class="pipe-step"><span>03</span><b>SCORE</b><small>多因子方向评分</small></div>
+      <div class="pipe-line"><i></i></div>
+      <div class="pipe-step"><span>04</span><b>SIGNAL</b><small>弹窗 / 语音 / 记录</small></div>
+    </div>
+    <div class="pipeline-caption reveal"><span>NOISE</span><i></i><b>STRUCTURE</b><i></i><span>DECISION</span></div>
+  </section>
+
+  <section class="section security" id="security">
+    <div class="security-grid">
+      <div class="security-copy reveal">
+        <span class="kicker">05 / SYSTEM ARCHITECTURE</span>
+        <h2>数据在云端。<br><span>判断在你手里。</span></h2>
+        <p>云端只做一件事：稳定采集公开市场数据。客户端通过 HTTPS 读取快照，每个安装实例都需要邀请码激活。</p>
+        <div class="security-list">
+          <div><i>01</i><b>CLOUD COLLECTOR</b><span>单点采集 · 多端分发</span></div>
+          <div><i>02</i><b>DEVICE LICENSE</b><span>一码一机 · 可解绑换机</span></div>
+          <div><i>03</i><b>HTTPS / TOKEN</b><span>TLS 通道 · 设备令牌</span></div>
+          <div><i>04</i><b>NO API KEY</b><span>只读取公开市场数据</span></div>
+        </div>
+      </div>
+      <div class="security-visual reveal">
+        <div class="radar">
+          <canvas id="radarCanvas"></canvas>
+          <div class="radar-cross"></div>
+          <div class="radar-label rl-a">NODE / SG-01</div>
+          <div class="radar-label rl-b">TLS 1.3</div>
+          <div class="radar-label rl-c">LICENSE</div>
+          <div class="radar-center"><i></i><span>MOSS<br>CORE</span></div>
+        </div>
+        <div class="security-badge"><i></i> PRIVATE DATA PLANE</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section download" id="download">
+    <div class="download-panel reveal">
+      <div class="download-copy">
+        <span class="kicker">06 / GET THE TERMINAL</span>
+        <h2>把整个战场。<br><span>装进你的屏幕。</span></h2>
+        <p>Windows 桌面版 · 单文件应用 · 云端数据直连。首次启动需要邀请码激活。</p>
+        <div class="download-meta">
+          <span>VERSION <b>1.0.0 / 20261107.1</b></span><span>SIZE <b>64 MB</b></span><span>PLATFORM <b>WINDOWS 10/11</b></span>
+        </div>
+        <div class="download-actions">
+          <a class="btn btn-primary btn-download magnetic" id="downloadBtn" href="downloads/MOSS-CORE-Desktop-v1.0.0-20261107.1.zip" download><span>DOWNLOAD FOR WINDOWS</span><b>↓</b></a>
+          <button class="btn btn-disabled" type="button" disabled><span>macOS</span><b>COMING SOON</b></button>
+        </div>
+        <div class="checksum"><span>SHA256</span><code>D5DAF5F140B078E1B4C79F5620C51C5EA1251EC125CABDED5CE0891EE392812A</code></div>
+      </div>
+      <div class="download-side">
+        <div class="download-glyph"><span>M</span><i></i></div>
+        <div class="install-steps">
+          <div><b>01</b><span>下载并解压</span></div><div><b>02</b><span>运行 MOSS CORE.exe</span></div><div><b>03</b><span>输入邀请码激活</span></div><div><b>04</b><span>进入监控终端</span></div>
+        </div>
+        <div class="download-note"><i></i> INVITE CODE REQUIRED</div>
+      </div>
+    </div>
+    <div class="download-footer reveal"><span>MOSS CORE © 2026</span><span>NEURAL ANOMALY TERMINAL</span><span>BUILT FOR THE EDGE</span></div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-brand"><span class="brand-mark"><i></i><b></b></span><b>MOSS CORE</b><small>NEURAL ANOMALY TERMINAL</small></div>
+  <div class="footer-links"><a href="#overview">概览</a><a href="#intel">能力</a><a href="#terminal">终端</a><a href="#download">下载</a></div>
+  <div class="footer-meta"><span>SG NODE · 01</span><span>© 2026 MOSS CORE</span></div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
