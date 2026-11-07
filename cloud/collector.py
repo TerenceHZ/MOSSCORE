@@ -228,6 +228,8 @@ setInterval(loadList,30000);
 
 API = "https://fapi.binance.com"
 FNG = "https://api.alternative.me/fng/?limit=2"
+LSR_API = API + "/futures/data/globalLongShortAccountRatio?symbol={}&period=5m&limit=2"
+LSR_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT"]
 POLL_SECONDS = int(os.environ.get("MOSS_POLL", "60"))
 PORT = int(os.environ.get("MOSS_PORT", "8787"))
 BIND = os.environ.get("MOSS_BIND", "127.0.0.1")
@@ -422,6 +424,41 @@ def fetch_fng():
         return None
 
 
+def fetch_long_short():
+    samples = []
+    updated = ""
+    for symbol in LSR_SYMBOLS:
+        try:
+            data = get_json(LSR_API.format(urllib.parse.quote(symbol)))
+            if not isinstance(data, list) or not data:
+                continue
+            item = data[-1]
+            long_account = n(item.get("longAccount"))
+            short_account = n(item.get("shortAccount"))
+            ts = int(n(item.get("timestamp")))
+            if not long_account or not short_account:
+                continue
+            if ts:
+                updated = datetime.fromtimestamp(ts / 1000, tz=timezone.utc).astimezone().strftime("%H:%M")
+            samples.append((long_account * 100, short_account * 100))
+        except Exception:
+            continue
+    if not samples:
+        return None
+    long_avg = sum(x[0] for x in samples) / len(samples)
+    short_avg = sum(x[1] for x in samples) / len(samples)
+    ratio = long_avg / short_avg if short_avg else 0
+    return {
+        "symbol": "TOP5",
+        "symbols": LSR_SYMBOLS,
+        "longAccount": round(long_avg, 2),
+        "shortAccount": round(short_avg, 2),
+        "ratio": round(ratio, 3),
+        "updatedAt": updated or "—",
+        "period": "5m",
+    }
+
+
 def collect():
     global _snapshot
     if time.time() < _cooldown_until:
@@ -444,6 +481,7 @@ def collect():
         "source": "BINANCE USDⓈ-M FUTURES · CLOUD",
         "rows": rows,
         "fearGreed": fetch_fng(),
+        "longShort": fetch_long_short(),
     }
     tmp = SNAPSHOT_FILE.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
