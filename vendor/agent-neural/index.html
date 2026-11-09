@@ -1096,9 +1096,10 @@ background-size:180% 180%,220% 220%}
 @keyframes nvwinflash{0%{opacity:0}12%{opacity:.45}35%{opacity:.12}100%{opacity:0}}
 .nv-fresh::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;z-index:6;background:linear-gradient(90deg,transparent,var(--nv-fc),transparent);transform-origin:left;animation:nvline 900s linear forwards;opacity:.8}
 .nv-meteor-glow{animation:nvMeteorGlow 3.8s ease-in-out infinite}
-.nv-card.focus.nv-focus-idle{filter:saturate(.35) brightness(.55);opacity:.62;transition:filter 1.2s ease,opacity 1.2s ease}
-.nv-card.nv-card-signal.sig-idle,.nv-card.imported.nv-card-signal.nv-focus-idle{filter:saturate(.35) brightness(.55);opacity:.62;transition:filter 1.2s ease,opacity 1.2s ease}
-.nv-card.nv-card-signal.sig-idle .nv-flow,.nv-card.nv-card-signal.sig-idle .nv-hotbg{opacity:.12!important;animation:none!important}
+.nv-card.focus.nv-focus-idle{filter:brightness(.62);opacity:.78;transition:filter 1.2s ease,opacity 1.2s ease}
+.nv-card.nv-card-signal.sig-idle,.nv-card.imported.nv-card-signal.nv-focus-idle{filter:brightness(.62);opacity:.78;transition:filter 1.2s ease,opacity 1.2s ease}
+.nv-card.nv-card-signal.sig-idle .nv-flow,.nv-card.nv-card-signal.nv-focus-idle .nv-flow{opacity:.45!important}
+.nv-card.nv-card-signal.sig-idle .nv-hotbg,.nv-card.nv-card-signal.nv-focus-idle .nv-hotbg{opacity:.4!important}
 .nv-card.focus.meteor-arrive{animation:nvMeteorArrive 900ms ease-out}
 @keyframes nvMeteorArrive{
   0%{box-shadow:inset 0 0 0 rgba(255,192,67,0),0 0 0 rgba(232,160,32,0)}
@@ -1112,8 +1113,9 @@ background-size:180% 180%,220% 220%}
   100%{filter:none}
 }
 
-.nv-card.focus.nv-focus-idle .nv-flow,.nv-card.focus.nv-focus-idle .nv-hotbg{opacity:.12!important;animation:none!important}
-.nv-card.focus.nv-focus-idle::after{opacity:.15!important}
+.nv-card.focus.nv-focus-idle .nv-flow{opacity:.45!important}
+.nv-card.focus.nv-focus-idle .nv-hotbg{opacity:.4!important}
+.nv-card.focus.nv-focus-idle::after{opacity:.5!important}
 @keyframes nvMeteorGlow{0%,100%{box-shadow:inset 0 0 22px rgba(232,160,32,.05),0 0 12px rgba(232,160,32,.12)}50%{box-shadow:inset 0 0 44px rgba(232,160,32,.13),0 0 26px rgba(232,160,32,.38)}}
 .nv-trace-tools{display:flex;align-items:center;gap:5px}
 .nv-trace-tools b{font:500 8px/1 var(--mono);color:#6b7685;font-weight:500;margin-right:2px}
