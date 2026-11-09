@@ -1194,23 +1194,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-drawer .nv-history .nv-alert-record .nv-ar-row{padding:0;border:0}
 .nv-drawer .nv-history .nv-alert-record .nv-ar-time{margin-bottom:7px}
 .nv-drawer .nv-history .nv-alert-record .nv-ar-row{display:flex}
-.nv-mh-list{display:flex;flex-direction:column;gap:9px;margin-top:2px}
 .nv-d-body.nv-scroll{overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 150px)}
-.nv-mh-card{border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(9,8,5,.9),rgba(20,15,6,.62));padding:11px 12px}
-.nv-mh-card.fresh{border-color:rgba(255,192,67,.6);box-shadow:inset 0 0 22px rgba(232,160,32,.08)}
-.nv-mh-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.nv-mh-sym{font:700 15px/1 var(--mono);color:#ffffff;white-space:nowrap}
-.nv-mh-price{font:600 12px/1 var(--mono);color:#c9bda6;white-space:nowrap}
-.nv-mh-chg{margin-left:auto;font:700 14px/1 var(--mono);white-space:nowrap}
-.nv-mh-why{margin-top:7px;font:500 11px/1.5 var(--cjk);color:#b3a488}
-.nv-mh-why b{color:#e4d4a8;font-weight:600}
-.nv-mh-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-.nv-mh-tags span{font:500 9.5px/1 var(--cjk);color:#c9a86b;border:1px solid rgba(232,160,32,.22);padding:3px 6px;background:rgba(232,160,32,.04)}
-.nv-mh-time{margin-top:7px;font:500 9px/1 var(--mono);color:#7b6d58;display:flex;justify-content:space-between}
-.nv-mh-pager{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px;font:500 10px/1 var(--mono);color:#9a8a70}
-.nv-mh-pager button{background:transparent;border:1px solid rgba(232,160,32,.28);color:#c9a35a;font:600 10px/1 var(--cjk);padding:5px 9px;cursor:pointer}
-.nv-mh-pager button:disabled{opacity:.3;cursor:default}
-.nv-mh-empty{padding:16px 0;font:500 11px/1.6 var(--cjk);color:#7b6d58;text-align:center}
 .nv-drawer .nv-history .nv-signal-record .sg div{display:flex;padding:0;border:0;justify-content:space-between}
 .nv-drawer .nv-ms{font:700 23px/1 var(--mono);color:#f2f0e8}
 .nv-drawer .nv-ms small{font:500 10px/1 var(--cjk);color:#8a7b62;margin-left:6px}
@@ -1537,7 +1521,6 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div class="nv-d-sec"><h4>为什么在榜</h4><p id="nvDWhy">24H +25.30%，15M OI +49.5%，持仓增量 +430.2万 USDT。</p><div class="nv-reasons" id="nvDReasons"><span>24H 涨幅榜 #1</span><span>15M OI +49.5%</span><span>持仓增量 +430.2万 USDT</span></div></div>
   <div class="nv-d-sec"><h4>数据</h4><p id="nvDData">数据源：公开行情快照 · 最后更新 17:00:15 · 当前为延时快照。</p></div>
   </div>
-  <div class="nv-d-sec"><h4>PUSH HISTORY · 推送明细</h4><div class="nv-mh-list" id="nvMhList"></div><div class="nv-mh-pager" id="nvMhPager"><button type="button" id="nvMhPrev">上一页</button><span id="nvMhPage">1 / 1</span><button type="button" id="nvMhNext">下一页</button></div></div>
   <div class="nv-pane" data-pane="history" hidden>
    <div class="nv-d-sec"><h4>近 24 小时监控</h4><div class="nv-history" id="nvDHistList"><div><span>暂无建仓信号记录</span><b>—</b></div></div></div>
    <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts" id="nvDHistStats"><div><span>信号次数</span><b id="nvHistCount">0</b></div><div><span>多单</span><b id="nvHistLong">0</b></div><div><span>空单</span><b id="nvHistShort">0</b></div><div><span>最新胜率</span><b id="nvHistWin">—</b></div></div></div>
@@ -11378,9 +11361,6 @@ requestAnimationFrame(frame);
       if (prev) prev.disabled = alertHistoryPage === 0;
       if (next) next.disabled = alertHistoryPage >= pages - 1;
     };
-    const mhPrev = sr.querySelector('#nvMhPrev'), mhNext = sr.querySelector('#nvMhNext');
-    mhPrev && mhPrev.addEventListener('click', () => { if (mhPage > 0) { mhPage -= 1; renderMhPage(); } });
-    mhNext && mhNext.addEventListener('click', () => { mhPage += 1; renderMhPage(); });
     const alertPager = sr.querySelector('.nv-alert-pager');
     alertPager && alertPager.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-alert-page]');
@@ -12144,83 +12124,6 @@ requestAnimationFrame(frame);
     setTimeout(loadFearGreed, 800);
     setInterval(loadFearGreed, 15 * 60 * 1000);
     const captureLog = [];
-    const MH_PAGE = 5;
-    let mhPage = 0;
-    let mhRows = [];
-    const renderMonitorHistory = (row, lane, price, changeDisp, color, up, oi5, oi15, deltaDisp, volDisp) => {
-      const list = sr.querySelector('#nvMhList');
-      if (!list) return;
-      const chg = Number(row.dataset.chg || 0);
-      const oi15n = Number(row.dataset.oi15 || 0);
-      const oi5n = Number(row.dataset.oi5 || 0);
-      const vol = Number(row.dataset.vol || 0);
-      const score = Number(row.dataset.score || 0);
-      const sym = (row.dataset.symbol || '').trim();
-      const laneLabel = lane === 'focus' ? '涨幅榜' : lane === 'loss' ? '弱势榜' : '自选监控';
-      const reach = Number(window.__MOSS_LIVE?.updatedAt === undefined ? Date.now() : Date.now());
-      const key = `mh-${sym}`;
-      const nowTs = Date.now();
-      const MH_TTL = 24 * 60 * 60 * 1000;
-      mhRows = mhRows.filter(x => x.sym !== sym && nowTs - (x.ts || 0) < MH_TTL);
-      mhRows.unshift({
-        sym, lane, laneLabel, price, changeDisp, chg, up, oi5n, oi15n, vol, score,
-        deltaDisp, volDisp,
-        ts: nowTs,
-        time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
-        stamp: window.__MOSS_LIVE?.updatedAt || '本地'
-      });
-      mhRows = mhRows.slice(0, 200);
-      mhPage = 0;
-      renderMhPage();
-    };
-    const pruneHistories = () => {
-      const nowTs = Date.now();
-      const TTL = 24 * 60 * 60 * 1000;
-      let changed = false;
-      const beforeSignal = signalLog.length;
-      signalLog = signalLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
-      if (signalLog.length !== beforeSignal) { saveSignals(); changed = true; }
-      const beforeAlert = alertLog.length;
-      alertLog = alertLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
-      if (alertLog.length !== beforeAlert) { saveAlerts(); changed = true; }
-      const beforeMh = mhRows.length;
-      mhRows = mhRows.filter(x => nowTs - (x.ts || 0) < TTL);
-      if (mhRows.length !== beforeMh) { mhPage = 0; renderMhPage(); changed = true; }
-      if (changed) { try { renderSignalHistory(); } catch (e) {} try { renderAlertHistory(); } catch (e) {} }
-    };
-    setInterval(pruneHistories, 10 * 60 * 1000);
-    const renderMhPage = () => {
-      const list = sr.querySelector('#nvMhList');
-      if (!list) return;
-      if (!mhRows.length) {
-        list.innerHTML = '<div class="nv-mh-empty">暂无监控历史 · 触发自选监控后在此按代币列出</div>';
-        const pageEl = sr.querySelector('#nvMhPage'); if (pageEl) pageEl.textContent = '1 / 1';
-        const prev = sr.querySelector('#nvMhPrev'), next = sr.querySelector('#nvMhNext');
-        if (prev) prev.disabled = true; if (next) next.disabled = true;
-        return;
-      }
-      const pages = Math.max(1, Math.ceil(mhRows.length / MH_PAGE));
-      mhPage = Math.max(0, Math.min(mhPage, pages - 1));
-      const slice = mhRows.slice(mhPage * MH_PAGE, mhPage * MH_PAGE + MH_PAGE);
-      list.innerHTML = slice.map((it, i) => {
-        const color = it.up ? '#63C08E' : '#C96358';
-        const reasons = [];
-        if (Math.abs(it.chg) >= 10) reasons.push(`24H ${it.chg >= 0 ? '+' : ''}${it.chg.toFixed(1)}%`);
-        if (Math.abs(it.oi15n) >= 5) reasons.push(`15M OI ${Number(it.oi15n).toFixed(1)}%`);
-        if (it.vol >= 2e7) reasons.push(`24H 成交 ${(it.vol / 1e6).toFixed(0)}M`);
-        if (!reasons.length) reasons.push(`监控评分 ${it.score.toFixed(1)}`);
-        return `<div class="nv-mh-card${i === 0 && mhPage === 0 ? ' fresh' : ''}">
-          <div class="nv-mh-top"><span class="nv-mh-sym">${pairName(it.sym)}</span><span class="nv-mh-price">${it.price}</span><span class="nv-mh-chg" style="color:${color}">${it.changeDisp}</span></div>
-          <div class="nv-mh-why">${it.laneLabel} · 达到监控条件：${reasons.map(x => `<b>${x}</b>`).join(' · ')}</div>
-          <div class="nv-mh-tags"><span>5M OI ${it.oi5n >= 0 ? '+' : ''}${it.oi5n.toFixed(2)}%</span><span>15M OI ${it.oi15n >= 0 ? '+' : ''}${it.oi15n.toFixed(2)}%</span><span>持仓增量 ${it.deltaDisp}</span><span>24H 成交 ${it.volDisp}</span></div>
-          <div class="nv-mh-time"><span>${it.laneLabel} · 抓取 ${it.stamp}</span><span>${it.time}</span></div>
-        </div>`;
-      }).join('');
-      const pageEl = sr.querySelector('#nvMhPage'); if (pageEl) pageEl.textContent = `${mhPage + 1} / ${pages}`;
-      const prev = sr.querySelector('#nvMhPrev'), next = sr.querySelector('#nvMhNext');
-      if (prev) prev.disabled = mhPage === 0;
-      if (next) next.disabled = mhPage >= pages - 1;
-    };
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
       if (!hl) return;
@@ -12236,6 +12139,22 @@ requestAnimationFrame(frame);
       const shorts = sr.querySelector('#nvHistShort'); if (shorts) shorts.textContent = recs.filter(a => a.side === 'short').length;
       const win = sr.querySelector('#nvHistWin'); if (win) win.textContent = recs.length ? `${recs[0].win}%` : '—';
     };
+    const pruneHistories = () => {
+      const nowTs = Date.now();
+      const TTL = 24 * 60 * 60 * 1000;
+      let changed = false;
+      const beforeSignal = signalLog.length;
+      signalLog = signalLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
+      if (signalLog.length !== beforeSignal) { saveSignals(); changed = true; }
+      const beforeAlert = alertLog.length;
+      alertLog = alertLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
+      if (alertLog.length !== beforeAlert) { saveAlerts(); changed = true; }
+      if (changed) {
+        try { renderSignalHistory(); } catch (e) {}
+        try { renderAlertHistory(); } catch (e) {}
+      }
+    };
+    setInterval(pruneHistories, 10 * 60 * 1000);
     const msRows = [...sr.querySelectorAll('.p-heat .nv-msrow')];
     let msTotal = 1.2;
     setInterval(() => {
@@ -12316,7 +12235,6 @@ requestAnimationFrame(frame);
       sr.querySelector('#nvDWhy').textContent = `24H ${changeDisp}，15M OI ${sign(oi15)}%，持仓增量 ${deltaDisp}。`;
       sr.querySelector('#nvDReasons').innerHTML = `<span>24H ${changeDisp}</span><span>5M OI ${sign(oi5)}%</span><span>15M OI ${sign(oi15)}%</span><span>持仓增量 ${deltaDisp}</span>`;
       sr.querySelector('#nvDData').textContent = `数据源：公开行情快照 · 最后更新 ${window.__MOSS_LIVE?.updatedAt || '本地'} · 当前为延时快照。`;
-      try { renderMonitorHistory(row, lane, price, changeDisp, color, up, oi5, oi15, deltaDisp, volDisp); } catch (e) {}
       const stage = row.dataset.stage || (lane === 'focus' ? 'entry' : 'low');
       const scoreRaw = row.dataset.score || '';
       const scoreNum = Number(scoreRaw) || 50;
