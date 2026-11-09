@@ -11513,7 +11513,7 @@ requestAnimationFrame(frame);
       const fmtPx = (v) => v ? v.toFixed(v < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
       return { r, chg, oi5, oi15, vol, score, stage, side, win, target, stop, targetText: fmtPx(target), stopText: fmtPx(stop) };
     };
-    const SIG_SLOT_MS = Number(window.__MOSS_TEST_SLOT) || 5 * 60 * 1000;
+    const SIG_SLOT_MS = 5 * 60 * 1000;
     const SIG_IDLE_MS = 15 * 60 * 1000;
     let sigQueue = [];
     let sigTimer = null;
@@ -11877,7 +11877,7 @@ requestAnimationFrame(frame);
       const gc = sr.querySelector('#nvGainCount'); if (gc) gc.textContent = gainRows.length;
       const lc = sr.querySelector('#nvLossCount'); if (lc) lc.textContent = lossRows.length;
       const FOCUS_COOLDOWN = 60 * 60 * 1000;
-    const FOCUS_SLOT_MS = Number(window.__MOSS_TEST_SLOT) || 5 * 60 * 1000;
+    const FOCUS_SLOT_MS = 5 * 60 * 1000;
     const FOCUS_IDLE_MS = 15 * 60 * 1000;
     let focusSeen = {};
     let focusQueue = [];
@@ -11929,10 +11929,18 @@ requestAnimationFrame(frame);
         if (el) el.classList.add('nv-focus-idle');
       }, FOCUS_IDLE_MS);
     };
+    const focusStartIdle = () => {
+      clearTimeout(focusIdleTimer);
+      focusIdleTimer = setTimeout(() => {
+        if (focusQueue.length || focusTimer) return;
+        const el = sr.querySelector('[data-nv-card="focus"]');
+        if (el) el.classList.add('nv-focus-idle');
+      }, FOCUS_IDLE_MS);
+    };
     const focusNext = () => {
       clearTimeout(focusTimer);
       focusTimer = null;
-      if (!focusQueue.length) return;
+      if (!focusQueue.length) { focusStartIdle(); return; }
       const item = focusQueue.shift();
       const sym = item && item.r && item.r.symbol;
       const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
@@ -11941,11 +11949,7 @@ requestAnimationFrame(frame);
       if (focusQueue.length) {
         focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS);
       } else {
-        focusTimer = setTimeout(() => {
-          focusTimer = null;
-          const el = sr.querySelector('[data-nv-card="focus"]');
-          if (el && !focusQueue.length) el.classList.add('nv-focus-idle');
-        }, FOCUS_IDLE_MS);
+        focusStartIdle();
       }
     };
     const rotateFocusCard = (rows, live) => {
@@ -11955,15 +11959,10 @@ requestAnimationFrame(frame);
       if (!hit.length) return;
       hit.forEach(r => { focusSeen[r.symbol] = now; });
       focusPersist();
-      const wasIdle = !focusQueue.length && !focusTimer;
+      const firstEver = !window.__MOSS_FOCUS_CURRENT;
       focusQueue = focusQueue.concat(hit);
-      if (!window.__MOSS_FOCUS_CURRENT) {
-        focusNext();
-        return;
-      }
+      if (firstEver) { focusNext(); return; }
       if (!focusTimer) focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS);
-      else if (wasIdle) { clearTimeout(focusTimer); focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS); }
-      else { clearTimeout(focusTimer); focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS); }
     };
     const renderFocusCard = (r) => {
       const card = sr.querySelector('[data-nv-card="focus"]');
