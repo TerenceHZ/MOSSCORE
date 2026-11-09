@@ -1099,6 +1099,19 @@ background-size:180% 180%,220% 220%}
 .nv-card.focus.nv-focus-idle{filter:saturate(.35) brightness(.55);opacity:.62;transition:filter 1.2s ease,opacity 1.2s ease}
 .nv-card.nv-card-signal.sig-idle,.nv-card.imported.nv-card-signal.nv-focus-idle{filter:saturate(.35) brightness(.55);opacity:.62;transition:filter 1.2s ease,opacity 1.2s ease}
 .nv-card.nv-card-signal.sig-idle .nv-flow,.nv-card.nv-card-signal.sig-idle .nv-hotbg{opacity:.12!important;animation:none!important}
+.nv-card.focus.meteor-arrive{animation:nvMeteorArrive 900ms ease-out}
+@keyframes nvMeteorArrive{
+  0%{box-shadow:inset 0 0 0 rgba(255,192,67,0),0 0 0 rgba(232,160,32,0)}
+  35%{box-shadow:inset 0 0 46px rgba(255,196,80,.22),0 0 34px rgba(255,192,67,.42);filter:brightness(1.5) contrast(1.15)}
+  100%{box-shadow:inset 0 0 38px rgba(232,160,32,.09),0 0 24px rgba(232,160,32,.12);filter:none}
+}
+.nv-card-signal.meteor-arrive{animation:nvMeteorArriveSignal 900ms ease-out}
+@keyframes nvMeteorArriveSignal{
+  0%{filter:none}
+  35%{filter:brightness(1.55) contrast(1.15) saturate(1.2)}
+  100%{filter:none}
+}
+
 .nv-card.focus.nv-focus-idle .nv-flow,.nv-card.focus.nv-focus-idle .nv-hotbg{opacity:.12!important;animation:none!important}
 .nv-card.focus.nv-focus-idle::after{opacity:.15!important}
 @keyframes nvMeteorGlow{0%,100%{box-shadow:inset 0 0 22px rgba(232,160,32,.05),0 0 12px rgba(232,160,32,.12)}50%{box-shadow:inset 0 0 44px rgba(232,160,32,.13),0 0 26px rgba(232,160,32,.38)}}
@@ -11500,7 +11513,7 @@ requestAnimationFrame(frame);
       const fmtPx = (v) => v ? v.toFixed(v < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
       return { r, chg, oi5, oi15, vol, score, stage, side, win, target, stop, targetText: fmtPx(target), stopText: fmtPx(stop) };
     };
-    const SIG_SLOT_MS = 5 * 60 * 1000;
+    const SIG_SLOT_MS = Number(window.__MOSS_TEST_SLOT) || 5 * 60 * 1000;
     const SIG_IDLE_MS = 15 * 60 * 1000;
     let sigQueue = [];
     let sigTimer = null;
@@ -11510,13 +11523,13 @@ requestAnimationFrame(frame);
       const card = signalCardEl();
       if (!card) return;
       const busy = Boolean(window.__MOSS_SIG_CURRENT);
-      card.classList.toggle('nv-focus-idle', !busy && !!window.__MOSS_SIG_SEEN_ONCE);
-      card.classList.toggle('sig-idle', !busy && !!window.__MOSS_SIG_SEEN_ONCE);
+      card.classList.remove('sig-idle');
+      if (!busy) card.classList.remove('nv-focus-idle');
     };
     const sigArmIdle = () => {
       clearTimeout(sigIdleTimer);
       const card = signalCardEl();
-      if (card) card.classList.remove('sig-idle');
+      if (card) card.classList.remove('sig-idle', 'nv-focus-idle');
       sigIdleTimer = setTimeout(() => {
         if (sigQueue.length || window.__MOSS_SIZE_OPEN) return;
         if (document.querySelector('#nvSignal')?.classList.contains('open')) return;
@@ -11528,9 +11541,17 @@ requestAnimationFrame(frame);
       const card = signalCardEl();
       if (!card || !entry) return;
       window.__MOSS_SIG_CURRENT = entry.key;
+      window.__MOSS_SIG_LAST = entry.key;
       window.__MOSS_SIG_SEEN_ONCE = true;
       card.classList.remove('sig-idle', 'nv-focus-idle');
       renderSignalFeed(entry.sig);
+      meteorTo(card, 'focus', 900, () => {
+        card.classList.remove('meteor-arrive');
+        void card.offsetWidth;
+        card.classList.add('meteor-arrive');
+        clearTimeout(card._sigArriveT);
+        card._sigArriveT = setTimeout(() => card.classList.remove('meteor-arrive'), 950);
+      });
       card.classList.add('hot', 'flash');
       clearTimeout(card._sigHotT);
       card._sigHotT = setTimeout(() => card.classList.remove('hot'), 15 * 60 * 1000);
@@ -11547,16 +11568,20 @@ requestAnimationFrame(frame);
     const sigNext = () => {
       clearTimeout(sigTimer);
       window.__MOSS_SIG_TIMER = null;
-      if (!sigQueue.length) { window.__MOSS_SIG_CURRENT = null; renderSignalCardFrame(); sigArmIdle(); return; }
+      if (!sigQueue.length) {
+        window.__MOSS_SIG_CURRENT = null;
+        renderSignalCardFrame();
+        sigArmIdle();
+        return;
+      }
       const entry = sigQueue.shift();
       const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
       const fresh = rows.find(x => x.symbol === (entry.sig.r.symbol));
       if (fresh) entry.sig = calcSignal(fresh);
       sigShow(entry);
-      if (sigQueue.length) {
-        window.__MOSS_SIG_TIMER = setTimeout(sigNext, SIG_SLOT_MS);
-        sigTimer = window.__MOSS_SIG_TIMER;
-      }
+      const wait = sigQueue.length ? SIG_SLOT_MS : SIG_IDLE_MS;
+      window.__MOSS_SIG_TIMER = setTimeout(sigNext, wait);
+      sigTimer = window.__MOSS_SIG_TIMER;
     };
     const refreshSignalCardFrame = () => renderSignalCardFrame();
     const signalChime = async () => {
@@ -11852,7 +11877,7 @@ requestAnimationFrame(frame);
       const gc = sr.querySelector('#nvGainCount'); if (gc) gc.textContent = gainRows.length;
       const lc = sr.querySelector('#nvLossCount'); if (lc) lc.textContent = lossRows.length;
       const FOCUS_COOLDOWN = 60 * 60 * 1000;
-    const FOCUS_SLOT_MS = 5 * 60 * 1000;
+    const FOCUS_SLOT_MS = Number(window.__MOSS_TEST_SLOT) || 5 * 60 * 1000;
     const FOCUS_IDLE_MS = 15 * 60 * 1000;
     let focusSeen = {};
     let focusQueue = [];
@@ -11877,6 +11902,7 @@ requestAnimationFrame(frame);
     const focusShow = (r) => {
       const card = sr.querySelector('[data-nv-card="focus"]');
       if (!card || !r) return;
+      clearTimeout(focusIdleTimer);
       card.classList.remove('nv-focus-idle');
       window.__MOSS_FOCUS_CURRENT = r.symbol;
       renderFocusCard(r);
@@ -11886,15 +11912,19 @@ requestAnimationFrame(frame);
         card._hotTimer = setTimeout(() => card.classList.remove('hot'), 15 * 60 * 1000);
         setTimeout(() => card.classList.remove('flash'), 650);
         focusFlash(card);
+        card.classList.remove('meteor-arrive');
+        void card.offsetWidth;
+        card.classList.add('meteor-arrive');
+        clearTimeout(card._arriveT);
+        card._arriveT = setTimeout(() => card.classList.remove('meteor-arrive'), 950);
       });
-      focusArmIdle();
     };
     const focusArmIdle = () => {
       const card = sr.querySelector('[data-nv-card="focus"]');
       clearTimeout(focusIdleTimer);
       if (card) card.classList.remove('nv-focus-idle');
       focusIdleTimer = setTimeout(() => {
-        if (focusQueue.length) return;
+        if (focusQueue.length || focusTimer) return;
         const el = sr.querySelector('[data-nv-card="focus"]');
         if (el) el.classList.add('nv-focus-idle');
       }, FOCUS_IDLE_MS);
@@ -11904,10 +11934,19 @@ requestAnimationFrame(frame);
       focusTimer = null;
       if (!focusQueue.length) return;
       const item = focusQueue.shift();
+      const sym = item && item.r && item.r.symbol;
       const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
-      const fresh = rows.find(x => x.symbol === item.r.symbol) || item.r;
-      focusShow(fresh);
-      if (focusQueue.length) focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS);
+      const fresh = sym ? rows.find(x => x.symbol === sym) : null;
+      if (fresh) focusShow(fresh);
+      if (focusQueue.length) {
+        focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS);
+      } else {
+        focusTimer = setTimeout(() => {
+          focusTimer = null;
+          const el = sr.querySelector('[data-nv-card="focus"]');
+          if (el && !focusQueue.length) el.classList.add('nv-focus-idle');
+        }, FOCUS_IDLE_MS);
+      }
     };
     const rotateFocusCard = (rows, live) => {
       const now = Date.now();
@@ -11916,12 +11955,15 @@ requestAnimationFrame(frame);
       if (!hit.length) return;
       hit.forEach(r => { focusSeen[r.symbol] = now; });
       focusPersist();
+      const wasIdle = !focusQueue.length && !focusTimer;
       focusQueue = focusQueue.concat(hit);
-      if (!window.__MOSS_FOCUS_CURRENT && !focusTimer) {
+      if (!window.__MOSS_FOCUS_CURRENT) {
         focusNext();
         return;
       }
       if (!focusTimer) focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS);
+      else if (wasIdle) { clearTimeout(focusTimer); focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS); }
+      else { clearTimeout(focusTimer); focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS); }
     };
     const renderFocusCard = (r) => {
       const card = sr.querySelector('[data-nv-card="focus"]');
