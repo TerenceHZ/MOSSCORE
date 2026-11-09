@@ -11257,6 +11257,7 @@ requestAnimationFrame(frame);
     try {
       const saved = JSON.parse(localStorage.getItem(ALERT_KEY) || '[]');
       if (Array.isArray(saved)) alertLog = saved.filter(a => a && a.ts && Date.now() - a.ts < ALERT_TTL);
+      localStorage.setItem(ALERT_KEY, JSON.stringify(alertLog.slice(0, 500)));
     } catch (e) {}
     if (!alertLog.length) {
       alertLog = [
@@ -11428,6 +11429,7 @@ requestAnimationFrame(frame);
     try {
       const saved = JSON.parse(localStorage.getItem(SIGNAL_KEY) || '[]');
       if (Array.isArray(saved)) signalLog = saved.filter(a => a && a.ts && Date.now() - a.ts < SIGNAL_TTL);
+      localStorage.setItem(SIGNAL_KEY, JSON.stringify(signalLog.slice(0, 500)));
     } catch (e) {}
     const saveSignals = () => { try { localStorage.setItem(SIGNAL_KEY, JSON.stringify(signalLog.slice(0, 500))); } catch (e) {} };
     const refreshSignalQuote = (rows) => {
@@ -12157,10 +12159,13 @@ requestAnimationFrame(frame);
       const laneLabel = lane === 'focus' ? '涨幅榜' : lane === 'loss' ? '弱势榜' : '自选监控';
       const reach = Number(window.__MOSS_LIVE?.updatedAt === undefined ? Date.now() : Date.now());
       const key = `mh-${sym}`;
-      mhRows = mhRows.filter(x => x.sym !== sym);
+      const nowTs = Date.now();
+      const MH_TTL = 24 * 60 * 60 * 1000;
+      mhRows = mhRows.filter(x => x.sym !== sym && nowTs - (x.ts || 0) < MH_TTL);
       mhRows.unshift({
         sym, lane, laneLabel, price, changeDisp, chg, up, oi5n, oi15n, vol, score,
         deltaDisp, volDisp,
+        ts: nowTs,
         time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
         stamp: window.__MOSS_LIVE?.updatedAt || '本地'
       });
@@ -12168,6 +12173,22 @@ requestAnimationFrame(frame);
       mhPage = 0;
       renderMhPage();
     };
+    const pruneHistories = () => {
+      const nowTs = Date.now();
+      const TTL = 24 * 60 * 60 * 1000;
+      let changed = false;
+      const beforeSignal = signalLog.length;
+      signalLog = signalLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
+      if (signalLog.length !== beforeSignal) { saveSignals(); changed = true; }
+      const beforeAlert = alertLog.length;
+      alertLog = alertLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
+      if (alertLog.length !== beforeAlert) { saveAlerts(); changed = true; }
+      const beforeMh = mhRows.length;
+      mhRows = mhRows.filter(x => nowTs - (x.ts || 0) < TTL);
+      if (mhRows.length !== beforeMh) { mhPage = 0; renderMhPage(); changed = true; }
+      if (changed) { try { renderSignalHistory(); } catch (e) {} try { renderAlertHistory(); } catch (e) {} }
+    };
+    setInterval(pruneHistories, 10 * 60 * 1000);
     const renderMhPage = () => {
       const list = sr.querySelector('#nvMhList');
       if (!list) return;
