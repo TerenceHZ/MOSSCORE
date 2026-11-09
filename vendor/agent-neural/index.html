@@ -11424,7 +11424,19 @@ requestAnimationFrame(frame);
       if (Array.isArray(saved)) signalLog = saved.filter(a => a && a.ts && Date.now() - a.ts < SIGNAL_TTL);
     } catch (e) {}
     const saveSignals = () => { try { localStorage.setItem(SIGNAL_KEY, JSON.stringify(signalLog.slice(0, 500))); } catch (e) {} };
+    const refreshSignalQuote = (rows) => {
+      const symSym = window.__MOSS_SIGNAL_SYMBOL;
+      if (!symSym || !Array.isArray(rows)) return;
+      const r = rows.find(x => x.symbol === symSym);
+      if (!r) return;
+      const chgEl = sr.querySelector('#nvCardSigChg');
+      if (chgEl) {
+        const up = Number(r.change24h || 0) >= 0;
+        chgEl.textContent = `${up ? '涨幅' : '跌幅'} ${up ? '+' : ''}${Number(r.change24h || 0).toFixed(2)}%`;
+      }
+    };
     const renderSignalFeed = (sig) => {
+      window.__MOSS_SIGNAL_SYMBOL = sig && (sig.r.symbol || sig.r.baseAsset);
       const card = sr.querySelector('#nvSignalCard');
       if (!card || !sig) return;
       const up = sig.side === 'long';
@@ -11823,36 +11835,54 @@ requestAnimationFrame(frame);
       focusPersist();
       const sym = latest.symbol;
       if (window.__MOSS_FOCUS_CURRENT === sym) return;
+      const prevScore = Number(window.__MOSS_FOCUS_SCORE || 0);
+      const nextScore = Math.abs(Number(latest.change24h || 0)) + Math.abs(Number(latest.oi15m || 0));
+      if (prevScore && nextScore < prevScore * 0.9) return;
       window.__MOSS_FOCUS_CURRENT = sym;
-      updCard('focus', latest);
+      window.__MOSS_FOCUS_SCORE = nextScore;
+      renderFocusCard(latest);
       const card = sr.querySelector('[data-nv-card="focus"]');
-      if (card) meteorTo(card, 'focus', 900, () => { focusFlash(card); });
+      if (card) {
+        meteorTo(card, 'focus', 900, () => {
+          card.classList.add('hot', 'flash');
+          clearTimeout(card._hotTimer);
+          card._hotTimer = setTimeout(() => card.classList.remove('hot'), 15 * 60 * 1000);
+          setTimeout(() => card.classList.remove('flash'), 650);
+          focusFlash(card);
+        });
+      }
+    };
+    const renderFocusCard = (r) => {
+      const card = sr.querySelector('[data-nv-card="focus"]');
+      if (!card || !r) return;
+      const set = (id, text) => { const el = sr.querySelector('#' + id); if (el) el.textContent = text; };
+      const chgColor = Number(r.change24h || 0) >= 0 ? '#63C08E' : '#C96358';
+      set('nvFocusSym', pairName(r.symbol || r.baseAsset));
+      set('nvFocusPrice', `${Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USDT`);
+      set('nvFocusChg', `${sign(r.change24h)}%`);
+      const chgEl = sr.querySelector('#nvFocusChg'); if (chgEl) chgEl.style.color = chgColor;
+      set('nvFocusVol', `24H量 ${fmtQv(r.quoteVolume24h)}`);
+      const oi15 = Number(r.oi15m || 0);
+      const d15 = Math.abs(Number(r.oiNotional || 0) * oi15 / (100 + oi15));
+      set('nvFocusOi15', `15M OI ${oi15 >= 0 ? '+' : '-'}${fmtWan(d15)} (${sign(oi15)}%)`);
+      const oi15El = sr.querySelector('#nvFocusOi15'); if (oi15El) oi15El.style.color = oi15 >= 0 ? '#63C08E' : '#C96358';
+      set('nvFocusOi', `当前 OI ${fmtWan(r.oiNotional)}`);
+      const oi24 = Number(r.oi24h || 0), d24 = Number(r.oi24hDelta || 0);
+      set('nvFocusOi24', `24H OI ${d24 >= 0 ? '+' : '-'}${fmtWan(Math.abs(d24))} (${sign(oi24)}%)`);
+      const oi24El = sr.querySelector('#nvFocusOi24'); if (oi24El) oi24El.style.color = d24 >= 0 ? '#63C08E' : '#C96358';
+      set('nvFocusTime', `抓取 ${live.updatedAt}`);
+      window.__MOSS_FOCUS_SYMBOL = r.symbol || r.baseAsset;
+      card.dataset.liveSymbol = r.symbol;
+      card.dataset.liveTime = live.updatedAt;
     };
     const updCard = (lane, r) => {
         const card = sr.querySelector(`[data-nv-card="${lane}"]`);
         if (!card || !r) return;
-        if (lane === 'focus') {
-          const set = (id, text) => { const el = sr.querySelector('#' + id); if (el) el.textContent = text; };
-          const chgColor = Number(r.change24h || 0) >= 0 ? '#63C08E' : '#C96358';
-          set('nvFocusSym', pairName(r.symbol || r.baseAsset));
-          set('nvFocusPrice', `${Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USDT`);
-          set('nvFocusChg', `${sign(r.change24h)}%`);
-          const chgEl = sr.querySelector('#nvFocusChg'); if (chgEl) chgEl.style.color = chgColor;
-          set('nvFocusVol', `24H量 ${fmtQv(r.quoteVolume24h)}`);
-          const oi15 = Number(r.oi15m || 0);
-          const d15 = Math.abs(Number(r.oiNotional || 0) * oi15 / (100 + oi15));
-          set('nvFocusOi15', `15M OI ${oi15 >= 0 ? '+' : '-'}${fmtWan(d15)} (${sign(oi15)}%)`);
-          const oi15El = sr.querySelector('#nvFocusOi15'); if (oi15El) oi15El.style.color = oi15 >= 0 ? '#63C08E' : '#C96358';
-          set('nvFocusOi', `当前 OI ${fmtWan(r.oiNotional)}`);
-          const oi24 = Number(r.oi24h || 0), d24 = Number(r.oi24hDelta || 0);
-          set('nvFocusOi24', `24H OI ${d24 >= 0 ? '+' : '-'}${fmtWan(Math.abs(d24))} (${sign(oi24)}%)`);
-          const oi24El = sr.querySelector('#nvFocusOi24'); if (oi24El) oi24El.style.color = d24 >= 0 ? '#63C08E' : '#C96358';
-          set('nvFocusTime', `抓取 ${live.updatedAt}`);
-        }
+        if (lane === 'focus') renderFocusCard(r);
         card.dataset.liveSymbol = r.symbol;
         const changed = card.dataset.liveTime && card.dataset.liveTime !== live.updatedAt;
         card.dataset.liveTime = live.updatedAt;
-        if (lane === 'focus' && window.__MOSS_CARD_READY && changed) {
+        if (lane === 'focus' && window.__MOSS_CARD_READY && changed && !window.__MOSS_FOCUS_EFFECT_ONLY) {
           meteorTo(card, 'focus', 900, () => {
             card.classList.add('hot', 'flash');
             clearTimeout(card._hotTimer);
@@ -11864,11 +11894,26 @@ requestAnimationFrame(frame);
       };
       const focusRows = rows.filter(r => r.focus);
       const focusPick = focusRows[0] || gainRows[0];
+      window.__MOSS_CARD_SRC = { focus: focusPick, imported: lossRows[0], rows };
       if (!window.__MOSS_FOCUS_CARD_SEEDED) {
-        updCard('focus', focusPick);
+        renderFocusCard(focusPick);
+        const seedCard = sr.querySelector('[data-nv-card="focus"]');
+        if (seedCard) {
+          seedCard.classList.add('hot');
+          clearTimeout(seedCard._hotTimer);
+          seedCard._hotTimer = setTimeout(() => seedCard.classList.remove('hot'), 15 * 60 * 1000);
+        }
+        window.__MOSS_FOCUS_CURRENT = focusPick ? focusPick.symbol : '';
+        window.__MOSS_FOCUS_SCORE = focusPick ? Math.abs(Number(focusPick.change24h || 0)) + Math.abs(Number(focusPick.oi15m || 0)) : 0;
         window.__MOSS_FOCUS_CARD_SEEDED = true;
       }
+      try {
+        const cur = window.__MOSS_FOCUS_CURRENT;
+        const fresh = cur ? rows.find(r => r.symbol === cur) : null;
+        if (fresh) renderFocusCard(fresh);
+      } catch (e) {}
       try { rotateFocusCard(rows, live); } catch (e) {}
+      try { refreshSignalQuote(rows); } catch (e) {}
       updCard('imported', lossRows[0]);
       const f = focusPick, im = lossRows[0];
       const alertPrev = window.__MOSS_ALERT_PREV || {};
