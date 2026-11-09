@@ -11774,7 +11774,6 @@ requestAnimationFrame(frame);
       const lc = sr.querySelector('#nvLossCount'); if (lc) lc.textContent = lossRows.length;
       const FOCUS_COOLDOWN = 30 * 60 * 1000;
     let focusSeen = {};
-    let focusQueue = [];
     try { focusSeen = JSON.parse(localStorage.getItem('moss-focus-rotate-v1') || '{}') || {}; } catch (e) { focusSeen = {}; }
     const focusPersist = () => { try { localStorage.setItem('moss-focus-rotate-v1', JSON.stringify(focusSeen)); } catch (e) {} };
     const focusHit = (r) => {
@@ -11785,28 +11784,29 @@ requestAnimationFrame(frame);
         || Number(r.volRatio3m || 0) >= 1.5
         || (Number(r.largeUsdt || 0) >= 5000 && Number(r.largeMultiple || 0) >= 20);
     };
-    const focusQueueMeta = () => {
-      const el = sr.querySelector('#nvFocusQueue');
-      if (el) el.textContent = focusQueue.length ? `${focusQueue.length} WAIT` : 'LIVE';
+    const focusFlash = (card) => {
+      if (!card) return;
+      card.classList.add('flash');
+      clearTimeout(card._focusFlash);
+      card._focusFlash = setTimeout(() => card.classList.remove('flash'), 900);
     };
     const rotateFocusCard = (rows, live) => {
       const now = Date.now();
       Object.keys(focusSeen).forEach(k => { if (now - focusSeen[k] >= FOCUS_COOLDOWN) delete focusSeen[k]; });
       const hit = (rows || []).filter(r => r.focus && focusHit(r) && !focusSeen[r.symbol]);
-      hit.slice(0, 8).forEach(r => {
+      if (!hit.length) return;
+      let latest = hit[0];
+      hit.forEach(r => {
         focusSeen[r.symbol] = now;
-        focusQueue.push({ r, time: live.updatedAt });
+        if (Number(r.quoteVolume24h || 0) > Number(latest.quoteVolume24h || 0)) latest = r;
       });
-      if (hit.length) focusPersist();
-      if (!window.__MOSS_FOCUS_CARD_TIMER) {
-        window.__MOSS_FOCUS_CARD_TIMER = setInterval(() => {
-          if (!focusQueue.length) { focusQueueMeta(); return; }
-          const next = focusQueue.shift();
-          updCard('focus', next.r);
-          focusQueueMeta();
-        }, 5000);
-      }
-      focusQueueMeta();
+      focusPersist();
+      const sym = latest.symbol;
+      if (window.__MOSS_FOCUS_CURRENT === sym) return;
+      window.__MOSS_FOCUS_CURRENT = sym;
+      updCard('focus', latest);
+      const card = sr.querySelector('[data-nv-card="focus"]');
+      if (card) meteorTo(card, 'focus', 900, () => { focusFlash(card); });
     };
     const updCard = (lane, r) => {
         const card = sr.querySelector(`[data-nv-card="${lane}"]`);
