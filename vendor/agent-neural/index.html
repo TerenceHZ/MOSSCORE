@@ -11370,7 +11370,7 @@ requestAnimationFrame(frame);
       renderAlertHistory();
     });
     const pushAlert = (r, liveTime, announce = true, type = 'oi') => {
-      if (!r) return;
+      if (!r || window.__MOSS_LIVE_FRESH === false) return;
       const pct = Number(r.oi15m || r.oi5m || 0);
       const dir = pct >= 0 ? '↑↑↑' : '↓↓↓';
       const delta = Math.abs(Number(r.oiNotional || 0) * pct / (100 + pct));
@@ -11454,7 +11454,7 @@ requestAnimationFrame(frame);
       drawer.setAttribute('aria-hidden', 'false');
       freshPanel(drawer, 'focus');
     };
-    { const latest = signalLog[0]; if (latest) renderSignalFeed({ r: { symbol: latest.symbol, price: latest.price, oiNotional: latest.oi }, chg: latest.chg, side: latest.side, win: latest.win, oi5: latest.oi5, oi15: latest.oi15, targetText: latest.target, stopText: latest.stop }); }
+    { const latest = signalLog[0]; if (latest && Date.now() - latest.ts < 15 * 60 * 1000) renderSignalFeed({ r: { symbol: latest.symbol, price: latest.price, oiNotional: latest.oi }, chg: latest.chg, side: latest.side, win: latest.win, oi5: latest.oi5, oi15: latest.oi15, targetText: latest.target, stopText: latest.stop }); }
     renderSignalHistory();
     const calcSignal = (r) => {
       const chg = Number(r.change24h || 0);
@@ -11518,7 +11518,7 @@ requestAnimationFrame(frame);
     let signalTimerId = null;
     const showSignal = (sig, row, lane) => {
       const el = document.querySelector('#nvSignal');
-      if (!el || !sig) return;
+      if (!el || !sig || window.__MOSS_LIVE_FRESH === false) return;
       el.className = 'nv-signal open ' + sig.side;
       el.setAttribute('aria-hidden', 'false');
       clearInterval(signalTimerId);
@@ -11694,9 +11694,21 @@ requestAnimationFrame(frame);
       const bar = sr.querySelector('#nvLsBar');
       if (bar) { bar.style.width = `${long}%`; bar.style.background = `linear-gradient(90deg,${color},#d8e9c8)`; }
     };
+    const liveIsFresh = (live) => {
+      const text = String((live && live.updatedAt) || '');
+      const match = text.match(/^(\d{1,2}):(\d{2}):(\d{2})/);
+      if (!match) return false;
+      const t = new Date();
+      t.setHours(Number(match[1]), Number(match[2]), Number(match[3]), 0);
+      let age = Date.now() - t.getTime();
+      if (age < 0) age += 24 * 60 * 60 * 1000;
+      return age <= 15 * 60 * 1000;
+    };
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
+      const liveFresh = liveIsFresh(live);
       window.__MOSS_LIVE_ACTIVE = true;
+      window.__MOSS_LIVE_FRESH = liveFresh;
       renderFearGreed(live.fearGreed);
       renderLongShort(live.longShort);
       const rows = [...live.rows].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
@@ -11894,7 +11906,7 @@ requestAnimationFrame(frame);
       const signalEl = document.querySelector('#nvSignal');
       const firstSignalPass = !window.__MOSS_SIGNAL_BASELINE;
       const lastSeen = best ? (seen[key] || 0) : 0;
-      if (best) {
+      if (best && liveFresh) {
         const repeatMs = 15 * 60 * 1000;
         const shouldRepeat = !firstSignalPass && !signalEl.classList.contains('open')
           && (!lastSeen || Date.now() - lastSeen >= repeatMs);
