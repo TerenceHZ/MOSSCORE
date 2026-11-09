@@ -105,7 +105,7 @@ td.actions{white-space:nowrap}td.actions button{margin-right:5px}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#2b2418;border:1px solid #3b3324;margin-bottom:18px}
 .stats-grid>div{background:#0b0e12;padding:14px 15px}.stats-grid span{display:block;font-size:10px;letter-spacing:.08em;color:#8b7d68}
 .stats-grid b{display:block;margin-top:7px;font:600 25px/1 Consolas,monospace;color:#ffd27a}.stats-grid small{display:block;margin-top:5px;font-size:10px;color:#695b48}
-.online-head{display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px}.online-head b{font-size:12px;color:#b9a682}.online-head span{font-size:10px;color:#6f624f}
+.online-head{display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px}.online-head b{font-size:12px;color:#b9a682}.online-head span{font-size:10px;color:#6f624f}.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}.status-dot.on{background:#63c08e;box-shadow:0 0 7px rgba(99,192,142,.65)}.status-dot.off{background:#5f594f}.status-label{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:10px}.status-label.on{color:#8fd8ae}.status-label.off{color:#736b60}
 #onlineList{font-size:11px}#onlineList td{padding:7px 8px;color:#b9a887}#onlineList td:last-child{color:#6f8f78;font-family:Consolas,monospace}
 .empty-online{color:#6f624f;font-size:11px;padding:8px 0}
 table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px;min-width:760px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #1f2328;white-space:nowrap}
@@ -120,7 +120,7 @@ th{color:#827664;font-weight:500}.hint{color:#827664;font-size:12px}.err{color:#
 <div class="panel"><div class="row"><div style="flex:1"><label>解绑邀请码</label><input id="resetCode" placeholder="MOSS-XXXX-XXXX-XXXX" style="width:100%"></div>
 <button onclick="resetCode()">解绑旧设备</button></div><div class="hint" style="margin-top:10px">解绑后该码可以给新电脑重新激活。</div></div>
 <div class="stats-grid"><div><span>ONLINE COMPUTERS</span><b id="statOnline">0</b><small>最近 5 分钟有数据请求</small></div><div><span>ACTIVE DEVICES</span><b id="statDevices">0</b><small>有效许可证设备</small></div><div><span>NEW TODAY</span><b id="statNew">0</b><small>今天首次激活</small></div><div><span>ACTIVE CODES</span><b id="statCodes">0</b><small>有效邀请码</small></div></div>
-<div class="panel"><div class="online-head"><b>在线电脑</b><span>每 30 秒自动刷新</span></div><div id="onlineList"></div></div>
+<div class="panel"><div class="online-head"><b>设备状态</b><span>每 15 分钟刷新 · 绿点在线 / 灰点离线</span></div><div id="deviceList"></div></div>
 <div class="panel"><div class="row" style="justify-content:space-between"><b>邀请码列表</b><span class="hint">完整邀请码仅管理员可见，可直接复制</span></div>
 <div class="table-wrap"><table><thead><tr><th>ID</th><th>邀请码</th><th>设备数</th><th>有效期</th><th>状态</th><th>已绑定</th><th>操作</th></tr></thead><tbody id="list"></tbody></table></div></div></div>
 <script>
@@ -177,20 +177,24 @@ async function loadList(){
   document.getElementById('statDevices').textContent=st.active_devices??'0';
   document.getElementById('statNew').textContent=st.new_today??'0';
   document.getElementById('statCodes').textContent=`${st.active_codes??0} / ${st.total_codes??0}`;
-  const online=document.getElementById('onlineList');online.innerHTML='';
-  const list=st.online_devices||[];
-  if(!list.length){online.innerHTML='<div class="empty-online">暂无在线电脑；客户端每 60 秒上报一次心跳。</div>'}
+  const online=document.getElementById('deviceList');online.innerHTML='';
+  const list=st.devices||st.online_devices||[];
+  if(!list.length){online.innerHTML='<div class="empty-online">暂无设备记录。</div>'}
   else{
     const table=document.createElement('table');
     const head=document.createElement('tr');
-    for(const h of ['设备','邀请码','最后心跳']){const th=document.createElement('th');th.textContent=h;head.appendChild(th)}
+    for(const h of ['设备','邀请码','状态','最后心跳']){const th=document.createElement('th');th.textContent=h;head.appendChild(th)}
     table.appendChild(head);
     for(const d of list){
       const tr=document.createElement('tr');
       const name=document.createElement('td');name.textContent=d.device_name||'未命名设备';
       const code=document.createElement('td');code.textContent=d.code||'—';code.style.whiteSpace='nowrap';
+      const state=document.createElement('td');
+      const dot=document.createElement('i');dot.className='status-dot '+(d.online?'on':'off');
+      const label=document.createElement('span');label.className='status-label '+(d.online?'on':'off');label.textContent=d.online?'在线':'离线';
+      state.append(dot,label);
       const seen=document.createElement('td');seen.textContent=d.last_seen?new Date(d.last_seen).toLocaleTimeString('zh-CN',{hour12:false}):'—';
-      tr.append(name,code,seen);table.appendChild(tr);
+      tr.append(name,code,state,seen);table.appendChild(tr);
     }
     online.appendChild(table);
   }
@@ -222,7 +226,7 @@ async function loadList(){
 }
 async function logout(){await fetch('/admin/logout',{method:'POST'});location='/admin'}
 loadList();
-setInterval(loadList,30000);
+setInterval(loadList,15*60*1000);
 </script></html>"""
 
 

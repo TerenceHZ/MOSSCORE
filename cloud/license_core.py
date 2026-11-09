@@ -216,7 +216,7 @@ def delete_code(code_id):
 def stats():
     init()
     current = now()
-    online_cutoff = iso(current - timedelta(minutes=5))
+    online_cutoff = iso(current - timedelta(minutes=15))
     today_start = iso(current.replace(hour=0, minute=0, second=0, microsecond=0))
     with connect() as db:
         base = (
@@ -240,17 +240,19 @@ def stats():
             "SELECT COUNT(*) n FROM codes WHERE revoked=0 AND (expires_at IS NULL OR expires_at>?)",
             (iso(current),),
         ).fetchone()["n"]
-        online_devices = [dict(r) for r in db.execute(
+        devices = [dict(r) for r in db.execute(
             "SELECT d.device_name,d.device_id,d.last_seen,d.activated_at,"
             "c.code_hint,c.code_plain FROM devices d JOIN codes c ON c.id=d.code_id "
             "WHERE d.revoked=0 AND c.revoked=0 AND (c.expires_at IS NULL OR c.expires_at>?) "
-            "AND d.last_seen>=? ORDER BY d.last_seen DESC LIMIT 30",
-            (iso(current), online_cutoff),
+            "ORDER BY d.last_seen DESC LIMIT 200",
+            (iso(current),),
         ).fetchall()]
-    for d in online_devices:
+    for d in devices:
         d["device_id"] = (d["device_id"] or "")[:12] + "…"
         d["code"] = d.pop("code_plain") or ("旧码 · " + d.pop("code_hint"))
         d.pop("code_hint", None)
+        d["online"] = d["last_seen"] >= online_cutoff
+    online_devices = [d for d in devices if d["online"]]
     return {
         "online": online,
         "active_devices": active_devices,
@@ -258,7 +260,8 @@ def stats():
         "active_codes": active_codes,
         "total_codes": total_codes,
         "online_devices": online_devices,
-        "window_minutes": 5,
+        "devices": devices,
+        "window_minutes": 15,
     }
 
 
