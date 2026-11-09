@@ -11868,7 +11868,7 @@ requestAnimationFrame(frame);
       fillRows(importMod, lossRows, 'loss');
       const gc = sr.querySelector('#nvGainCount'); if (gc) gc.textContent = gainRows.length;
       const lc = sr.querySelector('#nvLossCount'); if (lc) lc.textContent = lossRows.length;
-      const FOCUS_COOLDOWN = 30 * 60 * 1000;
+      const FOCUS_COOLDOWN = 60 * 60 * 1000;
     const FOCUS_SLOT_MS = 5 * 60 * 1000;
     const FOCUS_IDLE_MS = 15 * 60 * 1000;
     let focusSeen = {};
@@ -12100,24 +12100,36 @@ requestAnimationFrame(frame);
         const key = `${c.sig.r.symbol}-${c.sig.side}`;
         if (!uniq.has(key)) uniq.set(key, c);
       });
+      const SIG_COOLDOWN = 60 * 60 * 1000;
       const signalEntries = [...uniq.entries()];
       signalEntries.forEach(([key, c]) => {
         (c.row = null);
         c.key = key;
+        c.symbol = c.sig.r.symbol;
       });
       window.__MOSS_SIGNAL_ENTRIES = signalEntries;
+      const sigReady = ([key, c]) => {
+        const last = seen[key] || 0;
+        const lastSame = seen[`symbol:${c.symbol}`] || 0;
+        const now = Date.now();
+        return (!last || now - last >= SIG_COOLDOWN) && (!lastSame || now - lastSame >= SIG_COOLDOWN);
+      };
       if (liveFresh && !firstSignalPass) {
-        const due = signalEntries.filter(([key]) => !seen[key]);
-        due.slice(0, 5).forEach(([key, c]) => {
-          seen[key] = Date.now();
-          pushSignalSlot(c, 0);
+        const due = signalEntries.filter(sigReady);
+        due.forEach(([key, c], idx) => {
+          const now = Date.now();
+          seen[key] = now;
+          seen[`symbol:${c.symbol}`] = now;
+          if (idx < 5) pushSignalSlot(c, 0);
         });
       }
       if (firstSignalPass) {
-        signalEntries.forEach(([key], idx) => {
+        signalEntries.forEach(([key, c], idx) => {
           if (seen[key]) return;
-          seen[key] = Date.now();
-          if (idx < 5) pushSignalSlot(signalEntries[idx][1], 1200);
+          const now = Date.now();
+          seen[key] = now;
+          seen[`symbol:${c.symbol}`] = now;
+          if (idx < 5) pushSignalSlot(c, 1200);
         });
       }
       window.__MOSS_SIGNAL_SEEN = seen;
