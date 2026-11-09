@@ -11884,6 +11884,10 @@ requestAnimationFrame(frame);
     let focusTimer = null;
     let focusIdleTimer = null;
     try { focusSeen = JSON.parse(localStorage.getItem('moss-focus-rotate-v1') || '{}') || {}; } catch (e) { focusSeen = {}; }
+    {
+      const bootNow = Date.now();
+      Object.keys(focusSeen).forEach(k => { if (bootNow - focusSeen[k] >= 60 * 60 * 1000) delete focusSeen[k]; });
+    }
     const focusPersist = () => { try { localStorage.setItem('moss-focus-rotate-v1', JSON.stringify(focusSeen)); } catch (e) {} };
     const focusHit = (r) => {
       const vol = Number(r.quoteVolume24h || 0);
@@ -12008,17 +12012,25 @@ requestAnimationFrame(frame);
       const focusPick = focusRows[0] || gainRows[0];
       window.__MOSS_CARD_SRC = { focus: focusPick, imported: lossRows[0], rows };
       if (!window.__MOSS_FOCUS_CARD_SEEDED) {
-        renderFocusCard(focusPick);
-        const seedCard = sr.querySelector('[data-nv-card="focus"]');
-        if (seedCard) {
-          seedCard.classList.add('hot');
-          clearTimeout(seedCard._hotTimer);
-          seedCard._hotTimer = setTimeout(() => seedCard.classList.remove('hot'), 15 * 60 * 1000);
+        // 启动首屏：不用"当前列表第一个"，而是用"最新一轮达标"里最强的那个
+        const bootHits = focusRows.filter(r => focusHit(r))
+          .sort((a, b) => Number(b.quoteVolume24h || 0) - Number(a.quoteVolume24h || 0));
+        if (!window.__MOSS_FOCUS_CURRENT) {
+          const firstHit = bootHits[0];
+          const seed = firstHit || focusPick;
+          renderFocusCard(seed);
+          window.__MOSS_FOCUS_CURRENT = seed ? seed.symbol : '';
+          window.__MOSS_FOCUS_SCORE = seed ? Math.abs(Number(seed.change24h || 0)) + Math.abs(Number(seed.oi15m || 0)) : 0;
+          const seedCard = sr.querySelector('[data-nv-card="focus"]');
+          if (seedCard) {
+            seedCard.classList.remove('nv-focus-idle');
+            seedCard.classList.add('hot');
+            clearTimeout(seedCard._hotTimer);
+            seedCard._hotTimer = setTimeout(() => seedCard.classList.remove('hot'), 15 * 60 * 1000);
+          }
+          focusArmIdle();
         }
-        window.__MOSS_FOCUS_CURRENT = focusPick ? focusPick.symbol : '';
-        window.__MOSS_FOCUS_SCORE = focusPick ? Math.abs(Number(focusPick.change24h || 0)) + Math.abs(Number(focusPick.oi15m || 0)) : 0;
         window.__MOSS_FOCUS_CARD_SEEDED = true;
-        focusArmIdle();
       }
       try {
         const cur = window.__MOSS_FOCUS_CURRENT;
@@ -12160,6 +12172,24 @@ requestAnimationFrame(frame);
       window.__MOSS_SIGNAL_BASELINE = true;
       renderSignalCardFrame();
     };
+    // 每次启动重置展示状态：不用上次会话遗留的卡片内容
+    try {
+      window.__MOSS_FOCUS_CURRENT = '';
+      window.__MOSS_FOCUS_SCORE = 0;
+      window.__MOSS_FOCUS_CARD_SEEDED = false;
+      window.__MOSS_SIGNAL_SEEN = {};
+      window.__MOSS_SIGNAL_BASELINE = false;
+      window.__MOSS_SIG_CURRENT = null;
+      window.__MOSS_SIG_SEEN_ONCE = false;
+      window.__MOSS_ALERT_SEEDED = false;
+      window.__MOSS_ALERT_PREV = {};
+      window.__MOSS_EVENT_SEEN = {};
+      window.__MOSS_EVENT_SEEDED = false;
+      const fCard = sr.querySelector('[data-nv-card="focus"]');
+      if (fCard) fCard.classList.remove('nv-focus-idle', 'hot', 'flash');
+      const sCard = sr.querySelector('#nvSignalCard');
+      if (sCard) sCard.classList.remove('sig-idle', 'nv-focus-idle', 'hot', 'flash');
+    } catch (e) {}
     window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
     setTimeout(loadFearGreed, 800);
