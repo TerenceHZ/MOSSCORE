@@ -11636,22 +11636,11 @@ requestAnimationFrame(frame);
       card.classList.remove('sig-idle');
       if (!busy) card.classList.remove('nv-focus-idle');
     };
-    const sigGoIdle = () => {
-      if (sigQueue.length || window.__MOSS_SIZE_OPEN) { sigArmIdle(); return; }
-      if (document.querySelector('#nvSignal')?.classList.contains('open')) {
-        // 弹窗还开着：稍后再试，不放弃
-        clearTimeout(sigIdleTimer);
-        sigIdleTimer = setTimeout(sigGoIdle, 30 * 1000);
-        return;
-      }
-      const el = signalCardEl();
-      if (el) el.classList.add('sig-idle', 'nv-focus-idle');
-    };
+    // 取消自动变暗：卡片常亮
     const sigArmIdle = () => {
       clearTimeout(sigIdleTimer);
       const card = signalCardEl();
       if (card) card.classList.remove('sig-idle', 'nv-focus-idle');
-      sigIdleTimer = setTimeout(sigGoIdle, SIG_IDLE_MS);
     };
     const sigShow = (entry) => {
       const card = signalCardEl();
@@ -12393,19 +12382,11 @@ requestAnimationFrame(frame);
         if (el) el.classList.add('nv-focus-idle');
       }, FOCUS_IDLE_MS);
     };
-    const focusGoIdle = () => {
-      if (focusQueue.length || focusTimer) {
-        // 队列还有货：重新排一次空闲检查
-        clearTimeout(focusIdleTimer);
-        focusIdleTimer = setTimeout(focusGoIdle, 60 * 1000);
-        return;
-      }
-      const el = sr.querySelector('[data-nv-card="focus"]');
-      if (el) el.classList.add('nv-focus-idle');
-    };
+    // 取消自动变暗：卡片常亮
     const focusStartIdle = () => {
       clearTimeout(focusIdleTimer);
-      focusIdleTimer = setTimeout(focusGoIdle, FOCUS_IDLE_MS);
+      const card = sr.querySelector('[data-nv-card="focus"]');
+      if (card) card.classList.remove('nv-focus-idle');
     };
     const markFocusDone = (sym) => {
       if (!sym) return;
