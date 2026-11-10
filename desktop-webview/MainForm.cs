@@ -238,6 +238,8 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = true;
             _web.CoreWebView2.Settings.IsZoomControlEnabled = true;
             _web.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
+            TradeConfig.Load();
+            StartTransferTimer();
 
             var log = Path.Combine(AppContext.BaseDirectory, "boot.log");
             _web.CoreWebView2.NavigationStarting += (_, args) =>
@@ -348,8 +350,146 @@ internal sealed class MainForm : Form
                 var code = root.TryGetProperty("code", out var c) ? c.GetString() ?? "" : "";
                 _ = HandleActivationAsync(code);
             }
+            if (type == "trade") _ = HandleTradeAsync(root);
+            if (type == "tradeConfig") _ = HandleTradeConfigAsync(root);
         }
         catch { }
+    }
+
+    private async void PostToWeb(object payload)
+    {
+        try
+        {
+            if (_web.CoreWebView2 == null) return;
+            var json = JsonSerializer.Serialize(payload);
+            await _web.CoreWebView2.ExecuteScriptAsync(
+                $"window.dispatchEvent(new CustomEvent('moss:trade',{{detail:{json}}}));");
+        }
+        catch { }
+    }
+
+    private async Task HandleTradeConfigAsync(JsonElement root)
+    {
+        try
+        {
+            var action = root.TryGetProperty("action", out var a) ? a.GetString() : "";
+            if (action == "save")
+            {
+                var key = root.TryGetProperty("apiKey", out var k) ? k.GetString() ?? "" : "";
+                var secret = root.TryGetProperty("apiSecret", out var sec) ? sec.GetString() ?? "" : "";
+                var auto = root.TryGetProperty("autoTrade", out var au) && au.ValueKind == JsonValueKind.True;
+                TradeConfig.Current.ApiKey = key;
+                TradeConfig.Current.ApiSecret = secret;
+                TradeConfig.Current.AutoTrade = auto;
+                TradeConfig.Save();
+                PostToWeb(new { type = "config", ok = true, message = "密钥已加密保存到本机", configured = BinanceTradeService.Configured });
+                return;
+            }
+            if (action == "status")
+            {
+                var bal = await BinanceTradeService.GetBalancesAsync();
+                if (bal.Ok) TradeConfig.EnsureBaseline(bal.FuturesEquity);
+                var positions = bal.Ok ? await BinanceTradeService.GetPositionsAsync() : new System.Collections.Generic.List<object>();
+                PostToWeb(new
+                {
+                    type = "account",
+                    ok = bal.Ok,
+                    message = bal.Message,
+                    equity = bal.FuturesEquity,
+                    available = bal.AvailableBalance,
+                    spot = bal.SpotFree,
+                    baseline = TradeConfig.Current.BaselineEquity,
+                    positions,
+                    configured = BinanceTradeService.Configured,
+                    autoTrade = TradeConfig.Current.AutoTrade
+                });
+                return;
+            }
+            if (action == "transfer")
+            {
+                var bal = await BinanceTradeService.GetBalancesAsync();
+                var res = await RunTransferAsync(bal.FuturesEquity, bal.Ok);
+                PostToWeb(new { type = "transfer", ok = res.Ok, message = res.Message });
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            PostToWeb(new { type = "error", message = ex.Message });
+        }
+    }
+
+    private async Task HandleTradeAsync(JsonElement root)
+    {
+        try
+        {
+            var action = root.TryGetProperty("action", out var a) ? a.GetString() : "";
+            if (action != "market") return;
+            if (!TradeConfig.Current.AutoTrade)
+            {
+                PostToWeb(new { type = "order", ok = false, message = "真实下单未开启，请在设置里启用" });
+                return;
+            }
+            var symbol = root.TryGetProperty("symbol", out var s1) ? s1.GetString() ?? "" : "";
+            var side = root.TryGetProperty("side", out var s2) ? s2.GetString() ?? "long" : "long";
+            var bal = await BinanceTradeService.GetBalancesAsync();
+            if (!bal.Ok)
+            {
+                PostToWeb(new { type = "order", ok = false, message = bal.Message });
+                return;
+            }
+            TradeConfig.EnsureBaseline(bal.FuturesEquity);
+            var positions = await BinanceTradeService.GetPositionsAsync();
+            if (positions.Count >= 5)
+            {
+                PostToWeb(new { type = "order", ok = false, message = "已满 5 个持仓，暂停新开仓" });
+                return;
+            }
+            var result = await BinanceTradeService.PlaceMarketOrderAsync(
+                symbol, side, bal.FuturesEquity, 0.05, 5, 15, 15);
+            PostToWeb(new { type = "order", ok = result.Ok, message = result.Message, symbol, qty = result.Qty });
+        }
+        catch (Exception ex)
+        {
+            PostToWeb(new { type = "order", ok = false, message = ex.Message });
+        }
+    }
+
+    private static async Task<(bool Ok, string Message)> RunTransferAsync(double equity, bool hasBalance)
+    {
+        try
+        {
+            if (!hasBalance) return (false, "无法读取合约权益");
+            var baseline = TradeConfig.Current.BaselineEquity;
+            if (baseline <= 0) return (false, "尚未记录初始权益");
+            if (equity <= baseline) return (false, "当前未超过初始权益，无需划转");
+            if (equity <= baseline * 1.10) return (false, "未达到 10% 盈利线");
+            var amount = Math.Round(equity - baseline, 2);
+            if (amount < 1) return (false, "可划转金额过小");
+            return await BinanceTradeService.TransferToSpotAsync(amount);
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    private System.Threading.Timer? _transferTimer;
+
+    private void StartTransferTimer()
+    {
+        _transferTimer ??= new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                if (!BinanceTradeService.Configured || !TradeConfig.Current.AutoTrade) return;
+                var bal = await BinanceTradeService.GetBalancesAsync();
+                if (!bal.Ok) return;
+                var res = await RunTransferAsync(bal.FuturesEquity, true);
+                PostToWeb(new { type = "transfer", auto = true, ok = res.Ok, message = res.Message });
+            }
+            catch { }
+        }, null, TimeSpan.FromMinutes(2), TimeSpan.FromHours(2));
     }
 
     private async Task HandleActivationAsync(string code)

@@ -1031,6 +1031,7 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card-signal .nv-c-probe i{font-size:11px;color:#f0e2bf;font-weight:700}
 .nv-card-signal #nvCardSigTp{color:#63C08E}
 .nv-card-signal #nvCardSigSl{color:#C96358}
+.nv-trade-info{position:absolute;left:13px;right:13px;bottom:14px;font:500 8px/1 var(--mono);color:#6f5f48;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
 .nv-order-pop{position:fixed;left:calc(50% - 560px);bottom:120px;width:300px;z-index:90;padding:12px 13px 11px;border:1px solid rgba(99,192,142,.55);background:linear-gradient(150deg,rgba(6,20,14,.97),rgba(3,4,4,.97));box-shadow:0 0 24px rgba(99,192,142,.25),inset 0 0 30px rgba(99,192,142,.06);animation:nvOpIn .28s ease-out}
 .nv-order-pop[hidden]{display:none}
 .nv-order-pop.short{border-color:rgba(201,99,88,.55);box-shadow:0 0 24px rgba(201,99,88,.25),inset 0 0 30px rgba(201,99,88,.06)}
@@ -1463,6 +1464,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
      <span>止盈建议：<i id="nvCardSigTp">—</i></span>
      <span>止损建议：<i id="nvCardSigSl">—</i></span>
     </span>
+    <span class="nv-trade-info" id="nvTradeInfo">币安未连接 · 预演模式</span>
     <i class="nv-sigcard-progress" aria-hidden="true"></i>
     <i class="nv-hotbg" aria-hidden="true"></i><i class="nv-flow" aria-hidden="true"></i><i class="nv-flash" aria-hidden="true"></i>
    </button>
@@ -11609,11 +11611,19 @@ requestAnimationFrame(frame);
       }
     };
     // ===== 下单预演（LIVE_ORDER_ENABLED=false 时只做参数计算） =====
-    const LIVE_ORDER_ENABLED = false;
     const ORDER_LEVERAGE = 5;
-    const ORDER_EQUITY_PCT = 0.2;
+    const ORDER_EQUITY_PCT = 0.05;
+    const ORDER_TP_PCT = 15;
+    const ORDER_SL_PCT = 15;
+    const ORDER_MAX_POSITIONS = 5;
+    const TRADE_INFO = { configured: false, autoTrade: false, equity: 0, available: 0, spot: 0, baseline: 0, positions: [] };
+    const LIVE_ORDER_ENABLED = () => Boolean(TRADE_INFO.autoTrade);
+    const postTrade = (payload) => {
+      try { if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(payload); } catch (e) {}
+    };
     const EQUITY_KEY = 'moss-order-equity';
     const readEquity = () => {
+      if (Number(TRADE_INFO.equity || 0) > 0) return Number(TRADE_INFO.equity);
       try {
         const stored = Number(localStorage.getItem(EQUITY_KEY) || 0);
         if (stored > 0) return stored;
@@ -11652,27 +11662,31 @@ requestAnimationFrame(frame);
         stop: Number(sig.stop || 0),
         margin, notional, qty, leverage: ORDER_LEVERAGE,
         win: sig.win,
-        demo: !LIVE_ORDER_ENABLED
+        demo: !LIVE_ORDER_ENABLED()
       };
       const pop = opEl('nvOrderPop');
       if (!pop) return;
       pop.classList.toggle('short', sig.side === 'short');
       opEl('nvOpSym').textContent = pairName(sig.r.symbol);
       opEl('nvOpSide').textContent = sig.side === 'long' ? '建议建多' : '建议建空';
-      opEl('nvOpStage').textContent = LIVE_ORDER_ENABLED ? `真实下单 · 胜率 ${sig.win}%` : `预演 · 不会真实下单 · 胜率 ${sig.win}%`;
+      opEl('nvOpStage').textContent = LIVE_ORDER_ENABLED() ? `真实下单 · 胜率 ${sig.win}%` : `预演 · 不会真实下单 · 胜率 ${sig.win}%`;
       opEl('nvOpLev').textContent = `${ORDER_LEVERAGE}×`;
       opEl('nvOpMargin').textContent = margin > 0 ? `${margin.toFixed(2)} USDT` : '待设置权益';
       opEl('nvOpNotional').textContent = notional > 0 ? `${notional.toFixed(2)} USDT` : '—';
       opEl('nvOpQty').textContent = qty > 0 ? qty.toFixed(4) : '—';
+      const tpPx = sig.side === 'long' ? price * (1 + ORDER_TP_PCT / 100) : price * (1 - ORDER_TP_PCT / 100);
+      const slPx = sig.side === 'long' ? price * (1 - ORDER_SL_PCT / 100) : price * (1 + ORDER_SL_PCT / 100);
       opEl('nvOpEntry').textContent = fmtPrice(price);
-      opEl('nvOpTp').textContent = fmtPrice(sig.target);
-      opEl('nvOpSl').textContent = fmtPrice(sig.stop);
-      const risk = margin > 0 ? Math.abs(price - Number(sig.stop || price)) / price * notional : 0;
+      opEl('nvOpTp').textContent = `${fmtPrice(tpPx)} (+${ORDER_TP_PCT}%)`;
+      opEl('nvOpSl').textContent = `${fmtPrice(slPx)} (-${ORDER_SL_PCT}%)`;
+      const risk = margin > 0 ? Math.abs(price - slPx) / price * notional : 0;
       opEl('nvOpRisk').textContent = risk > 0 ? `最大亏 ${risk.toFixed(2)} USDT` : '—';
       const ok = opEl('nvOpOk');
       if (ok) {
-        ok.textContent = LIVE_ORDER_ENABLED ? '确认下单' : '预演模式 · 下单未开启';
-        ok.disabled = true;
+        const live = LIVE_ORDER_ENABLED();
+        const hasSlot = (TRADE_INFO.positions || []).length < ORDER_MAX_POSITIONS;
+        ok.textContent = live ? (hasSlot ? '确认下单' : '已满 5 单 · 暂停开仓') : '预演模式 · 下单未开启';
+        ok.disabled = !live || !hasSlot;
       }
       pop.hidden = false;
       clearTimeout(orderPopTimer);
@@ -12304,6 +12318,51 @@ requestAnimationFrame(frame);
       const sCard = sr.querySelector('#nvSignalCard');
       if (sCard) sCard.classList.remove('sig-idle', 'nv-focus-idle', 'hot', 'flash');
     } catch (e) {}
+    window.addEventListener('moss:trade', (ev) => {
+      try {
+        const d = (ev && ev.detail) || {};
+        if (d.type === 'account' || d.type === 'config') {
+          if (typeof d.configured === 'boolean') TRADE_INFO.configured = d.configured;
+          if (typeof d.autoTrade === 'boolean') TRADE_INFO.autoTrade = d.autoTrade;
+          if (typeof d.equity === 'number') TRADE_INFO.equity = d.equity;
+          if (typeof d.available === 'number') TRADE_INFO.available = d.available;
+          if (typeof d.spot === 'number') TRADE_INFO.spot = d.spot;
+          if (typeof d.baseline === 'number') TRADE_INFO.baseline = d.baseline;
+          if (Array.isArray(d.positions)) TRADE_INFO.positions = d.positions;
+          const info = sr.querySelector('#nvTradeInfo');
+          if (info) {
+            info.textContent = d.ok === false
+              ? `币安连接失败：${d.message || ''}`
+              : `合约权益 ${Number(TRADE_INFO.equity || 0).toFixed(2)} USDT · 持仓 ${(TRADE_INFO.positions || []).length}/${ORDER_MAX_POSITIONS} · 初始 ${Number(TRADE_INFO.baseline || 0).toFixed(2)}`;
+          }
+          if (orderPending) {
+            const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+            const cur = rows.find(r => r.symbol === orderPending.symbol);
+            if (cur) {
+              const sig = calcSignal(cur);
+              const entry = { sig, key: `${sig.r.symbol}-${sig.side}` };
+              queueOrderPreview(entry);
+            }
+          }
+        }
+        if (d.type === 'order') {
+          const okBtn = sr.querySelector('#nvOpOk');
+          if (okBtn) {
+            okBtn.textContent = d.ok ? '已下单' : '下单失败';
+            okBtn.disabled = true;
+          }
+          const stage = sr.querySelector('#nvOpStage');
+          if (stage) stage.textContent = (d.ok ? '下单成功：' : '下单失败：') + (d.message || '');
+          postTrade({ type: 'tradeConfig', action: 'status' });
+        }
+        if (d.type === 'transfer') {
+          const info = sr.querySelector('#nvTradeInfo');
+          if (info) info.textContent = (d.ok ? '划转完成：' : '划转跳过：') + (d.message || '');
+        }
+      } catch (e) {}
+    });
+    setTimeout(() => postTrade({ type: 'tradeConfig', action: 'status' }), 2500);
+    setInterval(() => postTrade({ type: 'tradeConfig', action: 'status' }), 60 * 1000);
     window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
     setTimeout(loadFearGreed, 800);
@@ -12592,6 +12651,18 @@ requestAnimationFrame(frame);
     const msPanel = sr.querySelector('.p-heat');
     msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); openAlerts(); });
     sr.querySelectorAll('[data-nv-op-close]').forEach(el => el.addEventListener('click', (e) => { e.stopPropagation(); closeOrderPop(); }));
+    (() => {
+      const okBtn = sr.querySelector('#nvOpOk');
+      if (!okBtn) return;
+      okBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!orderPending || okBtn.disabled) return;
+        const p = orderPending;
+        okBtn.disabled = true;
+        okBtn.textContent = '下单中…';
+        postTrade({ type: 'trade', action: 'market', symbol: p.symbol, side: p.side });
+      });
+    })();
     close && close.addEventListener('click', shut);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideSignal(); shut(); } });
     sr.addEventListener('click', e => {
