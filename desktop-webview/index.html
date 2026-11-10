@@ -1047,6 +1047,14 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-op-grid>div{display:flex;flex-direction:column;gap:3px}
 .nv-op-grid span{font:500 8.5px/1 var(--cjk);color:#6f5f48}
 .nv-op-grid b{font:600 12px/1 var(--mono);color:#e4d4a8}
+.nv-op-mode{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:9px;border-top:1px solid rgba(99,192,142,.16);font:500 9px/1 var(--cjk);color:#8a7a5e}
+.nv-op-switch{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-style:normal;user-select:none}
+.nv-op-switch b{position:relative;display:block;width:30px;height:14px;border-radius:7px;background:rgba(255,255,255,.1);border:1px solid rgba(232,160,32,.3);transition:background .2s,border-color .2s}
+.nv-op-switch b::after{content:"";position:absolute;left:2px;top:1px;width:10px;height:10px;border-radius:50%;background:#8a7a5e;transition:transform .2s,background .2s}
+.nv-op-switch.on b{background:rgba(99,192,142,.28);border-color:rgba(99,192,142,.6)}
+.nv-op-switch.on b::after{transform:translateX(15px);background:#8fd8b4}
+.nv-op-switch em{font:600 9px/1 var(--cjk);color:#c9a35a;font-style:normal}
+.nv-op-switch.on em{color:#8fd8b4}
 .nv-op-act{display:flex;gap:8px;margin-top:12px}
 .nv-op-act button{flex:1;padding:8px 0;font:600 10px/1 var(--cjk);cursor:pointer;border-radius:0}
 .nv-op-ok{background:rgba(99,192,142,.16);border:1px solid rgba(99,192,142,.5);color:#8fd8b4}
@@ -1481,6 +1489,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
      <div><span>止损</span><b id="nvOpSl">—</b></div>
      <div><span>风控</span><b id="nvOpRisk">—</b></div>
     </div>
+    <div class="nv-op-mode"><span>下单模式</span><i class="nv-op-switch" id="nvOpSwitch" role="switch" aria-checked="false"><b></b><em id="nvOpModeText">手动</em></i></div>
     <div class="nv-op-act"><button type="button" class="nv-op-ok" id="nvOpOk" disabled>预演模式 · 下单未开启</button><button type="button" class="nv-op-no" data-nv-op-close>关闭</button></div>
    </div>
    <button class="nv-card focus" type="button" data-nv-card="focus">
@@ -11601,7 +11610,20 @@ requestAnimationFrame(frame);
       card._sigHotT = setTimeout(() => card.classList.remove('hot'), 15 * 60 * 1000);
       setTimeout(() => card.classList.remove('flash'), 650);
       sigArmIdle();
-      try { queueOrderPreview(entry); } catch (e) {}
+      try {
+        queueOrderPreview(entry);
+        if (readOrderMode() === 'auto' && LIVE_ORDER_ENABLED()) {
+          const hasSlot = (TRADE_INFO.positions || []).length < ORDER_MAX_POSITIONS;
+          if (hasSlot) {
+            const p = orderPending;
+            if (p) {
+              const stage = opEl('nvOpStage');
+              if (stage) stage.textContent = '自动下单中…';
+              sendOrder(p);
+            }
+          }
+        }
+      } catch (e) {}
     };
     const pushSignalSlot = (entry, delay = 1100) => {
       if (!entry) return;
@@ -11616,8 +11638,19 @@ requestAnimationFrame(frame);
     const ORDER_TP_PCT = 15;
     const ORDER_SL_PCT = 15;
     const ORDER_MAX_POSITIONS = 5;
-    const TRADE_INFO = { configured: false, autoTrade: false, equity: 0, available: 0, spot: 0, baseline: 0, positions: [] };
+    const TRADE_INFO = { configured: false, autoTrade: false, equity: 0, available: 0, spot: 0, baseline: 0, positions: [], mode: 'manual' };
+    const ORDER_MODE_KEY = 'moss-order-mode';
+    const readOrderMode = () => {
+      if (TRADE_INFO.mode === 'auto' || TRADE_INFO.mode === 'manual') return TRADE_INFO.mode;
+      try { return localStorage.getItem(ORDER_MODE_KEY) === 'auto' ? 'auto' : 'manual'; } catch (e) { return 'manual'; }
+    };
     const LIVE_ORDER_ENABLED = () => Boolean(TRADE_INFO.autoTrade);
+    const orderBusy = { value: false };
+    const sendOrder = (p) => {
+      if (!p || orderBusy.value) return;
+      orderBusy.value = true;
+      postTrade({ type: 'trade', action: 'market', symbol: p.symbol, side: p.side });
+    };
     const postTrade = (payload) => {
       try { if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(payload); } catch (e) {}
     };
@@ -11681,12 +11714,21 @@ requestAnimationFrame(frame);
       opEl('nvOpSl').textContent = `${fmtPrice(slPx)} (-${ORDER_SL_PCT}%)`;
       const risk = margin > 0 ? Math.abs(price - slPx) / price * notional : 0;
       opEl('nvOpRisk').textContent = risk > 0 ? `最大亏 ${risk.toFixed(2)} USDT` : '—';
+      const mode = readOrderMode();
+      const sw = opEl('nvOpSwitch');
+      if (sw) sw.classList.toggle('on', mode === 'auto');
+      const mt = opEl('nvOpModeText');
+      if (mt) mt.textContent = mode === 'auto' ? '自动' : '手动';
       const ok = opEl('nvOpOk');
       if (ok) {
         const live = LIVE_ORDER_ENABLED();
         const hasSlot = (TRADE_INFO.positions || []).length < ORDER_MAX_POSITIONS;
-        ok.textContent = live ? (hasSlot ? '确认下单' : '已满 5 单 · 暂停开仓') : '预演模式 · 下单未开启';
-        ok.disabled = !live || !hasSlot;
+        if (mode === 'auto') {
+          ok.textContent = live ? '自动下单已开启' : '预演模式 · 下单未开启';
+        } else {
+          ok.textContent = live ? (hasSlot ? '确认下单' : '已满 5 单 · 暂停开仓') : '预演模式 · 下单未开启';
+        }
+        ok.disabled = !live || !hasSlot || mode === 'auto';
       }
       pop.hidden = false;
       clearTimeout(orderPopTimer);
@@ -12346,6 +12388,7 @@ requestAnimationFrame(frame);
           }
         }
         if (d.type === 'order') {
+          orderBusy.value = false;
           const okBtn = sr.querySelector('#nvOpOk');
           if (okBtn) {
             okBtn.textContent = d.ok ? '已下单' : '下单失败';
@@ -12652,6 +12695,21 @@ requestAnimationFrame(frame);
     msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); openAlerts(); });
     sr.querySelectorAll('[data-nv-op-close]').forEach(el => el.addEventListener('click', (e) => { e.stopPropagation(); closeOrderPop(); }));
     (() => {
+      const sw = sr.querySelector('#nvOpSwitch');
+      if (sw) {
+        sw.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const next = readOrderMode() === 'auto' ? 'manual' : 'auto';
+          TRADE_INFO.mode = next;
+          try { localStorage.setItem(ORDER_MODE_KEY, next); } catch (e) {}
+          postTrade({ type: 'tradeConfig', action: 'mode', mode: next });
+          if (orderPending) {
+            const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+            const cur = rows.find(r => r.symbol === orderPending.symbol);
+            if (cur) queueOrderPreview({ sig: calcSignal(cur), key: `${cur.symbol}-${calcSignal(cur).side}` });
+          }
+        });
+      }
       const okBtn = sr.querySelector('#nvOpOk');
       if (!okBtn) return;
       okBtn.addEventListener('click', (e) => {
@@ -12660,7 +12718,7 @@ requestAnimationFrame(frame);
         const p = orderPending;
         okBtn.disabled = true;
         okBtn.textContent = '下单中…';
-        postTrade({ type: 'trade', action: 'market', symbol: p.symbol, side: p.side });
+        sendOrder(p);
       });
     })();
     close && close.addEventListener('click', shut);

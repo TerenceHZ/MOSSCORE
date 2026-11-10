@@ -373,6 +373,15 @@ internal sealed class MainForm : Form
         try
         {
             var action = root.TryGetProperty("action", out var a) ? a.GetString() : "";
+            if (action == "mode")
+            {
+                var mode = root.TryGetProperty("mode", out var m) ? m.GetString() ?? "manual" : "manual";
+                var auto = mode == "auto";
+                TradeConfig.Current.AutoTrade = auto;
+                TradeConfig.Save();
+                PostToWeb(new { type = "config", ok = true, message = auto ? "已切换为自动下单" : "已切换为手动下单", autoTrade = auto, configured = BinanceTradeService.Configured });
+                return;
+            }
             if (action == "save")
             {
                 var key = root.TryGetProperty("apiKey", out var k) ? k.GetString() ?? "" : "";
