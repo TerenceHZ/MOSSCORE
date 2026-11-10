@@ -12117,18 +12117,10 @@ requestAnimationFrame(frame);
       if (!el) return;
       el.classList.remove('open');
       el.setAttribute('aria-hidden', 'true');
-      try { window.speechSynthesis.cancel(); } catch (e) {}    const hideSignal = () => {
-      clearInterval(signalTimerId);
-      const timerEl = document.querySelector('#nvSigTimer');
-      if (timerEl) { timerEl.textContent = '05:00'; timerEl.parentElement?.classList.remove('urgent'); }
-      const el = document.querySelector('#nvSignal');
-      if (!el) return;
-      el.classList.remove('open');
-      el.setAttribute('aria-hidden', 'true');
       try { window.speechSynthesis.cancel(); } catch (e) {}
-      // 弹窗关闭后重新开始空闲计时（15 分钟后变暗）
       try { sigArmIdle(); } catch (e) {}
     };
+
     const renderSmart = (sm) => {
       if (!sm) return;
       const pct = (v) => `${Number(v || 0).toFixed(1)}%`;
