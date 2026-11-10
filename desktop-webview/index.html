@@ -11544,6 +11544,7 @@ requestAnimationFrame(frame);
       if (!card || !entry) return;
       window.__MOSS_SIG_CURRENT = entry.key;
       window.__MOSS_SIG_LAST = entry.key;
+      try { pushCaptureLog(entry.sig.r.symbol, 'signal', entry.sig.win, entry.sig.chg); } catch (e) {}
       window.__MOSS_SIG_SEEN_ONCE = true;
       card.classList.remove('sig-idle', 'nv-focus-idle');
       renderSignalFeed(entry.sig);
@@ -11912,6 +11913,7 @@ requestAnimationFrame(frame);
       card.classList.remove('nv-focus-idle');
       window.__MOSS_FOCUS_CURRENT = r.symbol;
       renderFocusCard(r);
+      try { pushCaptureLog(r.symbol, 'focus', Math.round(Number(r.score || 0)), Number(r.change24h || 0)); } catch (e) {}
       meteorTo(card, 'focus', 900, () => {
         card.classList.add('hot', 'flash');
         clearTimeout(card._hotTimer);
@@ -11990,6 +11992,7 @@ requestAnimationFrame(frame);
       const oi24El = sr.querySelector('#nvFocusOi24'); if (oi24El) oi24El.style.color = d24 >= 0 ? '#63C08E' : '#C96358';
       set('nvFocusTime', `抓取 ${live.updatedAt}`);
       window.__MOSS_FOCUS_SYMBOL = r.symbol || r.baseAsset;
+      card.dataset.liveSymbol = r.symbol || r.baseAsset;
       card.dataset.liveSymbol = r.symbol;
       card.dataset.liveTime = live.updatedAt;
     };
@@ -12196,12 +12199,37 @@ requestAnimationFrame(frame);
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
     setTimeout(loadFearGreed, 800);
     setInterval(loadFearGreed, 15 * 60 * 1000);
-    const captureLog = [];
+    const CAPTURE_KEY = 'moss-capture-log-v1';
+    let captureLog = [];
+    try {
+      const savedCap = JSON.parse(localStorage.getItem(CAPTURE_KEY) || '[]');
+      const cut = Date.now() - 24 * 60 * 60 * 1000;
+      if (Array.isArray(savedCap)) captureLog = savedCap.filter(x => x && x.ts && x.ts >= cut);
+      localStorage.setItem(CAPTURE_KEY, JSON.stringify(captureLog));
+    } catch (e) { captureLog = []; }
+    const saveCaptureLog = () => { try { localStorage.setItem(CAPTURE_KEY, JSON.stringify(captureLog.slice(0, 500))); } catch (e) {} };
+    function pushCaptureLog(sym, kind, win, chg) {
+      try {
+        captureLog.unshift({
+          ts: Date.now(),
+          time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+          day: new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+          symbol: rawSymbol(sym),
+          kind: kind || 'focus',
+          win: win || 0,
+          chg: Number(chg || 0),
+          side: Number(chg || 0) >= 0 ? 'long' : 'short'
+        });
+        const cut = Date.now() - 24 * 60 * 60 * 1000;
+        captureLog = captureLog.filter(x => x.ts >= cut).slice(0, 500);
+        saveCaptureLog();
+      } catch (e) {}
+    }
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
       if (!hl) return;
       const symbol = window.__NOVA_HISTORY_SYMBOL || '';
-      const recs = signalLog.filter(a => a.symbol === symbol);
+      const recs = captureLog.filter(a => a.symbol === symbol);
       if (!recs.length) {
         hl.innerHTML = `<div><span>${symbol ? '近 24 小时暂无建仓信号' : '暂无建仓信号记录'}</span><b>—</b></div>`;
       } else {
@@ -12222,6 +12250,9 @@ requestAnimationFrame(frame);
       const beforeAlert = alertLog.length;
       alertLog = alertLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
       if (alertLog.length !== beforeAlert) { saveAlerts(); changed = true; }
+      const beforeCap = captureLog.length;
+      captureLog = captureLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
+      if (captureLog.length !== beforeCap) { saveCaptureLog(); changed = true; }
       if (changed) {
         try { renderSignalHistory(); } catch (e) {}
         try { renderAlertHistory(); } catch (e) {}
@@ -12261,6 +12292,28 @@ requestAnimationFrame(frame);
       drawer.classList.add('open');
       drawer.setAttribute('aria-hidden', 'false');
       freshPanel(drawer, 'focus');
+    };
+    const rowFromSnapshot = (r) => {
+      const div = document.createElement('div');
+      div.className = 'nv-row ' + ((Number(r.change24h || 0) >= 0) ? 'gain' : 'loss');
+      div.dataset.symbol = r.symbol;
+      div.dataset.price = r.price || 0;
+      div.dataset.chg = r.change24h || 0;
+      div.dataset.oi = r.oiNotional || 0;
+      div.dataset.vol = r.quoteVolume24h || 0;
+      div.dataset.oi5 = r.oi5m || 0;
+      div.dataset.oi15 = r.oi15m || 0;
+      div.dataset.stage = r.stage || '';
+      div.dataset.score = r.score || '';
+      div.dataset.pullback = r.pullback || 0;
+      div.innerHTML = `<div class="nv-row-head"><span class="nv-sym">${r.focus ? '★' : '○'}${pairName(r.symbol)}</span><span class="nv-price">${Number(r.price || 0)}</span><span class="nv-change">${sign(r.change24h)}%</span></div>
+        <div class="nv-row-oi"><span>OI <b>${fmtWan(r.oiNotional)}</b></span><span>5M <b>${sign(r.oi5m)}%</b></span><span>15M <b>${sign(r.oi15m)}%</b></span></div>
+        <div class="nv-row-foot"><span>VOL 24H <b>${fmtQv(r.quoteVolume24h)}</b></span><span>ΔOI <b>${fmtWan(r.oiNotional * r.oi15m / (100 + r.oi15m))}</b></span></div>`;
+      return div;
+    };
+    const openSymbol = (snap, lane) => {
+      if (!snap) return;
+      openRow(rowFromSnapshot(snap), lane);
     };
     const openRow = (row, lane) => {
       setDrawerMode('detail');
@@ -12379,20 +12432,17 @@ requestAnimationFrame(frame);
     cards.forEach(card => card.addEventListener('click', () => {
       window.__NOVA_SELECTED = card.dataset.nvCard;
       if (card.dataset.nvCard === 'signal') { card.classList.remove('sig-idle', 'nv-focus-idle'); openSignalHistory(); return; }
+      if (card.dataset.nvCard === 'signals') return;
       const lane = card.dataset.nvCard === 'focus' ? 'focus' : 'imported';
+      const shown = card.querySelector('.nv-c-sym')?.textContent || sr.querySelector('#nvFocusSym')?.textContent || '';
+      const cardSymbol = rawSymbol(shown);
+      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+      const snap = rows.find(r => r.symbol === cardSymbol);
+      if (snap) { openSymbol(snap, lane); return; }
       const mod = sr.querySelector(lane === 'focus' ? '.nv-mod.focus' : '.nv-mod.imported');
-      const cardSymbol = rawSymbol(card.dataset.liveSymbol || card.querySelector('.nv-c-sym')?.textContent || '');
-      const row = mod ? [...mod.querySelectorAll('.nv-row')].find(r => {
-        const s = rawSymbol((r.dataset.symbol || r.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, ''));
-        return s === cardSymbol || s.startsWith(cardSymbol) || cardSymbol.startsWith(s);
-      }) : null;
-      if (row) {
-        row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
-        setTimeout(() => row.classList.remove('flash'), 650);
-        openRow(row, lane);
-      } else {
-        open(lane);
-      }
+      const row = mod ? [...mod.querySelectorAll('.nv-row')].find(r => rawSymbol((r.dataset.symbol || '')) === cardSymbol) : null;
+      if (row) openRow(row, lane);
+      else open(lane);
     }));
     sr.querySelectorAll('.nv-row').forEach(row => row.addEventListener('click', (e) => {
       e.stopPropagation();
