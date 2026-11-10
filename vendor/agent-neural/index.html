@@ -1032,7 +1032,15 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card-signal #nvCardSigTp{color:#63C08E}
 .nv-card-signal #nvCardSigSl{color:#C96358}
 .nv-trade-info{position:absolute;left:13px;right:13px;bottom:14px;font:500 8px/1 var(--mono);color:#6f5f48;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
-.nv-order-pop{position:fixed;left:calc(50% - 560px);bottom:120px;width:300px;z-index:90;padding:12px 13px 11px;border:1px solid rgba(99,192,142,.55);background:linear-gradient(150deg,rgba(6,20,14,.97),rgba(3,4,4,.97));box-shadow:0 0 24px rgba(99,192,142,.25),inset 0 0 30px rgba(99,192,142,.06);animation:nvOpIn .28s ease-out}
+.nv-order-pop{position:fixed;left:calc(50% - 560px);bottom:120px;width:300px;z-index:90;padding:12px 13px 11px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
+.nv-order-pop::before{content:"";position:absolute;inset:-45%;z-index:-1;background:conic-gradient(from 0deg,transparent 0 22%,rgba(99,192,142,.24) 33%,rgba(180,255,220,.4) 38%,transparent 44%,transparent 62%,rgba(99,192,142,.22) 76%,transparent 84%);animation:nvOpFlow 6.5s linear infinite;pointer-events:none}
+.nv-order-pop::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(118deg,transparent 18%,rgba(99,192,142,.16) 42%,rgba(255,255,255,.07) 52%,transparent 70%);background-size:220% 220%;animation:nvOpSweep 5.2s ease-in-out infinite;pointer-events:none}
+.nv-order-pop.short{background:linear-gradient(150deg,rgba(26,8,7,.42),rgba(4,3,3,.34))}
+.nv-order-pop.short{box-shadow:0 0 30px rgba(201,99,88,.42),0 0 70px rgba(201,99,88,.16),inset 0 0 34px rgba(201,99,88,.1)}
+.nv-order-pop.short::before{background:conic-gradient(from 0deg,transparent 0 22%,rgba(201,99,88,.24) 33%,rgba(255,190,180,.4) 38%,transparent 44%,transparent 62%,rgba(201,99,88,.22) 76%,transparent 84%)}
+.nv-order-pop.short::after{background:linear-gradient(118deg,transparent 18%,rgba(201,99,88,.16) 42%,rgba(255,255,255,.06) 52%,transparent 70%);background-size:220% 220%}
+@keyframes nvOpFlow{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+@keyframes nvOpSweep{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .nv-order-pop[hidden]{display:none}
 .nv-order-pop.short{border-color:rgba(201,99,88,.55);box-shadow:0 0 24px rgba(201,99,88,.25),inset 0 0 30px rgba(201,99,88,.06)}
 @keyframes nvOpIn{0%{opacity:0;transform:translateY(10px) scale(.97)}100%{opacity:1;transform:none}}
@@ -1046,7 +1054,8 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-op-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-top:10px}
 .nv-op-grid>div{display:flex;flex-direction:column;gap:3px}
 .nv-op-grid span{font:500 8.5px/1 var(--cjk);color:#6f5f48}
-.nv-op-grid b{font:600 12px/1 var(--mono);color:#e4d4a8}
+.nv-op-grid b{font:600 12px/1 var(--mono);color:#f0e2bc;text-shadow:0 0 10px rgba(0,0,0,.85)}
+.nv-op-h b,.nv-op-h span,.nv-op-stage,.nv-op-mode,.nv-op-grid span{text-shadow:0 0 8px rgba(0,0,0,.9)}
 .nv-op-mode{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:9px;border-top:1px solid rgba(99,192,142,.16);font:500 9px/1 var(--cjk);color:#8a7a5e}
 .nv-op-switch{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-style:normal;user-select:none}
 .nv-op-switch b{position:relative;display:block;width:30px;height:14px;border-radius:7px;background:rgba(255,255,255,.1);border:1px solid rgba(232,160,32,.3);transition:background .2s,border-color .2s}
@@ -11724,7 +11733,7 @@ requestAnimationFrame(frame);
         const live = LIVE_ORDER_ENABLED();
         const hasSlot = (TRADE_INFO.positions || []).length < ORDER_MAX_POSITIONS;
         if (mode === 'auto') {
-          ok.textContent = live ? '自动下单已开启' : '预演模式 · 下单未开启';
+          ok.textContent = live ? (hasSlot ? '自动建仓模式' : '已满 5 单 · 暂停开仓') : '自动建仓模式 · 未开启';
         } else {
           ok.textContent = live ? (hasSlot ? '确认下单' : '已满 5 单 · 暂停开仓') : '预演模式 · 下单未开启';
         }
