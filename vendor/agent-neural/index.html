@@ -11482,6 +11482,7 @@ requestAnimationFrame(frame);
     const LEFT_KEY = 'moss-left-log-v1';
     const RIGHT_KEY = 'moss-right-log-v1';
     const LOG_TTL = 24 * 60 * 60 * 1000;
+    const SIG_COOLDOWN = 30 * 60 * 1000;
     const readLog = (key) => {
       try {
         const arr = JSON.parse(localStorage.getItem(key) || '[]');
@@ -11506,8 +11507,25 @@ requestAnimationFrame(frame);
         writeLog(key, list);
       } catch (e) {}
     }
-    const pushLeftLog = (sym, meta) => pushLogTo(LEFT_KEY, sym, meta);
-    const pushRightLog = (sym, meta) => pushLogTo(RIGHT_KEY, sym, meta);
+    const LOG_MIN_GAP = 60 * 1000;
+    const pushLeftLog = (sym, meta) => {
+      try {
+        const c = rawSymbol(sym);
+        const list = readLog(LEFT_KEY);
+        const last = list.find(x => x.symbol === c);
+        if (last && Date.now() - last.ts < LOG_MIN_GAP) return;
+      } catch (e) {}
+      pushLogTo(LEFT_KEY, sym, meta);
+    };
+    const pushRightLog = (sym, meta) => {
+      try {
+        const c = rawSymbol(sym);
+        const list = readLog(RIGHT_KEY);
+        const last = list.find(x => x.symbol === c);
+        if (last && Date.now() - last.ts < LOG_MIN_GAP) return;
+      } catch (e) {}
+      pushLogTo(RIGHT_KEY, sym, meta);
+    };
     const SIGNAL_KEY = 'moss-signal-log-v1', SIGNAL_TTL = 24 * 60 * 60 * 1000;
     let signalLog = [];
     try {
@@ -11618,16 +11636,22 @@ requestAnimationFrame(frame);
       card.classList.remove('sig-idle');
       if (!busy) card.classList.remove('nv-focus-idle');
     };
+    const sigGoIdle = () => {
+      if (sigQueue.length || window.__MOSS_SIZE_OPEN) { sigArmIdle(); return; }
+      if (document.querySelector('#nvSignal')?.classList.contains('open')) {
+        // 弹窗还开着：稍后再试，不放弃
+        clearTimeout(sigIdleTimer);
+        sigIdleTimer = setTimeout(sigGoIdle, 30 * 1000);
+        return;
+      }
+      const el = signalCardEl();
+      if (el) el.classList.add('sig-idle', 'nv-focus-idle');
+    };
     const sigArmIdle = () => {
       clearTimeout(sigIdleTimer);
       const card = signalCardEl();
       if (card) card.classList.remove('sig-idle', 'nv-focus-idle');
-      sigIdleTimer = setTimeout(() => {
-        if (sigQueue.length || window.__MOSS_SIZE_OPEN) return;
-        if (document.querySelector('#nvSignal')?.classList.contains('open')) return;
-        const el = signalCardEl();
-        if (el) el.classList.add('sig-idle', 'nv-focus-idle');
-      }, SIG_IDLE_MS);
+      sigIdleTimer = setTimeout(sigGoIdle, SIG_IDLE_MS);
     };
     const sigShow = (entry) => {
       const card = signalCardEl();
@@ -12093,7 +12117,17 @@ requestAnimationFrame(frame);
       if (!el) return;
       el.classList.remove('open');
       el.setAttribute('aria-hidden', 'true');
+      try { window.speechSynthesis.cancel(); } catch (e) {}    const hideSignal = () => {
+      clearInterval(signalTimerId);
+      const timerEl = document.querySelector('#nvSigTimer');
+      if (timerEl) { timerEl.textContent = '05:00'; timerEl.parentElement?.classList.remove('urgent'); }
+      const el = document.querySelector('#nvSignal');
+      if (!el) return;
+      el.classList.remove('open');
+      el.setAttribute('aria-hidden', 'true');
       try { window.speechSynthesis.cancel(); } catch (e) {}
+      // 弹窗关闭后重新开始空闲计时（15 分钟后变暗）
+      try { sigArmIdle(); } catch (e) {}
     };
     const renderSmart = (sm) => {
       if (!sm) return;
@@ -12328,10 +12362,20 @@ requestAnimationFrame(frame);
       window.__MOSS_FOCUS_CURRENT = r.symbol;
       renderFocusCard(r);
       try {
+        const oi15v = Number(r.oi15m || 0);
+        const deltaV = Number(r.oiNotional || 0) * oi15v / (100 + oi15v);
+        const reasons = [];
+        if (Math.abs(Number(r.change24h || 0)) >= 10) reasons.push(`24H ${Number(r.change24h || 0) >= 0 ? '+' : ''}${Number(r.change24h || 0).toFixed(2)}%`);
+        if (Math.abs(oi15v) >= 5) reasons.push(`15M OI ${oi15v >= 0 ? '+' : ''}${oi15v.toFixed(2)}%`);
+        if (Number(r.volRatio3m || 0) >= 1.5) reasons.push(`3M 放量 ${Number(r.volRatio3m).toFixed(1)}x`);
+        if (Number(r.largeUsdt || 0) >= 5000 && Number(r.largeMultiple || 0) >= 20) reasons.push(`大单 ${(Number(r.largeUsdt) / 10000).toFixed(1)}万 ${Number(r.largeMultiple).toFixed(0)}x`);
         pushRightLog(r.symbol, {
           win: Math.round(Number(r.score || 0)), chg: Number(r.change24h || 0),
           side: Number(r.change24h || 0) >= 0 ? 'long' : 'short',
-          score: r.score, oi: r.oiNotional, oi5: r.oi5m, oi15: r.oi15m, price: r.price
+          score: r.score, oi: r.oiNotional, oi5: r.oi5m, oi15: oi15v,
+          delta: deltaV, price: r.price,
+          reason: reasons.join(' · ') || '自选达标',
+          vol24: r.quoteVolume24h
         });
       } catch (e) {}
       meteorTo(card, 'focus', 900, () => {
@@ -12357,13 +12401,19 @@ requestAnimationFrame(frame);
         if (el) el.classList.add('nv-focus-idle');
       }, FOCUS_IDLE_MS);
     };
+    const focusGoIdle = () => {
+      if (focusQueue.length || focusTimer) {
+        // 队列还有货：重新排一次空闲检查
+        clearTimeout(focusIdleTimer);
+        focusIdleTimer = setTimeout(focusGoIdle, 60 * 1000);
+        return;
+      }
+      const el = sr.querySelector('[data-nv-card="focus"]');
+      if (el) el.classList.add('nv-focus-idle');
+    };
     const focusStartIdle = () => {
       clearTimeout(focusIdleTimer);
-      focusIdleTimer = setTimeout(() => {
-        if (focusQueue.length || focusTimer) return;
-        const el = sr.querySelector('[data-nv-card="focus"]');
-        if (el) el.classList.add('nv-focus-idle');
-      }, FOCUS_IDLE_MS);
+      focusIdleTimer = setTimeout(focusGoIdle, FOCUS_IDLE_MS);
     };
     const markFocusDone = (sym) => {
       if (!sym) return;
@@ -12393,12 +12443,14 @@ requestAnimationFrame(frame);
       const fresh = sym ? rows.find(x => x.symbol === sym) : null;
       if (!fresh) { focusNext(); return; }
       focusShow(fresh);
+      window.__MOSS_FOCUS_SLOT_START = Date.now();
       focusTimer = setTimeout(focusNext, focusQueue.length ? FOCUS_SLOT_MS : FOCUS_IDLE_MS);
     };
     const rotateFocusCard = (rows, live) => {
       focusCleanSeen();
       const cur = window.__MOSS_FOCUS_CURRENT;
       const hit = (rows || []).filter(r => r.focus && focusHit(r) && !focusSeen[r.symbol] && r.symbol !== cur);
+      if (!hit.length) return;
       const queued = new Set(focusQueue.map(x => (x ? (x.symbol || (x.r && x.r.symbol)) : null)));
       const fresh = hit.filter(r => !queued.has(r.symbol));
       if (!fresh.length) return;
@@ -12407,10 +12459,14 @@ requestAnimationFrame(frame);
         focusNext();
         return;
       }
-      // 新达标立刻插队
+      // 当前槽位还没播满 5 分钟 → 新币只排队，不抢占
+      const slotStart = Number(window.__MOSS_FOCUS_SLOT_START || 0);
+      if (slotStart && Date.now() - slotStart < FOCUS_SLOT_MS) {
+        focusQueue = focusQueue.concat(fresh);
+        return;
+      }
+      // 没有槽位在跑：立刻切
       focusQueue = fresh.concat(focusQueue);
-      clearTimeout(focusTimer);
-      focusTimer = null;
       focusNext();
     };
     const renderFocusCard = (r) => {
@@ -12582,7 +12638,6 @@ requestAnimationFrame(frame);
         const key = `${c.sig.r.symbol}-${c.sig.side}`;
         if (!uniq.has(key)) uniq.set(key, c);
       });
-      const SIG_COOLDOWN = 30 * 60 * 1000;
       const signalEntries = [...uniq.entries()];
       signalEntries.forEach(([key, c]) => {
         (c.row = null);
@@ -12696,30 +12751,42 @@ requestAnimationFrame(frame);
       const hl = sr.querySelector('#nvDHistList');
       if (!hl) return;
       const recs = readLog(viewKey());
+      const isRight = logView === 'right';
       if (!recs.length) {
         hl.innerHTML = '<div><span>24 小时内暂无播报记录</span><b>—</b></div>';
         const pg = sr.querySelector('#nvDHistPage'); if (pg) pg.textContent = '1 / 1';
         const pv = sr.querySelector('#nvDHistPrev'), nx = sr.querySelector('#nvDHistNext');
         if (pv) pv.disabled = true; if (nx) nx.disabled = true;
-        ['nvHistCount', 'nvHistLong', 'nvHistShort', 'nvHistWin'].forEach((id, i) => {
+        ['nvHistCount', 'nvHistLong', 'nvHistShort', 'nvHistWin'].forEach(id => {
           const el = sr.querySelector('#' + id); if (el) el.textContent = '0';
         });
         return;
       }
+      const counts = {};
+      recs.forEach(a => { counts[a.symbol] = (counts[a.symbol] || 0) + 1; });
       const pages = Math.max(1, Math.ceil(recs.length / CAP_PAGE));
       capPage = Math.max(0, Math.min(capPage, pages - 1));
       const pageRecs = recs.slice(capPage * CAP_PAGE, capPage * CAP_PAGE + CAP_PAGE);
       hl.innerHTML = pageRecs.map(a => {
         const up = Number(a.chg || 0) >= 0;
         const color = up ? '#63C08E' : '#C96358';
-        const kind = logView === 'right' ? '自选监控' : '建仓信号';
-        return `<div style="display:block;padding:8px 0;border-bottom:1px solid rgba(232,160,32,.1)">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
-            <b style="font:700 13px/1 var(--mono);color:#f2f0e8">${pairName(a.symbol)}</b>
-            <span style="font:600 9px/1 var(--mono);color:${color}">${up ? '+' : ''}${Number(a.chg || 0).toFixed(2)}%</span>
+        const label = isRight ? '自选监控' : '建仓信号';
+        const delta = Number(a.delta || 0);
+        return `<div class="nv-signal-record">
+          <div class="st">${a.time}</div>
+          <div class="sm"><b>${pairName(a.symbol)}</b><em style="color:${color}">${label} ${up ? '+' : ''}${Number(a.chg || 0).toFixed(2)}%</em><span>累计 ${counts[a.symbol]} 次</span></div>
+          <div class="sg">
+            <div><span>价格</span><b>${a.price ? a.price + ' USDT' : '—'}</b></div>
+            <div><span>胜率</span><b>${a.win || '—'}%</b></div>
+            <div><span>策略分</span><b>${a.score ? Number(a.score).toFixed(1) : '—'}</b></div>
+            <div><span>当前 OI</span><b>${fmtWan(a.oi)}</b></div>
+            <div><span>5M / 15M OI</span><b>${sign(a.oi5)}% / ${sign(a.oi15)}%</b></div>
+            <div><span>15M 增量</span><b>${delta >= 0 ? '+' : '-'}${fmtWan(Math.abs(delta))}</b></div>
+            <div><span>24H 成交额</span><b>${fmtQv(a.vol24 || 0)}</b></div>
+            ${isRight ? '' : `<div><span>止盈</span><b>${a.target || '—'}</b></div><div><span>止损</span><b>${a.stop || '—'}</b></div>`}
+            ${a.reason ? `<div style="grid-column:1/-1"><span>抓取理由</span><b>${a.reason}</b></div>` : ''}
+            <div><span>次数</span><b>${counts[a.symbol]} 次</b></div>
           </div>
-          <div style="margin-top:5px;font:500 9.5px/1.4 var(--cjk);color:#9a8a70">${kind}${a.win ? ' · 胜率 ' + a.win + '%' : ''}</div>
-          <div style="margin-top:4px;font:500 9px/1 var(--mono);color:#6f5f48">${a.day || ''} ${a.time || ''}</div>
         </div>`;
       }).join('');
       const pg = sr.querySelector('#nvDHistPage'); if (pg) pg.textContent = `${capPage + 1} / ${pages}`;
