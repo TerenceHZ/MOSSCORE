@@ -1537,8 +1537,9 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div class="nv-d-sec"><h4>数据</h4><p id="nvDData">数据源：公开行情快照 · 最后更新 17:00:15 · 当前为延时快照。</p></div>
   </div>
   <div class="nv-pane" data-pane="history" hidden>
-   <div class="nv-d-sec"><h4>近 24 小时监控</h4><div class="nv-history" id="nvDHistList"><div><span>暂无建仓信号记录</span><b>—</b></div></div></div>
-   <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts" id="nvDHistStats"><div><span>信号次数</span><b id="nvHistCount">0</b></div><div><span>多单</span><b id="nvHistLong">0</b></div><div><span>空单</span><b id="nvHistShort">0</b></div><div><span>最新胜率</span><b id="nvHistWin">—</b></div></div></div>
+   <div class="nv-d-sec"><h4>24 小时播报记录</h4><div class="nv-history" id="nvDHistList"><div><span>24 小时内暂无播报</span><b>—</b></div></div>
+    <div class="nv-mh-pager" id="nvDHistPager"><button type="button" id="nvDHistPrev">上一页</button><span id="nvDHistPage">1 / 1</span><button type="button" id="nvDHistNext">下一页</button></div></div>
+   <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts" id="nvDHistStats"><div><span>播报次数</span><b id="nvHistCount">0</b></div><div><span>建仓信号</span><b id="nvHistLong">0</b></div><div><span>自选监控</span><b id="nvHistShort">0</b></div><div><span>涉及币种</span><b id="nvHistWin">0</b></div></div></div>
   </div>
   <div class="nv-pane" data-pane="alerts" hidden>
    <div class="nv-d-sec"><h4>ALERT HISTORY · 异动历史</h4>
@@ -11376,6 +11377,9 @@ requestAnimationFrame(frame);
       if (prev) prev.disabled = alertHistoryPage === 0;
       if (next) next.disabled = alertHistoryPage >= pages - 1;
     };
+    const capPrev = sr.querySelector('#nvDHistPrev'), capNext = sr.querySelector('#nvDHistNext');
+    capPrev && capPrev.addEventListener('click', (e) => { e.stopPropagation(); if (capPage > 0) { capPage -= 1; renderCaptureLog(); } });
+    capNext && capNext.addEventListener('click', (e) => { e.stopPropagation(); capPage += 1; renderCaptureLog(); });
     const alertPager = sr.querySelector('.nv-alert-pager');
     alertPager && alertPager.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-alert-page]');
@@ -12225,20 +12229,48 @@ requestAnimationFrame(frame);
         saveCaptureLog();
       } catch (e) {}
     }
+    const CAP_PAGE = 10;
+    let capPage = 0;
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
       if (!hl) return;
-      const symbol = window.__NOVA_HISTORY_SYMBOL || '';
-      const recs = captureLog.filter(a => a.symbol === symbol);
+      const nowTs = Date.now();
+      const TTL = 24 * 60 * 60 * 1000;
+      const recs = captureLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
       if (!recs.length) {
-        hl.innerHTML = `<div><span>${symbol ? '近 24 小时暂无建仓信号' : '暂无建仓信号记录'}</span><b>—</b></div>`;
-      } else {
-        hl.innerHTML = recs.map(a => `<div><span>${a.time} · ${a.side === 'long' ? '建多' : '建空'} ${Number(a.chg).toFixed(2)}%</span><b>${a.win}%</b></div>`).join('');
+        hl.innerHTML = '<div><span>24 小时内暂无播报记录</span><b>—</b></div>';
+        const pg = sr.querySelector('#nvDHistPage'); if (pg) pg.textContent = '1 / 1';
+        const pv = sr.querySelector('#nvDHistPrev'), nx = sr.querySelector('#nvDHistNext');
+        if (pv) pv.disabled = true; if (nx) nx.disabled = true;
+        ['nvHistCount', 'nvHistLong', 'nvHistShort', 'nvHistWin'].forEach((id, i) => {
+          const el = sr.querySelector('#' + id); if (el) el.textContent = '0';
+        });
+        return;
       }
+      const pages = Math.max(1, Math.ceil(recs.length / CAP_PAGE));
+      capPage = Math.max(0, Math.min(capPage, pages - 1));
+      const pageRecs = recs.slice(capPage * CAP_PAGE, capPage * CAP_PAGE + CAP_PAGE);
+      hl.innerHTML = pageRecs.map(a => {
+        const up = Number(a.chg || 0) >= 0;
+        const color = up ? '#63C08E' : '#C96358';
+        const kind = a.kind === 'signal' ? '建仓信号' : '自选监控';
+        return `<div style="display:block;padding:8px 0;border-bottom:1px solid rgba(232,160,32,.1)">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+            <b style="font:700 13px/1 var(--mono);color:#f2f0e8">${pairName(a.symbol)}</b>
+            <span style="font:600 9px/1 var(--mono);color:${color}">${up ? '+' : ''}${Number(a.chg || 0).toFixed(2)}%</span>
+          </div>
+          <div style="margin-top:5px;font:500 9.5px/1.4 var(--cjk);color:#9a8a70">${kind}${a.win ? ' · 胜率 ' + a.win + '%' : ''}</div>
+          <div style="margin-top:4px;font:500 9px/1 var(--mono);color:#6f5f48">${a.day || ''} ${a.time || ''}</div>
+        </div>`;
+      }).join('');
+      const pg = sr.querySelector('#nvDHistPage'); if (pg) pg.textContent = `${capPage + 1} / ${pages}`;
+      const pv = sr.querySelector('#nvDHistPrev'), nx = sr.querySelector('#nvDHistNext');
+      if (pv) pv.disabled = capPage === 0;
+      if (nx) nx.disabled = capPage >= pages - 1;
       const count = sr.querySelector('#nvHistCount'); if (count) count.textContent = recs.length;
-      const longs = sr.querySelector('#nvHistLong'); if (longs) longs.textContent = recs.filter(a => a.side === 'long').length;
-      const shorts = sr.querySelector('#nvHistShort'); if (shorts) shorts.textContent = recs.filter(a => a.side === 'short').length;
-      const win = sr.querySelector('#nvHistWin'); if (win) win.textContent = recs.length ? `${recs[0].win}%` : '—';
+      const longs = sr.querySelector('#nvHistLong'); if (longs) longs.textContent = recs.filter(a => a.kind === 'signal').length;
+      const shorts = sr.querySelector('#nvHistShort'); if (shorts) shorts.textContent = recs.filter(a => a.kind === 'focus').length;
+      const uniq = sr.querySelector('#nvHistWin'); if (uniq) uniq.textContent = new Set(recs.map(a => a.symbol)).size;
     };
     const pruneHistories = () => {
       const nowTs = Date.now();
@@ -12283,6 +12315,7 @@ requestAnimationFrame(frame);
       sr.querySelector('#nvDKind').textContent = d.kind;
       sr.querySelector('#nvDTitle').textContent = pairName(d.title);
       window.__NOVA_HISTORY_SYMBOL = rawSymbol(d.title);
+      capPage = 0;
       sr.querySelector('#nvDStage').textContent = d.stage;
       const why = sr.querySelector('#nvDWhy'); if (why) why.textContent = d.why;
       const facts = sr.querySelector('#nvDFacts'); if (facts) facts.innerHTML = d.facts.map(([a,b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
