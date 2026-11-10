@@ -1604,8 +1604,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="nv-d-sec"><h4>口径</h4><p>三类历史分开归档：合约持仓、特大主动订单、3 分钟激增放量；不构成交易建议。</p></div>
   </div>
   <div class="nv-pane" data-pane="signals" hidden>
-   <div class="nv-d-sec" id="nvSigPaneLog" hidden><h4>24 小时播报记录</h4><div class="nv-history" id="nvDHistList2"><div><span>24 小时内暂无播报</span><b>—</b></div></div></div>
-   <div class="nv-d-sec"><h4>SIGNAL HISTORY</h4><div class="nv-signal-counts" id="nvSignalCounts"></div><div class="nv-signal-history" id="nvSignalHistory"></div></div>
+      <div class="nv-d-sec"><h4>SIGNAL HISTORY</h4><div class="nv-signal-counts" id="nvSignalCounts"></div><div class="nv-signal-history" id="nvSignalHistory"></div></div>
   </div>
  </div>
 </div>
@@ -11572,7 +11571,6 @@ requestAnimationFrame(frame);
     };
     const openSignalHistory = () => {
       showTab('signals');
-      try { renderCaptureLog(); } catch (e) {}
       setDrawerMode('signal');
       sr.querySelector('#nvDKind').textContent = '◉ SIGNAL FEED · 建仓信号';
       sr.querySelector('#nvDTitle').textContent = 'SIGNAL HISTORY';
@@ -11647,6 +11645,8 @@ requestAnimationFrame(frame);
       window.__MOSS_SIG_SEEN_ONCE = true;
       card.classList.remove('sig-idle', 'nv-focus-idle');
       renderSignalFeed(entry.sig);
+      // 每次轮播都弹一次建仓警报
+      try { showSignal(entry.sig, entry.row || null, entry.lane || 'gain'); } catch (e) {}
       meteorTo(card, 'focus', 900, () => {
         card.classList.remove('meteor-arrive');
         void card.offsetWidth;
@@ -11676,10 +11676,24 @@ requestAnimationFrame(frame);
     };
     const pushSignalSlot = (entry, delay = 1100) => {
       if (!entry) return;
-      sigQueue.push(entry);
-      if (sigQueue.length === 1 && !window.__MOSS_SIG_TIMER) {
-        setTimeout(sigNext, delay);
+      const sym = entry.symbol || (entry.sig && entry.sig.r && entry.sig.r.symbol);
+      if (!sym) return;
+      const playing = window.__MOSS_SIG_CURRENT
+        ? String(window.__MOSS_SIG_CURRENT).replace(/-(long|short)$/, '')
+        : null;
+      // 正在播的同一个币 / 已在队列里 → 不重复
+      if (playing === sym) return;
+      if (sigQueue.some(x => (x.symbol || (x.sig && x.sig.r && x.sig.r.symbol)) === sym)) return;
+      if (!playing) {
+        sigQueue.push(entry);
+        if (!window.__MOSS_SIG_TIMER) setTimeout(sigNext, delay);
+        return;
       }
+      // 正在播报时来了新币 → 插到队首，立刻切过去
+      sigQueue.unshift(entry);
+      clearTimeout(sigTimer);
+      window.__MOSS_SIG_TIMER = null;
+      sigNext();
     };
     // ===== 下单预演（LIVE_ORDER_ENABLED=false 时只做参数计算） =====
     const ORDER_LEVERAGE = 5;
@@ -12643,9 +12657,7 @@ requestAnimationFrame(frame);
     let capPage = 0;
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
-      const hl2 = sr.querySelector('#nvDHistList2');
-      if (!hl && !hl2) return;
-      if (!hl) { sr.querySelector('#nvSigPaneLog')?.removeAttribute('hidden'); }
+      if (!hl) return;
       const recs = readLog(viewKey());
       if (!recs.length) {
         hl.innerHTML = '<div><span>24 小时内暂无播报记录</span><b>—</b></div>';
@@ -12681,9 +12693,6 @@ requestAnimationFrame(frame);
       const longs = sr.querySelector('#nvHistLong'); if (longs) longs.textContent = recs.filter(a => Number(a.win || 0) >= 80).length;
       const shorts = sr.querySelector('#nvHistShort'); if (shorts) shorts.textContent = recs.filter(a => Number(a.win || 0) < 80).length;
       const uniq = sr.querySelector('#nvHistWin'); if (uniq) uniq.textContent = new Set(recs.map(a => a.symbol)).size;
-      if (hl2 && hl) hl2.innerHTML = hl.innerHTML;
-      const paneLog = sr.querySelector('#nvSigPaneLog');
-      if (paneLog) { if (logView === 'left') paneLog.removeAttribute('hidden'); else paneLog.setAttribute('hidden', ''); }
     };
     const pruneHistories = () => {
       const nowTs = Date.now();
@@ -12763,6 +12772,8 @@ requestAnimationFrame(frame);
     const openRow = (row, lane) => {
       setDrawerMode('detail');
       open(lane);
+      showTab('history');
+      try { renderCaptureLog(); } catch (e) {}
       const sym = rawSymbol((row.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, ''));
       const changeText = row.querySelector('.nv-change')?.textContent || '0%';
       const oiText = row.querySelectorAll('.nv-row-oi span')[0]?.textContent || '';
