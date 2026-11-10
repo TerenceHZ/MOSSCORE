@@ -1604,6 +1604,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="nv-d-sec"><h4>口径</h4><p>三类历史分开归档：合约持仓、特大主动订单、3 分钟激增放量；不构成交易建议。</p></div>
   </div>
   <div class="nv-pane" data-pane="signals" hidden>
+   <div class="nv-d-sec" id="nvSigPaneLog" hidden><h4>24 小时播报记录</h4><div class="nv-history" id="nvDHistList2"><div><span>24 小时内暂无播报</span><b>—</b></div></div></div>
    <div class="nv-d-sec"><h4>SIGNAL HISTORY</h4><div class="nv-signal-counts" id="nvSignalCounts"></div><div class="nv-signal-history" id="nvSignalHistory"></div></div>
   </div>
  </div>
@@ -11278,7 +11279,6 @@ requestAnimationFrame(frame);
         const meta = card.querySelector('.nv-c-meta'); if (meta) meta.innerHTML = `<i class="nv-stage ${lane === 'focus' ? 'entry' : 'watch'}">${lane === 'focus' ? '开仓信号' : '重点候选'}</i><b>${lane === 'focus' ? '97.0' : '77.2'}</b> · ${stamp()} 抓取`;
         const row = [...sr.querySelectorAll(`.nv-mod.${lane} .nv-row`)].find(r => (r.querySelector('.nv-sym') || {}).textContent === d.title);
         if (row) { row.classList.add('live'); setTimeout(() => row.classList.remove('live'), 3400); }
-        captureLog.unshift([`${stamp()} · ${lane === 'focus' ? '开仓信号' : '重点候选'} · ${d.title}`, lane === 'focus' ? '97.0' : '77.2']);
         renderCaptureLog();
         const mod = sr.querySelector('.nv-mod.' + lane);
         if (mod) meteorTo(mod, lane, lane === 'focus' ? 900 : 520, () => freshPanel(mod, lane));
@@ -11479,6 +11479,36 @@ requestAnimationFrame(frame);
     renderAlertFeed();
     renderAlertHistory();
     { const first = alertFeed && alertFeed.firstElementChild; if (first) markAlertFresh(first); }
+    // ===== 左右两条独立的播报记录 =====
+    const LEFT_KEY = 'moss-left-log-v1';
+    const RIGHT_KEY = 'moss-right-log-v1';
+    const LOG_TTL = 24 * 60 * 60 * 1000;
+    const readLog = (key) => {
+      try {
+        const arr = JSON.parse(localStorage.getItem(key) || '[]');
+        if (!Array.isArray(arr)) return [];
+        const cut = Date.now() - LOG_TTL;
+        return arr.filter(x => x && x.ts && x.ts >= cut).sort((a, b) => b.ts - a.ts);
+      } catch (e) { return []; }
+    };
+    const writeLog = (key, arr) => {
+      try { localStorage.setItem(key, JSON.stringify((arr || []).slice(0, 800))); } catch (e) {}
+    };
+    function pushLogTo(key, sym, meta) {
+      try {
+        const list = readLog(key);
+        const now = new Date();
+        list.unshift(Object.assign({
+          ts: Date.now(),
+          time: now.toLocaleTimeString('zh-CN', { hour12: false }),
+          day: now.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+          symbol: rawSymbol(sym)
+        }, meta || {}));
+        writeLog(key, list);
+      } catch (e) {}
+    }
+    const pushLeftLog = (sym, meta) => pushLogTo(LEFT_KEY, sym, meta);
+    const pushRightLog = (sym, meta) => pushLogTo(RIGHT_KEY, sym, meta);
     const SIGNAL_KEY = 'moss-signal-log-v1', SIGNAL_TTL = 24 * 60 * 60 * 1000;
     let signalLog = [];
     try {
@@ -11518,11 +11548,12 @@ requestAnimationFrame(frame);
     const renderSignalHistory = () => {
       const box = sr.querySelector('#nvSignalHistory');
       if (!box) return;
+      const sigLog = readLog(LEFT_KEY);
       const counts = {};
-      signalLog.forEach(a => { counts[a.symbol] = (counts[a.symbol] || 0) + 1; });
+      sigLog.forEach(a => { counts[a.symbol] = (counts[a.symbol] || 0) + 1; });
       const summary = sr.querySelector('#nvSignalCounts');
       if (summary) summary.innerHTML = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([s, n]) => `<span>${pairName(s)} × ${n}</span>`).join('');
-      box.innerHTML = signalLog.slice(0, 500).map(a => {
+      box.innerHTML = sigLog.slice(0, 500).map(a => {
         const color = a.side === 'short' ? '#C96358' : '#63C08E';
         return `<div class="nv-signal-record"><div class="st">${a.time}</div><div class="sm"><b>${pairName(a.symbol)}</b><em class="${a.side}" style="color:${color}">${a.side === 'long' ? '建议建多' : '建议建空'} ${Number(a.chg).toFixed(2)}%</em><span>该币累计建议 ${counts[a.symbol]} 次</span></div><div class="sg"><div><span>价格</span><b>${a.price} USDT</b></div><div><span>胜率</span><b>${a.win}%</b></div><div><span>策略分</span><b>${a.score ? Number(a.score).toFixed(1) : '—'}</b></div><div><span>当前 OI</span><b>${fmtWan(a.oi)}</b></div><div><span>5M / 15M OI</span><b>${sign(a.oi5)}% / ${sign(a.oi15)}%</b></div><div><span>15M 增量</span><b>${a.delta >= 0 ? '+' : '-'}${fmtWan(Math.abs(a.delta))}</b></div><div><span>止盈</span><b>${a.target}</b></div><div><span>止损</span><b>${a.stop}</b></div><div><span>建议次数</span><b>${counts[a.symbol]} 次</b></div></div></div>`;
       }).join('');
@@ -11541,6 +11572,7 @@ requestAnimationFrame(frame);
     };
     const openSignalHistory = () => {
       showTab('signals');
+      try { renderCaptureLog(); } catch (e) {}
       setDrawerMode('signal');
       sr.querySelector('#nvDKind').textContent = '◉ SIGNAL FEED · 建仓信号';
       sr.querySelector('#nvDTitle').textContent = 'SIGNAL HISTORY';
@@ -11604,7 +11636,14 @@ requestAnimationFrame(frame);
       if (!card || !entry) return;
       window.__MOSS_SIG_CURRENT = entry.key;
       window.__MOSS_SIG_LAST = entry.key;
-      try { pushCaptureLog(entry.sig.r.symbol, 'signal', entry.sig.win, entry.sig.chg); } catch (e) {}
+      try {
+        pushLeftLog(entry.sig.r.symbol, {
+          win: entry.sig.win, chg: entry.sig.chg, side: entry.sig.side, score: entry.sig.score,
+          price: Number(entry.sig.r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''),
+          oi: entry.sig.r.oiNotional, oi5: entry.sig.oi5, oi15: entry.sig.oi15,
+          target: entry.sig.targetText, stop: entry.sig.stopText
+        });
+      } catch (e) {}
       window.__MOSS_SIG_SEEN_ONCE = true;
       card.classList.remove('sig-idle', 'nv-focus-idle');
       renderSignalFeed(entry.sig);
@@ -12204,7 +12243,7 @@ requestAnimationFrame(frame);
       fillRows(importMod, lossRows, 'loss');
       const gc = sr.querySelector('#nvGainCount'); if (gc) gc.textContent = gainRows.length;
       const lc = sr.querySelector('#nvLossCount'); if (lc) lc.textContent = lossRows.length;
-      const FOCUS_COOLDOWN = 60 * 60 * 1000;
+      const FOCUS_COOLDOWN = 30 * 60 * 1000;
     const FOCUS_SLOT_MS = 5 * 60 * 1000;
     const FOCUS_IDLE_MS = 15 * 60 * 1000;
     let focusSeen = {};
@@ -12238,7 +12277,13 @@ requestAnimationFrame(frame);
       card.classList.remove('nv-focus-idle');
       window.__MOSS_FOCUS_CURRENT = r.symbol;
       renderFocusCard(r);
-      try { pushCaptureLog(r.symbol, 'focus', Math.round(Number(r.score || 0)), Number(r.change24h || 0)); } catch (e) {}
+      try {
+        pushRightLog(r.symbol, {
+          win: Math.round(Number(r.score || 0)), chg: Number(r.change24h || 0),
+          side: Number(r.change24h || 0) >= 0 ? 'long' : 'short',
+          score: r.score, oi: r.oiNotional, oi5: r.oi5m, oi15: r.oi15m, price: r.price
+        });
+      } catch (e) {}
       meteorTo(card, 'focus', 900, () => {
         card.classList.add('hot', 'flash');
         clearTimeout(card._hotTimer);
@@ -12270,32 +12315,53 @@ requestAnimationFrame(frame);
         if (el) el.classList.add('nv-focus-idle');
       }, FOCUS_IDLE_MS);
     };
+    const markFocusDone = (sym) => {
+      if (!sym) return;
+      focusSeen[sym] = Date.now();
+      focusPersist();
+    };
+    const focusCleanSeen = () => {
+      const now = Date.now();
+      Object.keys(focusSeen).forEach(k => { if (now - focusSeen[k] >= FOCUS_COOLDOWN) delete focusSeen[k]; });
+    };
+    const focusEligible = () => {
+      focusCleanSeen();
+      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+      const cur = window.__MOSS_FOCUS_CURRENT;
+      return rows.filter(r => r.focus && focusHit(r) && !focusSeen[r.symbol] && r.symbol !== cur);
+    };
     const focusNext = () => {
       clearTimeout(focusTimer);
       focusTimer = null;
+      const prevSym = window.__MOSS_FOCUS_CURRENT;
+      if (prevSym) markFocusDone(prevSym);
+      if (!focusQueue.length) focusQueue = focusEligible();
       if (!focusQueue.length) { focusStartIdle(); return; }
       const item = focusQueue.shift();
-      const sym = item && item.r && item.r.symbol;
+      const sym = item ? (item.symbol || (item.r && item.r.symbol)) : null;
       const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
       const fresh = sym ? rows.find(x => x.symbol === sym) : null;
-      if (fresh) focusShow(fresh);
-      if (focusQueue.length) {
-        focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS);
-      } else {
-        focusStartIdle();
-      }
+      if (!fresh) { focusNext(); return; }
+      focusShow(fresh);
+      focusTimer = setTimeout(focusNext, focusQueue.length ? FOCUS_SLOT_MS : FOCUS_IDLE_MS);
     };
     const rotateFocusCard = (rows, live) => {
-      const now = Date.now();
-      Object.keys(focusSeen).forEach(k => { if (now - focusSeen[k] >= FOCUS_COOLDOWN) delete focusSeen[k]; });
-      const hit = (rows || []).filter(r => r.focus && focusHit(r) && !focusSeen[r.symbol]);
-      if (!hit.length) return;
-      hit.forEach(r => { focusSeen[r.symbol] = now; });
-      focusPersist();
-      const firstEver = !window.__MOSS_FOCUS_CURRENT;
-      focusQueue = focusQueue.concat(hit);
-      if (firstEver) { focusNext(); return; }
-      if (!focusTimer) focusTimer = setTimeout(focusNext, FOCUS_SLOT_MS);
+      focusCleanSeen();
+      const cur = window.__MOSS_FOCUS_CURRENT;
+      const hit = (rows || []).filter(r => r.focus && focusHit(r) && !focusSeen[r.symbol] && r.symbol !== cur);
+      const queued = new Set(focusQueue.map(x => (x ? (x.symbol || (x.r && x.r.symbol)) : null)));
+      const fresh = hit.filter(r => !queued.has(r.symbol));
+      if (!fresh.length) return;
+      if (!cur) {
+        focusQueue = focusQueue.concat(fresh);
+        focusNext();
+        return;
+      }
+      // 新达标立刻插队
+      focusQueue = fresh.concat(focusQueue);
+      clearTimeout(focusTimer);
+      focusTimer = null;
+      focusNext();
     };
     const renderFocusCard = (r) => {
       const card = sr.querySelector('[data-nv-card="focus"]');
@@ -12466,7 +12532,7 @@ requestAnimationFrame(frame);
         const key = `${c.sig.r.symbol}-${c.sig.side}`;
         if (!uniq.has(key)) uniq.set(key, c);
       });
-      const SIG_COOLDOWN = 60 * 60 * 1000;
+      const SIG_COOLDOWN = 30 * 60 * 1000;
       const signalEntries = [...uniq.entries()];
       signalEntries.forEach(([key, c]) => {
         (c.row = null);
@@ -12571,40 +12637,16 @@ requestAnimationFrame(frame);
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
     setTimeout(loadFearGreed, 800);
     setInterval(loadFearGreed, 15 * 60 * 1000);
-    const CAPTURE_KEY = 'moss-capture-log-v1';
-    let captureLog = [];
-    try {
-      const savedCap = JSON.parse(localStorage.getItem(CAPTURE_KEY) || '[]');
-      const cut = Date.now() - 24 * 60 * 60 * 1000;
-      if (Array.isArray(savedCap)) captureLog = savedCap.filter(x => x && x.ts && x.ts >= cut);
-      localStorage.setItem(CAPTURE_KEY, JSON.stringify(captureLog));
-    } catch (e) { captureLog = []; }
-    const saveCaptureLog = () => { try { localStorage.setItem(CAPTURE_KEY, JSON.stringify(captureLog.slice(0, 500))); } catch (e) {} };
-    function pushCaptureLog(sym, kind, win, chg) {
-      try {
-        captureLog.unshift({
-          ts: Date.now(),
-          time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
-          day: new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
-          symbol: rawSymbol(sym),
-          kind: kind || 'focus',
-          win: win || 0,
-          chg: Number(chg || 0),
-          side: Number(chg || 0) >= 0 ? 'long' : 'short'
-        });
-        const cut = Date.now() - 24 * 60 * 60 * 1000;
-        captureLog = captureLog.filter(x => x.ts >= cut).slice(0, 500);
-        saveCaptureLog();
-      } catch (e) {}
-    }
+    let logView = 'left';
+    const viewKey = () => (logView === 'right' ? RIGHT_KEY : LEFT_KEY);
     const CAP_PAGE = 10;
     let capPage = 0;
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
-      if (!hl) return;
-      const nowTs = Date.now();
-      const TTL = 24 * 60 * 60 * 1000;
-      const recs = captureLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
+      const hl2 = sr.querySelector('#nvDHistList2');
+      if (!hl && !hl2) return;
+      if (!hl) { sr.querySelector('#nvSigPaneLog')?.removeAttribute('hidden'); }
+      const recs = readLog(viewKey());
       if (!recs.length) {
         hl.innerHTML = '<div><span>24 小时内暂无播报记录</span><b>—</b></div>';
         const pg = sr.querySelector('#nvDHistPage'); if (pg) pg.textContent = '1 / 1';
@@ -12621,7 +12663,7 @@ requestAnimationFrame(frame);
       hl.innerHTML = pageRecs.map(a => {
         const up = Number(a.chg || 0) >= 0;
         const color = up ? '#63C08E' : '#C96358';
-        const kind = a.kind === 'signal' ? '建仓信号' : '自选监控';
+        const kind = logView === 'right' ? '自选监控' : '建仓信号';
         return `<div style="display:block;padding:8px 0;border-bottom:1px solid rgba(232,160,32,.1)">
           <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
             <b style="font:700 13px/1 var(--mono);color:#f2f0e8">${pairName(a.symbol)}</b>
@@ -12636,9 +12678,12 @@ requestAnimationFrame(frame);
       if (pv) pv.disabled = capPage === 0;
       if (nx) nx.disabled = capPage >= pages - 1;
       const count = sr.querySelector('#nvHistCount'); if (count) count.textContent = recs.length;
-      const longs = sr.querySelector('#nvHistLong'); if (longs) longs.textContent = recs.filter(a => a.kind === 'signal').length;
-      const shorts = sr.querySelector('#nvHistShort'); if (shorts) shorts.textContent = recs.filter(a => a.kind === 'focus').length;
+      const longs = sr.querySelector('#nvHistLong'); if (longs) longs.textContent = recs.filter(a => Number(a.win || 0) >= 80).length;
+      const shorts = sr.querySelector('#nvHistShort'); if (shorts) shorts.textContent = recs.filter(a => Number(a.win || 0) < 80).length;
       const uniq = sr.querySelector('#nvHistWin'); if (uniq) uniq.textContent = new Set(recs.map(a => a.symbol)).size;
+      if (hl2 && hl) hl2.innerHTML = hl.innerHTML;
+      const paneLog = sr.querySelector('#nvSigPaneLog');
+      if (paneLog) { if (logView === 'left') paneLog.removeAttribute('hidden'); else paneLog.setAttribute('hidden', ''); }
     };
     const pruneHistories = () => {
       const nowTs = Date.now();
@@ -12650,9 +12695,8 @@ requestAnimationFrame(frame);
       const beforeAlert = alertLog.length;
       alertLog = alertLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
       if (alertLog.length !== beforeAlert) { saveAlerts(); changed = true; }
-      const beforeCap = captureLog.length;
-      captureLog = captureLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
-      if (captureLog.length !== beforeCap) { saveCaptureLog(); changed = true; }
+      writeLog(LEFT_KEY, readLog(LEFT_KEY));
+      writeLog(RIGHT_KEY, readLog(RIGHT_KEY));
       if (changed) {
         try { renderSignalHistory(); } catch (e) {}
         try { renderAlertHistory(); } catch (e) {}
@@ -12668,7 +12712,7 @@ requestAnimationFrame(frame);
       const amount = row.querySelector('b'); if (amount) amount.textContent = '$' + msTotal.toFixed(1) + 'M';
       const bar = row.querySelector('.nv-msbar i'); if (bar) bar.style.width = '100%';
       row.classList.add('live'); setTimeout(() => row.classList.remove('live'), 3200);
-      const full = sr.querySelector('#nvDMsFull'); if (full) full.innerHTML = `$${msTotal.toFixed(1)}M <small>累计 · ${captureLog.length + 2} 笔 · 2 条链</small>`;
+      const full = sr.querySelector('#nvDMsFull'); if (full) full.innerHTML = `$${msTotal.toFixed(1)}M <small>累计 · ${readLog(RIGHT_KEY).length + 2} 笔 · 2 条链</small>`;
       const msPanel = sr.querySelector('.p-heat');
       if (msPanel) meteorTo(msPanel, 'focus', 900, () => freshPanel(msPanel, 'focus'));
       ping('multi');
@@ -12832,7 +12876,9 @@ requestAnimationFrame(frame);
     }
     cards.forEach(card => card.addEventListener('click', () => {
       window.__NOVA_SELECTED = card.dataset.nvCard;
-      if (card.dataset.nvCard === 'signal') { card.classList.remove('sig-idle', 'nv-focus-idle'); openSignalHistory(); return; }
+      if (card.dataset.nvCard === 'signal') { card.classList.remove('sig-idle', 'nv-focus-idle'); logView = 'left'; capPage = 0; openSignalHistory(); return; }
+      logView = card.dataset.nvCard === 'focus' ? 'right' : 'left';
+      capPage = 0;
       if (card.dataset.nvCard === 'signals') return;
       const lane = card.dataset.nvCard === 'focus' ? 'focus' : 'imported';
       const shown = card.querySelector('.nv-c-sym')?.textContent || sr.querySelector('#nvFocusSym')?.textContent || '';
@@ -12850,7 +12896,10 @@ requestAnimationFrame(frame);
       row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
       setTimeout(() => row.classList.remove('flash'), 650);
       const mod = row.closest('.nv-mod');
-      openRow(row, mod && mod.classList.contains('focus') ? 'focus' : 'imported');
+      const lane = mod && mod.classList.contains('focus') ? 'focus' : 'imported';
+      logView = lane === 'focus' ? 'right' : 'left';
+      capPage = 0;
+      openRow(row, lane);
     }));
     const msPanel = sr.querySelector('.p-heat');
     msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); openAlerts(); });
