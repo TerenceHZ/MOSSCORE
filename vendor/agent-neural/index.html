@@ -1032,7 +1032,7 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card-signal #nvCardSigTp{color:#63C08E}
 .nv-card-signal #nvCardSigSl{color:#C96358}
 .nv-trade-info{position:absolute;left:13px;right:13px;bottom:14px;font:500 8px/1 var(--mono);color:#6f5f48;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
-.nv-order-pop{position:fixed;left:calc(50% - 560px);bottom:120px;width:300px;z-index:90;padding:12px 13px 11px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
+.nv-order-pop{position:fixed;left:calc(50% - 560px);bottom:120px;width:300px;z-index:2000;padding:12px 13px 11px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
 .nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
 .nv-order-pop::after{content:none}
 .nv-order-pop.short{background:linear-gradient(150deg,rgba(26,8,7,.42),rgba(4,3,3,.34))}
@@ -1501,26 +1501,6 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
     <i class="nv-sigcard-progress" aria-hidden="true"></i>
     <i class="nv-hotbg" aria-hidden="true"></i><i class="nv-flow" aria-hidden="true"></i><i class="nv-flash" aria-hidden="true"></i>
    </button>
-   <div class="nv-order-pop" id="nvOrderPop" hidden>
-    <div class="nv-op-h"><b id="nvOpSym">—</b><span id="nvOpSide">—</span><button class="nv-op-pos" type="button" id="nvOpPos">持仓 0/5</button><i class="nv-op-x" data-nv-op-close>×</i></div>
-    <div class="nv-op-stage" id="nvOpStage">预演 · 不会真实下单</div>
-    <div class="nv-op-grid">
-     <div><span>杠杆</span><b id="nvOpLev">5×</b></div>
-     <div><span>保证金（账户权益 20%）</span><b id="nvOpMargin">—</b></div>
-     <div><span>名义价值</span><b id="nvOpNotional">—</b></div>
-     <div><span>下单数量</span><b id="nvOpQty">—</b></div>
-     <div><span>入场价</span><b id="nvOpEntry">—</b></div>
-     <div><span>止盈</span><b id="nvOpTp">—</b></div>
-     <div><span>止损</span><b id="nvOpSl">—</b></div>
-     <div><span>风控</span><b id="nvOpRisk">—</b></div>
-    </div>
-    <div class="nv-op-mode"><span>下单模式</span><i class="nv-op-switch" id="nvOpSwitch" role="switch" aria-checked="false"><b></b><em id="nvOpModeText">手动</em></i></div>
-    <div class="nv-op-act"><button type="button" class="nv-op-ok" id="nvOpOk" disabled>预演模式 · 下单未开启</button><button type="button" class="nv-op-no" data-nv-op-close>关闭</button></div>
-    <div class="nv-op-positions" id="nvOpPositions" hidden>
-     <div class="nv-op-pos-h"><span>持仓明细</span><i class="nv-op-pos-x" id="nvOpPosBack">返回</i></div>
-     <div class="nv-op-pos-list" id="nvOpPosList"><div class="nv-op-pos-empty">暂无持仓</div></div>
-    </div>
-   </div>
    <button class="nv-card focus" type="button" data-nv-card="focus">
     <span class="nv-c-h">★ FOCUS · 自选主监控<i id="nvFocusQueue" style="margin-left:6px;font:500 8px/1 var(--mono);letter-spacing:.06em;color:#7b6d58">LIVE</i></span>
     <span class="nv-c-sym" id="nvFocusSym">CLANKER/USDT</span>
@@ -1582,6 +1562,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
  <div class="mp-foot"><span>HIGHEST THRESHOLD</span><b id="mpFoot">MOSS // 78</b></div>
 </div>
 </div>
+
 <div class="nv-drawer" id="nvDrawer" aria-hidden="true">
  <div class="nv-d-h">
   <div><div class="nv-d-k" id="nvDKind">★ FOCUS · 自选主监控</div><div class="nv-d-title" id="nvDTitle">BLESS/USDT</div><div class="nv-d-stage" id="nvDStage">开仓信号 · 97.0</div></div>
@@ -11700,10 +11681,65 @@ requestAnimationFrame(frame);
     };
     let orderPending = null;
     let orderPopTimer = null;
-    const opEl = (id) => sr.querySelector('#' + id);
+    const opEl = (id) => document.getElementById(id) || sr.querySelector('#' + id);
     const fmtPrice = (v) => v ? Number(v).toFixed(Number(v) < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
     const ORDER_POP_MS = 3 * 60 * 1000;
     let orderPopAuto = null;
+    (() => {
+      if (document.getElementById('moss-order-style')) return;
+      const style = document.createElement('style');
+      style.id = 'moss-order-style';
+      style.textContent = `
+.nv-order-pop{position:fixed;left:calc(50% - 560px);bottom:120px;width:300px;z-index:2000;padding:12px 13px 11px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate;font-family:"JetBrains Mono","Microsoft YaHei",ui-monospace,monospace}
+.nv-order-pop[hidden]{display:none}
+.nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
+.nv-order-pop.short{border-color:rgba(201,99,88,.62);background:linear-gradient(150deg,rgba(26,8,7,.42),rgba(4,3,3,.34));box-shadow:0 0 30px rgba(201,99,88,.42),0 0 70px rgba(201,99,88,.16),inset 0 0 34px rgba(201,99,88,.1)}
+.nv-order-pop.short::before{background:radial-gradient(70% 120% at 16% 0%,rgba(201,99,88,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(201,99,88,.24) 38%,transparent 62%,rgba(255,255,255,.06) 80%,transparent 96%);background-size:180% 180%,220% 220%}
+@keyframes nvOpIn{0%{opacity:0;transform:translateY(10px) scale(.97)}100%{opacity:1;transform:none}}
+.nv-op-h{display:flex;align-items:baseline;gap:8px}
+.nv-op-h b{font:700 17px/1 inherit;color:#f2f0e8;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-h span{font:700 10px/1 "Microsoft YaHei",sans-serif;color:#63C08E;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-order-pop.short .nv-op-h span{color:#C96358}
+.nv-op-pos{margin-left:auto;padding:3px 7px;border:1px solid rgba(99,192,142,.4);background:rgba(99,192,142,.1);font:600 8.5px/1 inherit;color:#8fd8b4;cursor:pointer;white-space:nowrap}
+.nv-op-pos:hover{background:rgba(99,192,142,.22);border-color:rgba(99,192,142,.75)}
+.nv-order-pop.short .nv-op-pos{border-color:rgba(201,99,88,.4);background:rgba(201,99,88,.1);color:#e0a49a}
+.nv-op-x{margin-left:8px;font:400 15px/1 inherit;color:#7b6d58;cursor:pointer;font-style:normal}
+.nv-op-x:hover{color:#e8a020}
+.nv-op-stage{margin-top:6px;font:500 9px/1.4 "Microsoft YaHei",sans-serif;color:#8a7a5e;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-top:10px}
+.nv-op-grid>div{display:flex;flex-direction:column;gap:3px}
+.nv-op-grid span{font:500 8.5px/1 "Microsoft YaHei",sans-serif;color:#6f5f48;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-grid b{font:600 12px/1 inherit;color:#f0e2bc;text-shadow:0 0 10px rgba(0,0,0,.85)}
+.nv-op-mode{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:9px;border-top:1px solid rgba(99,192,142,.16);font:500 9px/1 "Microsoft YaHei",sans-serif;color:#8a7a5e;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-switch{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-style:normal;user-select:none}
+.nv-op-switch b{position:relative;display:block;width:30px;height:14px;border-radius:7px;background:rgba(255,255,255,.1);border:1px solid rgba(232,160,32,.3);transition:background .2s,border-color .2s}
+.nv-op-switch b::after{content:"";position:absolute;left:2px;top:1px;width:10px;height:10px;border-radius:50%;background:#8a7a5e;transition:transform .2s,background .2s}
+.nv-op-switch.on b{background:rgba(99,192,142,.28);border-color:rgba(99,192,142,.6)}
+.nv-op-switch.on b::after{transform:translateX(15px);background:#8fd8b4}
+.nv-op-switch em{font:600 9px/1 "Microsoft YaHei",sans-serif;color:#c9a35a;font-style:normal}
+.nv-op-switch.on em{color:#8fd8b4}
+.nv-op-act{display:flex;gap:8px;margin-top:12px}
+.nv-op-act button{flex:1;padding:8px 0;font:600 10px/1 "Microsoft YaHei",sans-serif;cursor:pointer;border-radius:0}
+.nv-op-ok{background:rgba(99,192,142,.16);border:1px solid rgba(99,192,142,.5);color:#8fd8b4}
+.nv-op-ok:disabled{opacity:.55;cursor:default}
+.nv-op-no{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a}
+.nv-op-positions{position:absolute;inset:0;z-index:3;padding:12px 13px 11px;background:linear-gradient(150deg,rgba(6,20,14,.93),rgba(3,4,4,.91))}
+.nv-op-positions[hidden]{display:none}
+.nv-op-pos-h{display:flex;align-items:center;justify-content:space-between;font:700 11px/1 "Microsoft YaHei",sans-serif;color:#f0e2bc;padding-bottom:8px;border-bottom:1px solid rgba(99,192,142,.2)}
+.nv-op-pos-x{font:600 9px/1 "Microsoft YaHei",sans-serif;color:#c9a35a;cursor:pointer;font-style:normal}
+.nv-op-pos-list{margin-top:8px;max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:7px}
+.nv-op-pos-row{padding:7px 8px;border:1px solid rgba(99,192,142,.2);background:rgba(99,192,142,.05)}
+.nv-op-pos-row.up{border-color:rgba(99,192,142,.45);background:rgba(99,192,142,.1)}
+.nv-op-pos-row.down{border-color:rgba(201,99,88,.45);background:rgba(201,99,88,.1)}
+.nv-op-pos-top{display:flex;justify-content:space-between;align-items:baseline}
+.nv-op-pos-top b{font:700 12px/1 inherit;color:#f2f0e8}
+.nv-op-pos-top i{font:600 10px/1 inherit;font-style:normal}
+.nv-op-pos-meta{margin-top:5px;display:flex;gap:10px;font:500 8.5px/1.3 inherit;color:#9a8a70}
+.nv-op-pos-empty{padding:14px 0;text-align:center;font:500 10px/1.5 "Microsoft YaHei",sans-serif;color:#6f5f48}
+@keyframes nvhotbg{0%,100%{background-position:0% 50%,0% 50%}50%{background-position:100% 50%,100% 50%}}
+`;
+      document.head.appendChild(style);
+    })();
     const closeOrderPop = () => {
       const pop = opEl('nvOrderPop');
       if (pop) pop.hidden = true;
@@ -12450,7 +12486,7 @@ requestAnimationFrame(frame);
         }
         if (d.type === 'order') {
           orderBusy.value = false;
-          const okBtn = sr.querySelector('#nvOpOk');
+          const okBtn = document.getElementById('nvOpOk');
           if (okBtn) {
             okBtn.textContent = d.ok ? '已下单' : '下单失败';
             okBtn.disabled = true;
@@ -12754,21 +12790,23 @@ requestAnimationFrame(frame);
     }));
     const msPanel = sr.querySelector('.p-heat');
     msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); openAlerts(); });
-    sr.querySelectorAll('[data-nv-op-close]').forEach(el => el.addEventListener('click', (e) => { e.stopPropagation(); closeOrderPop(); }));
+    document.querySelectorAll('[data-nv-op-close]').forEach(el => el.addEventListener('click', (e) => { e.stopPropagation(); closeOrderPop(); }));
     (() => {
-      const posBtn = sr.querySelector('#nvOpPos');
-      const posPanel = sr.querySelector('#nvOpPositions');
+      const posBtn = document.getElementById('nvOpPos');
+      const posPanel = document.getElementById('nvOpPositions');
       if (posBtn && posPanel) {
-        posBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
+        const openPositions = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
           try { renderPositions(); } catch (err) {}
           posPanel.hidden = false;
           postTrade({ type: 'tradeConfig', action: 'status' });
-        });
+        };
+        posBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); }, true);
+        posBtn.addEventListener('mousedown', openPositions, true);
       }
-      const posBack = sr.querySelector('#nvOpPosBack');
+      const posBack = document.getElementById('nvOpPosBack');
       if (posBack && posPanel) posBack.addEventListener('click', (e) => { e.stopPropagation(); posPanel.hidden = true; });
-      const sw = sr.querySelector('#nvOpSwitch');
+      const sw = document.getElementById('nvOpSwitch');
       if (sw) {
         sw.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -12783,7 +12821,7 @@ requestAnimationFrame(frame);
           }
         });
       }
-      const okBtn = sr.querySelector('#nvOpOk');
+      const okBtn = document.getElementById('nvOpOk');
       if (!okBtn) return;
       okBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -12794,6 +12832,57 @@ requestAnimationFrame(frame);
         sendOrder(p);
       });
     })();
+    (() => {
+      const pop = document.getElementById('nvOrderPop');
+      if (!pop) return;
+      ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup'].forEach(t => {
+        pop.addEventListener(t, (e) => { e.stopPropagation(); }, true);
+      });
+    })();
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      if (!t || !t.closest) return;
+      const pop = t.closest('#nvOrderPop');
+      if (!pop) return;
+      e.stopPropagation();
+      if (t.closest('#nvOpPos')) {
+        e.preventDefault();
+        try { renderPositions(); } catch (err) {}
+        const panel = document.getElementById('nvOpPositions');
+        if (panel) panel.hidden = false;
+        postTrade({ type: 'tradeConfig', action: 'status' });
+        return;
+      }
+      if (t.closest('#nvOpPosBack')) {
+        const panel = document.getElementById('nvOpPositions');
+        if (panel) panel.hidden = true;
+        return;
+      }
+      if (t.closest('[data-nv-op-close]')) {
+        closeOrderPop();
+        return;
+      }
+      if (t.closest('#nvOpSwitch')) {
+        const next = readOrderMode() === 'auto' ? 'manual' : 'auto';
+        TRADE_INFO.mode = next;
+        try { localStorage.setItem(ORDER_MODE_KEY, next); } catch (err) {}
+        postTrade({ type: 'tradeConfig', action: 'mode', mode: next });
+        if (orderPending) {
+          const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+          const cur = rows.find(r => r.symbol === orderPending.symbol);
+          if (cur) { const sig = calcSignal(cur); queueOrderPreview({ sig, key: `${cur.symbol}-${sig.side}` }); }
+        }
+        return;
+      }
+      if (t.closest('#nvOpOk')) {
+        const okBtn = document.getElementById('nvOpOk');
+        if (!orderPending || (okBtn && okBtn.disabled)) return;
+        const pend = orderPending;
+        if (okBtn) { okBtn.disabled = true; okBtn.textContent = '下单中…'; }
+        sendOrder(pend);
+        return;
+      }
+    }, true);
     close && close.addEventListener('click', shut);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideSignal(); shut(); } });
     sr.addEventListener('click', e => {
@@ -12906,5 +12995,26 @@ requestAnimationFrame(frame);
   setShown(true);
 })();
 </script>
+
+   <div class="nv-order-pop" id="nvOrderPop" hidden>
+    <div class="nv-op-h"><b id="nvOpSym">—</b><span id="nvOpSide">—</span><button class="nv-op-pos" type="button" id="nvOpPos">持仓 0/5</button><i class="nv-op-x" data-nv-op-close>×</i></div>
+    <div class="nv-op-stage" id="nvOpStage">预演 · 不会真实下单</div>
+    <div class="nv-op-grid">
+     <div><span>杠杆</span><b id="nvOpLev">5×</b></div>
+     <div><span>保证金（账户权益 20%）</span><b id="nvOpMargin">—</b></div>
+     <div><span>名义价值</span><b id="nvOpNotional">—</b></div>
+     <div><span>下单数量</span><b id="nvOpQty">—</b></div>
+     <div><span>入场价</span><b id="nvOpEntry">—</b></div>
+     <div><span>止盈</span><b id="nvOpTp">—</b></div>
+     <div><span>止损</span><b id="nvOpSl">—</b></div>
+     <div><span>风控</span><b id="nvOpRisk">—</b></div>
+    </div>
+    <div class="nv-op-mode"><span>下单模式</span><i class="nv-op-switch" id="nvOpSwitch" role="switch" aria-checked="false"><b></b><em id="nvOpModeText">手动</em></i></div>
+    <div class="nv-op-act"><button type="button" class="nv-op-ok" id="nvOpOk" disabled>预演模式 · 下单未开启</button><button type="button" class="nv-op-no" data-nv-op-close>关闭</button></div>
+    <div class="nv-op-positions" id="nvOpPositions" hidden>
+     <div class="nv-op-pos-h"><span>持仓明细</span><i class="nv-op-pos-x" id="nvOpPosBack">返回</i></div>
+     <div class="nv-op-pos-list" id="nvOpPosList"><div class="nv-op-pos-empty">暂无持仓</div></div>
+    </div>
+   </div>
 
 </body></html>
