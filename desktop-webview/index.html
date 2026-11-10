@@ -11682,10 +11682,14 @@ requestAnimationFrame(frame);
     let orderPopTimer = null;
     const opEl = (id) => sr.querySelector('#' + id);
     const fmtPrice = (v) => v ? Number(v).toFixed(Number(v) < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
+    const ORDER_POP_MS = 3 * 60 * 1000;
+    let orderPopAuto = null;
     const closeOrderPop = () => {
       const pop = opEl('nvOrderPop');
       if (pop) pop.hidden = true;
       orderPending = null;
+      clearTimeout(orderPopAuto);
+      orderPopAuto = null;
     };
     const queueOrderPreview = (entry) => {
       if (!entry || !entry.sig) return;
@@ -11711,7 +11715,9 @@ requestAnimationFrame(frame);
       pop.classList.toggle('short', sig.side === 'short');
       opEl('nvOpSym').textContent = pairName(sig.r.symbol);
       opEl('nvOpSide').textContent = sig.side === 'long' ? '建议建多' : '建议建空';
-      opEl('nvOpStage').textContent = LIVE_ORDER_ENABLED() ? `真实下单 · 胜率 ${sig.win}%` : `预演 · 不会真实下单 · 胜率 ${sig.win}%`;
+      const stageLabel = LIVE_ORDER_ENABLED() ? '真实下单' : '预演 · 不会真实下单';
+      opEl('nvOpStage').textContent = `${stageLabel} · 胜率 ${sig.win}% · ${Math.round(ORDER_POP_MS / 60000)} 分钟后自动关闭`;
+      opEl('nvOpStage').dataset.base = stageLabel + ' · 胜率 ' + sig.win + '%';
       opEl('nvOpLev').textContent = `${ORDER_LEVERAGE}×`;
       opEl('nvOpMargin').textContent = margin > 0 ? `${margin.toFixed(2)} USDT` : '待设置权益';
       opEl('nvOpNotional').textContent = notional > 0 ? `${notional.toFixed(2)} USDT` : '—';
@@ -11741,6 +11747,8 @@ requestAnimationFrame(frame);
       }
       pop.hidden = false;
       clearTimeout(orderPopTimer);
+      clearTimeout(orderPopAuto);
+      orderPopAuto = setTimeout(() => { closeOrderPop(); }, ORDER_POP_MS);
     };
     const sigNext = () => {
       clearTimeout(sigTimer);
