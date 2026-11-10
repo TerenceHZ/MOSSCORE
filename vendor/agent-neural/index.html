@@ -11678,22 +11678,20 @@ requestAnimationFrame(frame);
       if (!entry) return;
       const sym = entry.symbol || (entry.sig && entry.sig.r && entry.sig.r.symbol);
       if (!sym) return;
-      const playing = window.__MOSS_SIG_CURRENT
-        ? String(window.__MOSS_SIG_CURRENT).replace(/-(long|short)$/, '')
-        : null;
-      // 正在播的同一个币 / 已在队列里 → 不重复
+      const curRaw = window.__MOSS_SIG_CURRENT;
+      const playing = curRaw ? String(curRaw).replace(/-(long|short)$/, '') : null;
       if (playing === sym) return;
       if (sigQueue.some(x => (x.symbol || (x.sig && x.sig.r && x.sig.r.symbol)) === sym)) return;
+      const wasEmpty = sigQueue.length === 0;
       if (!playing) {
         sigQueue.push(entry);
-        if (!window.__MOSS_SIG_TIMER) setTimeout(sigNext, delay);
-        return;
+      } else {
+        sigQueue.unshift(entry);
       }
-      // 正在播报时来了新币 → 插到队首，立刻切过去
-      sigQueue.unshift(entry);
-      clearTimeout(sigTimer);
-      window.__MOSS_SIG_TIMER = null;
-      sigNext();
+      // 只有队列从空变为非空时才调度；已有定时器就交给它
+      if (wasEmpty && !window.__MOSS_SIG_TIMER) {
+        setTimeout(sigNext, delay);
+      }
     };
     // ===== 下单预演（LIVE_ORDER_ENABLED=false 时只做参数计算） =====
     const ORDER_LEVERAGE = 5;
@@ -11946,9 +11944,42 @@ requestAnimationFrame(frame);
       clearTimeout(orderPopAuto);
       orderPopAuto = setTimeout(() => { closeOrderPop(); }, ORDER_POP_MS);
     };
+    // 左侧：队列空时先补一轮，补不到才进入空闲
+    const sigRefill = () => {
+      const played = (() => { try { return JSON.parse(localStorage.getItem('moss-sig-played-v1') || '{}') || {}; } catch (e) { return {}; } })();
+      const now = Date.now();
+      const entries = window.__MOSS_SIGNAL_ENTRIES || [];
+      const queued = new Set(sigQueue.map(x => x.symbol || (x.sig && x.sig.r && x.sig.r.symbol)));
+      const playing = window.__MOSS_SIG_CURRENT
+        ? String(window.__MOSS_SIG_CURRENT).replace(/-(long|short)$/, '')
+        : null;
+      entries.forEach(([key, c]) => {
+        const sym = c.symbol;
+        if (!sym) return;
+        if (sym === playing || queued.has(sym)) return;
+        const at = played[sym] || 0;
+        if (at && now - at < SIG_COOLDOWN) return;
+        sigQueue.push({ sig: c.sig, key, symbol: sym, lane: c.lane });
+        queued.add(sym);
+      });
+    };
+    let sigInFlight = false;
     const sigNext = () => {
+      if (sigInFlight) return;
+      sigInFlight = true;
+      try {
       clearTimeout(sigTimer);
       window.__MOSS_SIG_TIMER = null;
+      // 上一条播完，写入播放时间
+      const prev = window.__MOSS_SIG_CURRENT;
+      if (prev) {
+        try {
+          const played = JSON.parse(localStorage.getItem('moss-sig-played-v1') || '{}') || {};
+          played[String(prev).replace(/-(long|short)$/, '')] = Date.now();
+          localStorage.setItem('moss-sig-played-v1', JSON.stringify(played));
+        } catch (e) {}
+      }
+      if (!sigQueue.length) sigRefill();
       if (!sigQueue.length) {
         window.__MOSS_SIG_CURRENT = null;
         renderSignalCardFrame();
@@ -11956,13 +11987,18 @@ requestAnimationFrame(frame);
         return;
       }
       const entry = sigQueue.shift();
-      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
-      const fresh = rows.find(x => x.symbol === (entry.sig.r.symbol));
-      if (fresh) entry.sig = calcSignal(fresh);
-      sigShow(entry);
+      try {
+        const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+        const fresh = rows.find(x => x.symbol === (entry.sig.r.symbol));
+        if (fresh) entry.sig = calcSignal(fresh);
+        sigShow(entry);
+      } catch (e) {
+        console.error('sigShow failed:', e);
+      }
       const wait = sigQueue.length ? SIG_SLOT_MS : SIG_IDLE_MS;
       window.__MOSS_SIG_TIMER = setTimeout(sigNext, wait);
       sigTimer = window.__MOSS_SIG_TIMER;
+      } finally { sigInFlight = false; }
     };
     const refreshSignalCardFrame = () => renderSignalCardFrame();
     const signalChime = async () => {
@@ -12535,10 +12571,10 @@ requestAnimationFrame(frame);
       const seen = window.__MOSS_SIGNAL_SEEN || {};
       const firstSignalPass = !window.__MOSS_SIGNAL_BASELINE;
       const sigCandidates = [];
-      (focusRows.length ? focusRows : []).concat(gainRows, lossRows).forEach(r => {
+      (rows || []).forEach(r => {
         const sig = calcSignal(r);
         if (sig.win >= 72 && (r.stage === 'entry' || sig.win >= 82)) {
-          sigCandidates.push({ sig, lane: r.focus ? 'gain' : 'loss' });
+          sigCandidates.push({ sig, lane: Number(r.change24h || 0) >= 0 ? 'gain' : 'loss' });
         }
       });
       const uniq = new Map();
@@ -12555,10 +12591,11 @@ requestAnimationFrame(frame);
       });
       window.__MOSS_SIGNAL_ENTRIES = signalEntries;
       const sigReady = ([key, c]) => {
-        const last = seen[key] || 0;
-        const lastSame = seen[`symbol:${c.symbol}`] || 0;
         const now = Date.now();
-        return (!last || now - last >= SIG_COOLDOWN) && (!lastSame || now - lastSame >= SIG_COOLDOWN);
+        let played = {};
+        try { played = JSON.parse(localStorage.getItem('moss-sig-played-v1') || '{}') || {}; } catch (e) { played = {}; }
+        const at = played[c.symbol] || 0;
+        return !at || now - at >= SIG_COOLDOWN;
       };
       if (liveFresh && !firstSignalPass) {
         const due = signalEntries.filter(sigReady);
@@ -12729,10 +12766,10 @@ requestAnimationFrame(frame);
     let auto = 0;
     setTimeout(() => { if (!window.__MOSS_LIVE_ACTIVE) fire('focus'); }, 30000);
     setInterval(() => { if (!window.__MOSS_LIVE_ACTIVE) { auto = 1 - auto; fire(auto ? 'imported' : 'focus'); } }, 180000);
-    const open = (key) => {
+    const open = (key, keepTab) => {
       setDrawerMode('detail');
       const d = data[key] || data.focus;
-      showTab('current');
+      if (!keepTab) showTab('current');
       sr.querySelector('#nvDKind').textContent = d.kind;
       sr.querySelector('#nvDTitle').textContent = pairName(d.title);
       window.__NOVA_HISTORY_SYMBOL = rawSymbol(d.title);
@@ -12771,9 +12808,7 @@ requestAnimationFrame(frame);
     };
     const openRow = (row, lane) => {
       setDrawerMode('detail');
-      open(lane);
-      showTab('history');
-      try { renderCaptureLog(); } catch (e) {}
+      open(lane, true);
       const sym = rawSymbol((row.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, ''));
       const changeText = row.querySelector('.nv-change')?.textContent || '0%';
       const oiText = row.querySelectorAll('.nv-row-oi span')[0]?.textContent || '';
@@ -12845,7 +12880,8 @@ requestAnimationFrame(frame);
       const winSignal = sr.querySelector('#nvWinSignal'); winSignal.textContent = sigLabel;
       sr.querySelector('#nvEntryScore').textContent = score;
       sr.querySelector('#nvEntrySide').textContent = lane === 'focus' ? '顺势' : '回避';
-      showTab('current');
+      showTab('history');
+      try { renderCaptureLog(); } catch (e) {}
     };
     const openAlerts = () => {
       setDrawerMode('alerts');
