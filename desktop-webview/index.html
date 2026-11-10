@@ -1031,6 +1031,26 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card-signal .nv-c-probe i{font-size:11px;color:#f0e2bf;font-weight:700}
 .nv-card-signal #nvCardSigTp{color:#63C08E}
 .nv-card-signal #nvCardSigSl{color:#C96358}
+.nv-order-pop{position:fixed;left:calc(50% - 560px);bottom:120px;width:300px;z-index:90;padding:12px 13px 11px;border:1px solid rgba(99,192,142,.55);background:linear-gradient(150deg,rgba(6,20,14,.97),rgba(3,4,4,.97));box-shadow:0 0 24px rgba(99,192,142,.25),inset 0 0 30px rgba(99,192,142,.06);animation:nvOpIn .28s ease-out}
+.nv-order-pop[hidden]{display:none}
+.nv-order-pop.short{border-color:rgba(201,99,88,.55);box-shadow:0 0 24px rgba(201,99,88,.25),inset 0 0 30px rgba(201,99,88,.06)}
+@keyframes nvOpIn{0%{opacity:0;transform:translateY(10px) scale(.97)}100%{opacity:1;transform:none}}
+.nv-op-h{display:flex;align-items:baseline;gap:8px}
+.nv-op-h b{font:700 17px/1 var(--mono);color:#f2f0e8}
+.nv-op-h span{font:700 10px/1 var(--cjk);color:#63C08E}
+.nv-order-pop.short .nv-op-h span{color:#C96358}
+.nv-op-x{margin-left:auto;font:400 15px/1 var(--mono);color:#7b6d58;cursor:pointer;font-style:normal}
+.nv-op-x:hover{color:#e8a020}
+.nv-op-stage{margin-top:6px;font:500 9px/1.4 var(--cjk);color:#8a7a5e}
+.nv-op-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-top:10px}
+.nv-op-grid>div{display:flex;flex-direction:column;gap:3px}
+.nv-op-grid span{font:500 8.5px/1 var(--cjk);color:#6f5f48}
+.nv-op-grid b{font:600 12px/1 var(--mono);color:#e4d4a8}
+.nv-op-act{display:flex;gap:8px;margin-top:12px}
+.nv-op-act button{flex:1;padding:8px 0;font:600 10px/1 var(--cjk);cursor:pointer;border-radius:0}
+.nv-op-ok{background:rgba(99,192,142,.16);border:1px solid rgba(99,192,142,.5);color:#8fd8b4}
+.nv-op-ok:disabled{opacity:.55;cursor:default}
+.nv-op-no{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a}
 .nv-card:hover{border-color:rgba(232,160,32,.85)}
 .nv-card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(232,160,32,.55),transparent);opacity:0}
 .nv-card.hot::after{opacity:1;animation:nvline 900s linear forwards}
@@ -1446,6 +1466,21 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
     <i class="nv-sigcard-progress" aria-hidden="true"></i>
     <i class="nv-hotbg" aria-hidden="true"></i><i class="nv-flow" aria-hidden="true"></i><i class="nv-flash" aria-hidden="true"></i>
    </button>
+   <div class="nv-order-pop" id="nvOrderPop" hidden>
+    <div class="nv-op-h"><b id="nvOpSym">—</b><span id="nvOpSide">—</span><i class="nv-op-x" data-nv-op-close>×</i></div>
+    <div class="nv-op-stage" id="nvOpStage">预演 · 不会真实下单</div>
+    <div class="nv-op-grid">
+     <div><span>杠杆</span><b id="nvOpLev">5×</b></div>
+     <div><span>保证金（账户权益 20%）</span><b id="nvOpMargin">—</b></div>
+     <div><span>名义价值</span><b id="nvOpNotional">—</b></div>
+     <div><span>下单数量</span><b id="nvOpQty">—</b></div>
+     <div><span>入场价</span><b id="nvOpEntry">—</b></div>
+     <div><span>止盈</span><b id="nvOpTp">—</b></div>
+     <div><span>止损</span><b id="nvOpSl">—</b></div>
+     <div><span>风控</span><b id="nvOpRisk">—</b></div>
+    </div>
+    <div class="nv-op-act"><button type="button" class="nv-op-ok" id="nvOpOk" disabled>预演模式 · 下单未开启</button><button type="button" class="nv-op-no" data-nv-op-close>关闭</button></div>
+   </div>
    <button class="nv-card focus" type="button" data-nv-card="focus">
     <span class="nv-c-h">★ FOCUS · 自选主监控<i id="nvFocusQueue" style="margin-left:6px;font:500 8px/1 var(--mono);letter-spacing:.06em;color:#7b6d58">LIVE</i></span>
     <span class="nv-c-sym" id="nvFocusSym">CLANKER/USDT</span>
@@ -11564,6 +11599,7 @@ requestAnimationFrame(frame);
       card._sigHotT = setTimeout(() => card.classList.remove('hot'), 15 * 60 * 1000);
       setTimeout(() => card.classList.remove('flash'), 650);
       sigArmIdle();
+      try { queueOrderPreview(entry); } catch (e) {}
     };
     const pushSignalSlot = (entry, delay = 1100) => {
       if (!entry) return;
@@ -11571,6 +11607,75 @@ requestAnimationFrame(frame);
       if (sigQueue.length === 1 && !window.__MOSS_SIG_TIMER) {
         setTimeout(sigNext, delay);
       }
+    };
+    // ===== 下单预演（LIVE_ORDER_ENABLED=false 时只做参数计算） =====
+    const LIVE_ORDER_ENABLED = false;
+    const ORDER_LEVERAGE = 5;
+    const ORDER_EQUITY_PCT = 0.2;
+    const EQUITY_KEY = 'moss-order-equity';
+    const readEquity = () => {
+      try {
+        const stored = Number(localStorage.getItem(EQUITY_KEY) || 0);
+        if (stored > 0) return stored;
+      } catch (e) {}
+      return Number(window.__MOSS_EQUITY || 0);
+    };
+    const saveEquity = (v) => {
+      const n = Number(v);
+      if (!(n > 0)) return;
+      window.__MOSS_EQUITY = n;
+      try { localStorage.setItem(EQUITY_KEY, String(n)); } catch (e) {}
+    };
+    let orderPending = null;
+    let orderPopTimer = null;
+    const opEl = (id) => sr.querySelector('#' + id);
+    const fmtPrice = (v) => v ? Number(v).toFixed(Number(v) < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
+    const closeOrderPop = () => {
+      const pop = opEl('nvOrderPop');
+      if (pop) pop.hidden = true;
+      orderPending = null;
+    };
+    const queueOrderPreview = (entry) => {
+      if (!entry || !entry.sig) return;
+      const sig = entry.sig;
+      const price = Number(sig.r.price || 0);
+      if (!price) return;
+      const equity = readEquity();
+      const margin = equity > 0 ? equity * ORDER_EQUITY_PCT : 0;
+      const notional = margin * ORDER_LEVERAGE;
+      const qty = notional > 0 ? notional / price : 0;
+      orderPending = {
+        symbol: sig.r.symbol,
+        side: sig.side,
+        entry: price,
+        target: Number(sig.target || 0),
+        stop: Number(sig.stop || 0),
+        margin, notional, qty, leverage: ORDER_LEVERAGE,
+        win: sig.win,
+        demo: !LIVE_ORDER_ENABLED
+      };
+      const pop = opEl('nvOrderPop');
+      if (!pop) return;
+      pop.classList.toggle('short', sig.side === 'short');
+      opEl('nvOpSym').textContent = pairName(sig.r.symbol);
+      opEl('nvOpSide').textContent = sig.side === 'long' ? '建议建多' : '建议建空';
+      opEl('nvOpStage').textContent = LIVE_ORDER_ENABLED ? `真实下单 · 胜率 ${sig.win}%` : `预演 · 不会真实下单 · 胜率 ${sig.win}%`;
+      opEl('nvOpLev').textContent = `${ORDER_LEVERAGE}×`;
+      opEl('nvOpMargin').textContent = margin > 0 ? `${margin.toFixed(2)} USDT` : '待设置权益';
+      opEl('nvOpNotional').textContent = notional > 0 ? `${notional.toFixed(2)} USDT` : '—';
+      opEl('nvOpQty').textContent = qty > 0 ? qty.toFixed(4) : '—';
+      opEl('nvOpEntry').textContent = fmtPrice(price);
+      opEl('nvOpTp').textContent = fmtPrice(sig.target);
+      opEl('nvOpSl').textContent = fmtPrice(sig.stop);
+      const risk = margin > 0 ? Math.abs(price - Number(sig.stop || price)) / price * notional : 0;
+      opEl('nvOpRisk').textContent = risk > 0 ? `最大亏 ${risk.toFixed(2)} USDT` : '—';
+      const ok = opEl('nvOpOk');
+      if (ok) {
+        ok.textContent = LIVE_ORDER_ENABLED ? '确认下单' : '预演模式 · 下单未开启';
+        ok.disabled = true;
+      }
+      pop.hidden = false;
+      clearTimeout(orderPopTimer);
     };
     const sigNext = () => {
       clearTimeout(sigTimer);
@@ -12486,6 +12591,7 @@ requestAnimationFrame(frame);
     }));
     const msPanel = sr.querySelector('.p-heat');
     msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); openAlerts(); });
+    sr.querySelectorAll('[data-nv-op-close]').forEach(el => el.addEventListener('click', (e) => { e.stopPropagation(); closeOrderPop(); }));
     close && close.addEventListener('click', shut);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideSignal(); shut(); } });
     sr.addEventListener('click', e => {
