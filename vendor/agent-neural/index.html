@@ -1497,7 +1497,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
      <span>止盈建议：<i id="nvCardSigTp">—</i></span>
      <span>止损建议：<i id="nvCardSigSl">—</i></span>
     </span>
-    <span class="nv-trade-info" id="nvTradeInfo">币安未连接 · 预演模式</span>
+    <span class="nv-trade-info" id="nvTradeInfo" title="点击配置币安 API">币安未连接 · 点击配置</span>
     <i class="nv-sigcard-progress" aria-hidden="true"></i>
     <i class="nv-hotbg" aria-hidden="true"></i><i class="nv-flow" aria-hidden="true"></i><i class="nv-flash" aria-hidden="true"></i>
    </button>
@@ -11740,6 +11740,70 @@ requestAnimationFrame(frame);
 `;
       document.head.appendChild(style);
     })();
+    (() => {
+      if (document.getElementById('moss-binance-style')) return;
+      const st = document.createElement('style');
+      st.id = 'moss-binance-style';
+      st.textContent = `
+.nv-binance-entry{position:fixed;right:18px;bottom:18px;z-index:1800;padding:7px 12px;border:1px solid rgba(232,160,32,.45);background:rgba(10,8,4,.72);color:#c9a35a;font:600 10px/1 "Microsoft YaHei",sans-serif;cursor:pointer;letter-spacing:.04em}
+.nv-binance-entry:hover{border-color:rgba(232,160,32,.85);color:#e8a020;box-shadow:0 0 18px rgba(232,160,32,.25)}
+.nv-binance-setup{position:fixed;inset:0;z-index:2500;display:grid;place-items:center;background:rgba(0,0,0,.55)}
+.nv-binance-setup[hidden]{display:none}
+.nv-bs-card{width:380px;padding:16px;border:1px solid rgba(232,160,32,.5);background:linear-gradient(150deg,rgba(10,10,8,.97),rgba(3,4,4,.97));box-shadow:0 0 40px rgba(232,160,32,.18);font-family:"JetBrains Mono","Microsoft YaHei",monospace}
+.nv-bs-h{display:flex;align-items:center;justify-content:space-between;font:700 14px/1 "Microsoft YaHei",sans-serif;color:#f2f0e8}
+.nv-bs-h i{font:400 18px/1 inherit;color:#7b6d58;cursor:pointer;font-style:normal}
+.nv-bs-h i:hover{color:#e8a020}
+.nv-bs-note{margin-top:7px;font:500 9.5px/1.5 "Microsoft YaHei",sans-serif;color:#8a7a5e}
+.nv-bs-row{display:block;margin-top:12px}
+.nv-bs-row span{display:block;font:600 9px/1 "Microsoft YaHei",sans-serif;color:#c9a35a;margin-bottom:5px}
+.nv-bs-row input{width:100%;box-sizing:border-box;padding:8px 9px;background:rgba(0,0,0,.5);border:1px solid rgba(232,160,32,.28);color:#f2f0e8;font:500 11px/1.2 inherit;outline:none}
+.nv-bs-row input:focus{border-color:rgba(232,160,32,.7)}
+.nv-bs-status{margin-top:11px;padding:7px 9px;background:rgba(255,255,255,.04);border-left:2px solid #8a7a5e;font:500 9.5px/1.4 "Microsoft YaHei",sans-serif;color:#9a8a70}
+.nv-bs-status.ok{border-left-color:#63C08E;color:#8fd8b4}
+.nv-bs-status.err{border-left-color:#C96358;color:#e0a49a}
+.nv-bs-actions{display:flex;gap:8px;margin-top:13px}
+.nv-bs-actions button{flex:1;padding:9px 0;font:600 11px/1 "Microsoft YaHei",sans-serif;cursor:pointer}
+#nvBsTest{background:transparent;border:1px solid rgba(232,160,32,.4);color:#c9a35a}
+#nvBsSave{background:rgba(99,192,142,.15);border:1px solid rgba(99,192,142,.55);color:#8fd8b4}
+.nv-bs-tip{margin-top:11px;font:500 9px/1.5 "Microsoft YaHei",sans-serif;color:#6f5f48}
+`;
+      document.head.appendChild(st);
+    })();
+    (() => {
+      const setup = document.getElementById('nvBinanceSetup');
+      if (!setup) return;
+      const keyEl = document.getElementById('nvBsKey');
+      const secEl = document.getElementById('nvBsSecret');
+      const statusEl = document.getElementById('nvBsStatus');
+      const setStatus = (txt, cls) => { if (!statusEl) return; statusEl.textContent = txt; statusEl.className = 'nv-bs-status' + (cls ? ' ' + cls : ''); };
+      const openSetup = () => { setup.hidden = false; setTimeout(() => keyEl && keyEl.focus(), 60); };
+      const closeSetup = () => { setup.hidden = true; };
+      window.__MOSS_OPEN_SETUP = openSetup;
+      document.getElementById('nvBinanceEntry')?.addEventListener('click', openSetup);
+      document.getElementById('nvTradeInfo')?.addEventListener('click', (e) => { e.stopPropagation(); openSetup(); });
+      document.getElementById('nvBsClose')?.addEventListener('click', closeSetup);
+      setup.addEventListener('click', (e) => { if (e.target === setup) closeSetup(); });
+      document.getElementById('nvBsTest')?.addEventListener('click', () => {
+        const k = (keyEl.value || '').trim(), v = (secEl.value || '').trim();
+        if (!k || !v) { setStatus('请先填写 API Key 和 Secret', 'err'); return; }
+        setStatus('测试中…', '');
+        postTrade({ type: 'tradeConfig', action: 'test', apiKey: k, apiSecret: v });
+      });
+      document.getElementById('nvBsSave')?.addEventListener('click', () => {
+        const k = (keyEl.value || '').trim(), v = (secEl.value || '').trim();
+        if (!k || !v) { setStatus('请先填写 API Key 和 Secret', 'err'); return; }
+        postTrade({ type: 'tradeConfig', action: 'save', apiKey: k, apiSecret: v, autoTrade: false });
+        setStatus('已保存到本机加密文件', 'ok');
+        setTimeout(closeSetup, 700);
+      });
+      window.addEventListener('moss:binance', (ev) => {
+        const d = (ev && ev.detail) || {};
+        if (d.type === 'test') {
+          if (d.ok) setStatus(`连接成功 · 合约权益 ${Number(d.equity || 0).toFixed(2)} USDT`, 'ok');
+          else setStatus(`连接失败：${d.message || ''}`, 'err');
+        }
+      });
+    })();
     const closeOrderPop = () => {
       const pop = opEl('nvOrderPop');
       if (pop) pop.hidden = true;
@@ -13017,4 +13081,20 @@ requestAnimationFrame(frame);
     </div>
    </div>
 
+
+ <button class="nv-binance-entry" id="nvBinanceEntry" type="button">⚙ 币安 API</button>
+ <div class="nv-binance-setup" id="nvBinanceSetup" hidden>
+  <div class="nv-bs-card">
+   <div class="nv-bs-h"><b>币安 API 配置</b><i id="nvBsClose">×</i></div>
+   <div class="nv-bs-note">密钥只保存在本机加密文件，不会上传云端。</div>
+   <label class="nv-bs-row"><span>API Key</span><input id="nvBsKey" type="text" autocomplete="off" spellcheck="false" placeholder="粘贴 API Key"></label>
+   <label class="nv-bs-row"><span>Secret</span><input id="nvBsSecret" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴 Secret Key"></label>
+   <div class="nv-bs-status" id="nvBsStatus">未测试</div>
+   <div class="nv-bs-actions">
+    <button type="button" id="nvBsTest">测试连接</button>
+    <button type="button" id="nvBsSave">保存并启用</button>
+   </div>
+   <div class="nv-bs-tip">权限只需要「合约交易 + 读取」，不要开「提现」。若填了 IP 白名单，需包含当前公网 IP。</div>
+  </div>
+ </div>
 </body></html>

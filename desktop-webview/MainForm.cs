@@ -382,6 +382,19 @@ internal sealed class MainForm : Form
                 PostToWeb(new { type = "config", ok = true, message = auto ? "已切换为自动下单" : "已切换为手动下单", autoTrade = auto, configured = BinanceTradeService.Configured });
                 return;
             }
+            if (action == "test")
+            {
+                var tk = root.TryGetProperty("apiKey", out var k1) ? k1.GetString() ?? "" : "";
+                var ts = root.TryGetProperty("apiSecret", out var s1) ? s1.GetString() ?? "" : "";
+                var prevKey = BinanceTradeService.ApiKey;
+                var prevSecret = BinanceTradeService.ApiSecret;
+                BinanceTradeService.SetKeys(tk, ts);
+                var bal = await BinanceTradeService.GetBalancesAsync();
+                BinanceTradeService.SetKeys(prevKey ?? "", prevSecret ?? "");
+                await _web.CoreWebView2.ExecuteScriptAsync(
+                    $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(new { type = "test", ok = bal.Ok, message = bal.Message, equity = bal.FuturesEquity })}}}));");
+                return;
+            }
             if (action == "save")
             {
                 var key = root.TryGetProperty("apiKey", out var k) ? k.GetString() ?? "" : "";
@@ -391,7 +404,9 @@ internal sealed class MainForm : Form
                 TradeConfig.Current.ApiSecret = secret;
                 TradeConfig.Current.AutoTrade = auto;
                 TradeConfig.Save();
-                PostToWeb(new { type = "config", ok = true, message = "密钥已加密保存到本机", configured = BinanceTradeService.Configured });
+                var bal2 = await BinanceTradeService.GetBalancesAsync();
+                if (bal2.Ok) TradeConfig.EnsureBaseline(bal2.FuturesEquity);
+                PostToWeb(new { type = "config", ok = true, message = "密钥已加密保存到本机", configured = BinanceTradeService.Configured, equity = bal2.FuturesEquity });
                 return;
             }
             if (action == "status")
