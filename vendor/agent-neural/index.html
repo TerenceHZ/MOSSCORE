@@ -11767,6 +11767,68 @@ requestAnimationFrame(frame);
       }
     };
 
+    // ===== 云端时槽驱动：打开即同步，到点统一切换 =====
+    let cloudSynced = false;
+    let cloudSlotTimer = null;
+
+    // 让左侧立刻显示云端指定的币，并按云端剩余时间定时
+    const syncLeftFromCloud = async (force) => {
+      const data = await fetchCloudQueue();
+      if (!data || !data.left || !data.left.symbol) return false;
+      const want = String(data.left.symbol);
+      const remain = Math.max(1000, Number(data.left.remainingMs) || SIG_SLOT_MS);
+      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+      const row = rows.find((x) => String(x.symbol) === want);
+      if (!row) return false;
+      const cur = window.__MOSS_SIG_CURRENT;
+      if (!force && cur && String(cur).replace(/-(long|short)$/, '') === want) {
+        return true;
+      }
+      try {
+        const sig = calcSignal(row);
+        sigShow({ key: row.symbol + '-' + sig.side, sig });
+        clearTimeout(sigTimer);
+        clearTimeout(cloudSlotTimer);
+        cloudSlotTimer = setTimeout(() => { syncLeftFromCloud(true); }, remain);
+        window.__MOSS_SIG_TIMER = cloudSlotTimer;
+        sigTimer = cloudSlotTimer;
+      } catch (e) {
+        return false;
+      }
+      return true;
+    };
+
+    // 让右侧立刻显示云端指定的币
+    const syncRightFromCloud = async (force) => {
+      const data = await fetchCloudQueue();
+      if (!data || !data.right || !data.right.symbol) return false;
+      const want = String(data.right.symbol);
+      const remain = Math.max(1000, Number(data.right.remainingMs) || FOCUS_SLOT_MS);
+      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+      const row = rows.find((x) => String(x.symbol) === want);
+      if (!row) return false;
+      const cur = window.__MOSS_FOCUS_CURRENT;
+      if (!force && cur && String(cur) === want) return true;
+      try {
+        focusShow(row);
+        clearTimeout(focusTimer);
+        focusTimer = setTimeout(() => { syncRightFromCloud(true); }, remain);
+      } catch (e) {
+        return false;
+      }
+      return true;
+    };
+
+    const syncBothFromCloud = async () => {
+      try {
+        const [L, R] = await Promise.all([syncLeftFromCloud(true), syncRightFromCloud(true)]);
+        cloudSynced = !!(L || R);
+        return cloudSynced;
+      } catch (e) {
+        return false;
+      }
+    };
+
     const SIG_SLOT_MS = 5 * 60 * 1000;
     const SIG_IDLE_MS = 15 * 60 * 1000;
     let sigQueue = [];
@@ -12908,7 +12970,15 @@ requestAnimationFrame(frame);
     });
     setTimeout(() => postTrade({ type: 'tradeConfig', action: 'status' }), 2500);
     setInterval(() => postTrade({ type: 'tradeConfig', action: 'status' }), 60 * 1000);
-    window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
+    window.addEventListener('moss:live', () => {
+      applyLive(window.__MOSS_LIVE);
+      // 首次拿到数据后，立即与云端时槽对齐（只做一次，避免反复打断）
+      if (!window.__MOSS_CLOUD_INIT) {
+        window.__MOSS_CLOUD_INIT = setTimeout(() => {
+          try { syncBothFromCloud().catch(() => {}); } catch (e) {}
+        }, 1200);
+      }
+    });
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
     setTimeout(loadFearGreed, 800);
     setInterval(loadFearGreed, 15 * 60 * 1000);

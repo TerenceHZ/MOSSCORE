@@ -165,7 +165,8 @@ def compute_side(db, side, rows, now):
         return {"symbol": None, "queue": []}
 
     nxt = pool[0]
-    duration = SLOT_MS if len(pool) > 1 else IDLE_MS
+    # 队列里只有这一个候选：只锁定 5 分钟，好让后续新达标的币能及时插进来
+    duration = SLOT_MS
     ends = now + duration
     db.execute(
         "INSERT INTO slot(side, symbol, started_at, ends_at) VALUES(?,?,?,?) "
