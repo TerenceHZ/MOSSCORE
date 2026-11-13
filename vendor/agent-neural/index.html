@@ -11610,7 +11610,20 @@ requestAnimationFrame(frame);
     const renderSignalHistory = () => {
       const box = sr.querySelector('#nvSignalHistory');
       if (!box) return;
-      const sigLog = readLog(LEFT_KEY);
+      // 优先用云端历史，保证多设备一致
+      // 直接用云端历史缓存（避免函数作用域时序问题）
+      let cloudLeft = null;
+      try {
+        const hc = window.__MOSS_CLOUD_HISTORY || {};
+        const raw = hc.left || [];
+        if (raw.length) {
+          cloudLeft = raw.map((x) => {
+            const m = x.meta || {};
+            return Object.assign({}, m, { symbol: x.symbol, time: x.time, ts: x.ts, _cloud: true });
+          });
+        }
+      } catch (e) {}
+      const sigLog = (cloudLeft && cloudLeft.length) ? cloudLeft : readLog(LEFT_KEY);
       const counts = {};
       sigLog.forEach(a => { counts[a.symbol] = (counts[a.symbol] || 0) + 1; });
       const summary = sr.querySelector('#nvSignalCounts');
@@ -11656,11 +11669,16 @@ requestAnimationFrame(frame);
     const openSignalHistory = () => {
       showTab('signals');
       setDrawerMode('signal');
-      const leftRecs = readLog(LEFT_KEY);
+      let histCount = 0;
+      try {
+        const hc = window.__MOSS_CLOUD_HISTORY || {};
+        histCount = (hc.left || []).length;
+      } catch (e) {}
+      if (!histCount) histCount = readLog(LEFT_KEY).length;
       const curSym = document.querySelector('#host-neural').shadowRoot.querySelector('#nvCardSigSym')?.textContent || '—';
       sr.querySelector('#nvDKind').textContent = '◉ SIGNAL FEED · 建仓信号';
       sr.querySelector('#nvDTitle').textContent = curSym;
-      sr.querySelector('#nvDStage').textContent = `24 小时 · ${leftRecs.length} 条 · 点击代币查看详情`;
+      sr.querySelector('#nvDStage').textContent = `24 小时 · ${histCount} 条 · 点击代币查看详情`;
       renderSignalHistory();
       drawer.classList.add('open');
       drawer.setAttribute('aria-hidden', 'false');
@@ -13025,11 +13043,13 @@ requestAnimationFrame(frame);
         return null;
       }
     };
+    window.__MOSS_CLOUD_HIST_FN = cloudHistoryFor;
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
       if (!hl) return;
       const isRightView = logView === 'right';
-      const cloudRecs = cloudHistoryFor(isRightView ? 'right' : 'left');
+      const cf2 = window.__MOSS_CLOUD_HIST_FN;
+      const cloudRecs = (typeof cf2 === 'function') ? cf2(isRightView ? 'right' : 'left') : null;
       const recs = cloudRecs && cloudRecs.length ? cloudRecs : readLog(viewKey());
       const isRight = logView === 'right';
       if (!recs.length) {
