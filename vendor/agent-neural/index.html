@@ -11836,6 +11836,17 @@ requestAnimationFrame(frame);
     };
     window.__MOSS_SYNC_CLOUD = syncBothFromCloud;
 
+    // 每 30 秒对齐一次云端（发现不一致立即纠正）
+    if (!window.__MOSS_CLOUD_POLL) {
+      window.__MOSS_CLOUD_POLL = setInterval(() => {
+        try {
+          if (typeof window.__MOSS_SYNC_CLOUD === 'function') {
+            window.__MOSS_SYNC_CLOUD().catch(() => {});
+          }
+        } catch (e) {}
+      }, 30 * 1000);
+    }
+
     const SIG_SLOT_MS = 5 * 60 * 1000;
     const SIG_IDLE_MS = 15 * 60 * 1000;
     let sigQueue = [];
