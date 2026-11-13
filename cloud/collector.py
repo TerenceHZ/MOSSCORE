@@ -494,6 +494,14 @@ def collect():
     with _lock:
         _snapshot = payload
         _status.update(ok=True, updatedAt=payload["updatedAt"], lastError=None)
+
+    # 记录三类异动（云端统一，供所有设备读取）
+    try:
+        n = queue_core.record_alerts(rows)
+        if n:
+            log(f"alerts recorded={n}")
+    except Exception as exc:
+        log(f"alert record error: {exc}")
     log(f"snapshot rows={len(rows)} focus={len(focus)} detail={len(detail)} elapsed={time.time()-started:.1f}s")
 
 
@@ -672,6 +680,25 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/health":
             with _lock:
                 self.send_json({"ok": _status["ok"], "updatedAt": _status["updatedAt"], "lastError": _status["lastError"]})
+            return
+        if path == "/alerts":
+            auth = self.headers.get("Authorization", "")
+            supplied = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+            if not supplied:
+                supplied = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("token", [""])[0]
+            if not supplied or (supplied != token() and license_core.validate_license(supplied) is None):
+                self.send_json({"error": "unauthorized"}, 401)
+                return
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            atype = qs.get("type", [None])[0]
+            try:
+                limit = int(qs.get("limit", ["100"])[0])
+            except ValueError:
+                limit = 100
+            try:
+                self.send_json(queue_core.get_alerts(limit=limit, alert_type=atype))
+            except Exception as exc:
+                self.send_json({"ok": False, "error": str(exc)[:200]}, 500)
             return
         if path == "/history":
             auth = self.headers.get("Authorization", "")

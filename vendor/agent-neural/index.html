@@ -11378,6 +11378,39 @@ requestAnimationFrame(frame);
 <div class="nv-alert-line">当前持仓量 <b>${fmtWan(a.oi)}</b></div>
 <div class="nv-alert-time">${a.time}</div></div>`;
     };
+    // 云端异动 → 本地 alertLog 结构（供现有渲染复用）
+    window.__MOSS_APPLY_CLOUD_ALERTS = (rows) => {
+      try {
+        if (!Array.isArray(rows) || !rows.length) return;
+        const mapped = rows.map((x) => {
+          const pct = Number(x.pct || 0);
+          const dir = pct >= 0 ? '↑↑↑' : '↓↓↓';
+          return {
+            time: x.time,
+            type: x.type || 'oi',
+            symbol: x.symbol,
+            pct: pct,
+            oi: Number(x.oi || 0),
+            price: String(x.price || ''),
+            dir: dir,
+            chg: Number(x.chg || 0),
+            delta: Number(x.delta || 0),
+            ts: x.ts,
+            volRatio: Number(x.ratio || 0),
+            change3m: Number(x.chg3m || 0),
+            largeSide: x.side || '',
+            largeUsdt: Number(x.usdt || 0),
+            largeMultiple: Number(x.multiple || 0),
+            _cloud: true
+          };
+        });
+        alertLog = mapped;
+        // 立即重绘右上角异动板块
+        try { if (typeof renderAlertFeed === 'function') renderAlertFeed(false); } catch (e) {}
+        try { if (typeof renderAlertHistory === 'function') renderAlertHistory(); } catch (e) {}
+      } catch (e) {}
+    };
+
     const renderAlertFeed = (animate = false) => {
       if (!alertFeed) return;
       const oldTop = new Map();
@@ -12961,6 +12994,35 @@ requestAnimationFrame(frame);
         console.log('[CLOUD-H] left=', left.length, 'right=', right.length);
       };
 
+      const fetchAlerts = async () => {
+        const tk = getToken();
+        if (!tk) return null;
+        try {
+          const res = await fetch('https://43-160-232-254.sslip.io/alerts?limit=200', {
+            headers: { Authorization: 'Bearer ' + tk },
+            cache: 'no-store'
+          });
+          if (!res.ok) return null;
+          const j = await res.json();
+          return (j && j.ok) ? j.rows : null;
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const refreshAlerts = async () => {
+        const rows = await fetchAlerts();
+        if (!rows) return;
+        window.__MOSS_CLOUD_ALERTS = rows;
+        // 同步到本地的 alertLog 结构，供现有渲染使用
+        try {
+          if (typeof window.__MOSS_APPLY_CLOUD_ALERTS === 'function') {
+            window.__MOSS_APPLY_CLOUD_ALERTS(rows);
+          }
+        } catch (e) {}
+        console.log('[CLOUD-A] rows=', rows.length);
+      };
+
       // 按云端 endsAt 定时切换：所有设备在同一毫秒切到下一个币
       const scheduleAtEndsAt = (side, slot) => {
         if (!slot || !slot.symbol || !slot.endsAt) return;
@@ -12984,6 +13046,7 @@ requestAnimationFrame(frame);
 
       const tick = async () => {
         refreshHistory().catch(() => {});
+        refreshAlerts().catch(() => {});
         const data = await fetchQueue();
 
         if (!data) {

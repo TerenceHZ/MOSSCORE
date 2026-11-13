@@ -58,6 +58,15 @@ def init():
             meta TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_history_side ON history(side, played_at DESC);
+        CREATE TABLE IF NOT EXISTS alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            meta TEXT,
+            UNIQUE(type, symbol, created_at)
+        );
+        CREATE INDEX IF NOT EXISTS idx_alerts_time ON alerts(created_at DESC);
         """)
 
 
@@ -334,4 +343,144 @@ def get_history(side=None, limit=100):
             "time": dt.astimezone().strftime("%H:%M:%S"),
             "meta": meta,
         })
+    return {"ok": True, "rows": out}
+
+
+# ===== 三类异动事件（云端统一记录）=====
+ALERT_TTL_MS = 24 * 60 * 60 * 1000
+ALERT_MIN_GAP_MS = 10 * 60 * 1000   # 同币同类型 10 分钟内不重复
+
+
+def detect_alerts(rows):
+    """从快照中检测三类异动事件。"""
+    out = []
+    for r in rows or []:
+        try:
+            vol = float(r.get("quoteVolume24h") or 0)
+            if vol < 2e6:
+                continue
+            sym = r.get("symbol")
+            if not sym:
+                continue
+
+            oi15 = float(r.get("oi15m") or 0)
+            oi5 = float(r.get("oi5m") or 0)
+            vol_ratio = float(r.get("volRatio3m") or 0)
+            large_usdt = float(r.get("largeUsdt") or 0)
+            large_mult = float(r.get("largeMultiple") or 0)
+
+            # 类型1：OI 异动
+            if abs(oi15) >= 5 or abs(oi5) >= 3:
+                pct = oi15 if abs(oi15) >= abs(oi5) else oi5
+                oi = float(r.get("oiNotional") or 0)
+                out.append({
+                    "type": "oi",
+                    "symbol": sym,
+                    "meta": {
+                        "pct": round(pct, 2),
+                        "oi": oi,
+                        "delta": round(abs(oi * pct / (100 + pct)) if pct else 0),
+                        "price": r.get("price"),
+                        "chg": r.get("change24h"),
+                    },
+                })
+
+            # 类型2：大单
+            if large_usdt >= 5000 and large_mult >= 20:
+                out.append({
+                    "type": "large",
+                    "symbol": sym,
+                    "meta": {
+                        "usdt": large_usdt,
+                        "multiple": large_mult,
+                        "side": r.get("largeSide") or "",
+                        "price": r.get("price"),
+                        "chg": r.get("change24h"),
+                    },
+                })
+
+            # 类型3：放量
+            if vol_ratio >= 1.5:
+                out.append({
+                    "type": "volume",
+                    "symbol": sym,
+                    "meta": {
+                        "ratio": round(vol_ratio, 2),
+                        "chg3m": r.get("change3m"),
+                        "price": r.get("price"),
+                        "chg": r.get("change24h"),
+                    },
+                })
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def record_alerts(rows):
+    """把检测到的异动写入云端库（带去重和清理）。"""
+    init()
+    now = _now_ms()
+    events = detect_alerts(rows)
+    written = 0
+    with _lock:
+        with sqlite3.connect(STATE_DB, timeout=10) as db:
+            db.execute("PRAGMA journal_mode=WAL")
+            # 清理过期
+            db.execute("DELETE FROM alerts WHERE created_at < ?", (now - ALERT_TTL_MS,))
+            for ev in events:
+                last = db.execute(
+                    "SELECT created_at FROM alerts WHERE type=? AND symbol=? "
+                    "ORDER BY created_at DESC LIMIT 1",
+                    (ev["type"], ev["symbol"]),
+                ).fetchone()
+                if last and now - last[0] < ALERT_MIN_GAP_MS:
+                    continue
+                try:
+                    db.execute(
+                        "INSERT OR IGNORE INTO alerts(type, symbol, created_at, meta) VALUES(?,?,?,?)",
+                        (ev["type"], ev["symbol"], now, json.dumps(ev["meta"], ensure_ascii=False)),
+                    )
+                    written += 1
+                except Exception:
+                    continue
+            db.commit()
+    return written
+
+
+def get_alerts(limit=100, alert_type=None):
+    """返回最近的异动事件。"""
+    init()
+    now = _now_ms()
+    with sqlite3.connect(STATE_DB, timeout=10) as db:
+        db.row_factory = sqlite3.Row
+        db.execute("DELETE FROM alerts WHERE created_at < ?", (now - ALERT_TTL_MS,))
+        if alert_type:
+            rows = db.execute(
+                "SELECT type, symbol, created_at, meta FROM alerts "
+                "WHERE type=? ORDER BY created_at DESC LIMIT ?",
+                (alert_type, int(limit)),
+            ).fetchall()
+        else:
+            rows = db.execute(
+                "SELECT type, symbol, created_at, meta FROM alerts "
+                "ORDER BY created_at DESC LIMIT ?",
+                (int(limit),),
+            ).fetchall()
+    out = []
+    for r in rows:
+        d = dict(r)
+        try:
+            meta = json.loads(d.get("meta") or "{}")
+        except Exception:
+            meta = {}
+        ts = d.get("created_at") or 0
+        dt = datetime.fromtimestamp(ts / 1000.0, timezone.utc)
+        item = {
+            "type": d.get("type"),
+            "symbol": d.get("symbol"),
+            "ts": ts,
+            "time": dt.astimezone().strftime("%H:%M:%S"),
+        }
+        item.update(meta)
+        out.append(item)
     return {"ok": True, "rows": out}
