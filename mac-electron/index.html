@@ -11725,7 +11725,7 @@ requestAnimationFrame(frame);
       if (cloudQueueCache.inflight) return cloudQueueCache.inflight;
 
       const tk = cloudQueueToken();
-      if (!tk) return Promise.resolve(null);
+      if (!tk) { console.log('[CQ] no token'); return Promise.resolve(null); }
 
       const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
       const timer = setTimeout(() => { try { ctrl && ctrl.abort(); } catch (e) {} }, CLOUD_QUEUE_TIMEOUT);
@@ -11739,6 +11739,7 @@ requestAnimationFrame(frame);
         .then((res) => (res.ok ? res.json() : null))
         .then((json) => {
           clearTimeout(timer);
+          console.log('[CQ] resp ok=', json && json.ok, 'left=', json && json.left && json.left.symbol, 'right=', json && json.right && json.right.symbol);
           if (json && json.ok) {
             cloudQueueCache = { at: Date.now(), data: json, inflight: null };
             return json;
@@ -11774,7 +11775,7 @@ requestAnimationFrame(frame);
     // 让左侧立刻显示云端指定的币，并按云端剩余时间定时
     const syncLeftFromCloud = async (force) => {
       const data = await fetchCloudQueue();
-      if (!data || !data.left || !data.left.symbol) return false;
+      if (!data || !data.left || !data.left.symbol) { console.log('[SL] no data'); return false; }
       const want = String(data.left.symbol);
       const remain = Math.max(1000, Number(data.left.remainingMs) || SIG_SLOT_MS);
       const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
@@ -11786,12 +11787,9 @@ requestAnimationFrame(frame);
       }
       try {
         const sig = calcSignal(row);
-        sigShow({ key: row.symbol + '-' + sig.side, sig });
-        clearTimeout(sigTimer);
-        clearTimeout(cloudSlotTimer);
-        cloudSlotTimer = setTimeout(() => { syncLeftFromCloud(true); }, remain);
-        window.__MOSS_SIG_TIMER = cloudSlotTimer;
-        sigTimer = cloudSlotTimer;
+        (window.__MOSS_SIG_SHOW || sigShow)({ key: row.symbol + '-' + sig.side, sig });
+        clearTimeout(window.__MOSS_CLOUD_L_TIMER);
+        window.__MOSS_CLOUD_L_TIMER = setTimeout(() => { syncLeftFromCloud(true); }, remain);
       } catch (e) {
         return false;
       }
@@ -11801,19 +11799,27 @@ requestAnimationFrame(frame);
     // 让右侧立刻显示云端指定的币
     const syncRightFromCloud = async (force) => {
       const data = await fetchCloudQueue();
-      if (!data || !data.right || !data.right.symbol) return false;
+      if (!data || !data.right || !data.right.symbol) {
+        console.log('[SR] no data');
+        return false;
+      }
       const want = String(data.right.symbol);
       const remain = Math.max(1000, Number(data.right.remainingMs) || FOCUS_SLOT_MS);
       const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
       const row = rows.find((x) => String(x.symbol) === want);
-      if (!row) return false;
+      if (!row) {
+        console.log('[SR] not in rows:', want, 'rowsLen=', rows.length);
+        return false;
+      }
       const cur = window.__MOSS_FOCUS_CURRENT;
       if (!force && cur && String(cur) === want) return true;
       try {
-        focusShow(row);
-        clearTimeout(focusTimer);
-        focusTimer = setTimeout(() => { syncRightFromCloud(true); }, remain);
+        (window.__MOSS_FOCUS_SHOW || focusShow)(row);
+        clearTimeout(window.__MOSS_CLOUD_R_TIMER);
+        window.__MOSS_CLOUD_R_TIMER = setTimeout(() => { syncRightFromCloud(true); }, remain);
+        console.log('[SR] applied', want);
       } catch (e) {
+        console.log('[SR] error:', String(e && e.message || e).slice(0, 150));
         return false;
       }
       return true;
@@ -11828,6 +11834,7 @@ requestAnimationFrame(frame);
         return false;
       }
     };
+    window.__MOSS_SYNC_CLOUD = syncBothFromCloud;
 
     const SIG_SLOT_MS = 5 * 60 * 1000;
     const SIG_IDLE_MS = 15 * 60 * 1000;
@@ -11893,6 +11900,7 @@ requestAnimationFrame(frame);
         }
       } catch (e) {}
     };
+    window.__MOSS_SIG_SHOW = sigShow;
     const pushSignalSlot = (entry, delay = 1100) => {
       if (!entry) return;
       const sym = entry.symbol || (entry.sig && entry.sig.r && entry.sig.r.symbol);
@@ -12618,6 +12626,7 @@ requestAnimationFrame(frame);
         card._arriveT = setTimeout(() => card.classList.remove('meteor-arrive'), 950);
       });
     };
+    window.__MOSS_FOCUS_SHOW = focusShow;
     const focusArmIdle = () => {
       const card = sr.querySelector('[data-nv-card="focus"]');
       clearTimeout(focusIdleTimer);
@@ -12980,6 +12989,22 @@ requestAnimationFrame(frame);
       }
     });
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
+    // 启动云端时槽同步（延迟到所有函数定义完成后）
+    (function bootCloudSync() {
+      let tries = 0;
+      const attempt = () => {
+        tries++;
+        const fn = window.__MOSS_SYNC_CLOUD;
+        const hasData = window.__MOSS_LIVE && Array.isArray(window.__MOSS_LIVE.rows) && window.__MOSS_LIVE.rows.length > 0;
+        if (typeof fn === 'function' && hasData) {
+          try { fn().catch(() => {}); } catch (e) {}
+          return;
+        }
+        if (tries < 30) setTimeout(attempt, 800);
+      };
+      setTimeout(attempt, 1500);
+    })();
+
     setTimeout(loadFearGreed, 800);
     setInterval(loadFearGreed, 15 * 60 * 1000);
     let logView = 'left';
