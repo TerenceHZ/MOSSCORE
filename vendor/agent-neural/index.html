@@ -1032,7 +1032,7 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card-signal #nvCardSigTp{color:#63C08E}
 .nv-card-signal #nvCardSigSl{color:#C96358}
 .nv-trade-info{position:absolute;left:13px;right:13px;bottom:14px;font:500 8px/1 var(--mono);color:#6f5f48;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
-.nv-order-pop{position:fixed;left:24px;bottom:250px;width:320px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
+.nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:none!important;width:330px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
 .nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
 .nv-order-pop::after{content:none}
 .nv-order-pop.short{background:linear-gradient(150deg,rgba(26,8,7,.42),rgba(4,3,3,.34))}
@@ -11822,7 +11822,7 @@ requestAnimationFrame(frame);
       const style = document.createElement('style');
       style.id = 'moss-order-style';
       style.textContent = `
-.nv-order-pop{position:fixed;left:24px;bottom:250px;width:320px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate;font-family:"JetBrains Mono","Microsoft YaHei",ui-monospace,monospace}
+.nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:none!important;width:330px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate;font-family:"JetBrains Mono","Microsoft YaHei",ui-monospace,monospace}
 .nv-order-pop[hidden]{display:none}
 .nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
 .nv-order-pop.short{border-color:rgba(201,99,88,.62);background:linear-gradient(150deg,rgba(26,8,7,.42),rgba(4,3,3,.34));box-shadow:0 0 30px rgba(201,99,88,.42),0 0 70px rgba(201,99,88,.16),inset 0 0 34px rgba(201,99,88,.1)}
@@ -12021,6 +12021,35 @@ requestAnimationFrame(frame);
         ok.disabled = !live || !hasSlot || mode === 'auto';
       }
       pop.hidden = false;
+      // 定位：紧贴左侧「最新建仓」卡片右侧，底部与卡片对齐（渲染完成后校正）
+      try {
+        const place = () => {
+          const anchor = document.querySelector('#host-neural').shadowRoot.querySelector('#nvSignalCard');
+          if (!anchor) return;
+          const ar = anchor.getBoundingClientRect();
+          const gap = 14;
+          const pw = pop.offsetWidth, ph = pop.offsetHeight;
+          let left = Math.round(ar.right + gap);
+          let top = Math.round(ar.bottom - ph);
+          if (left + pw > window.innerWidth - 16) {
+            left = Math.round(ar.left);
+            top = Math.round(ar.bottom - ph);
+          }
+          top = Math.max(16, Math.min(top, window.innerHeight - ph - 16));
+          left = Math.max(16, left);
+          pop.style.left = left + 'px';
+          pop.style.top = top + 'px';
+        };
+        place();
+        requestAnimationFrame(place);
+        // 内容异步填充后高度会变化 → 持续校正几次
+        [40, 120, 260, 500, 900].forEach(ms => setTimeout(place, ms));
+        if (window.__MOSS_POPUP_RO) { try { window.__MOSS_POPUP_RO.disconnect(); } catch (e) {} }
+        try {
+          window.__MOSS_POPUP_RO = new ResizeObserver(() => place());
+          window.__MOSS_POPUP_RO.observe(pop);
+        } catch (e) {}
+      } catch (e) {}
       clearTimeout(orderPopTimer);
       clearTimeout(orderPopAuto);
       orderPopAuto = setTimeout(() => { closeOrderPop(); }, ORDER_POP_MS);
