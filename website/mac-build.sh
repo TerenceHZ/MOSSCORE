@@ -106,29 +106,37 @@ echo "Patching activation gate..."
 INDEX_FILE="$CONF_DIR/index.html"
 if [ -f "$INDEX_FILE" ]; then
   python3 - "$INDEX_FILE" << 'PYEOF'
-import re, sys
+import sys
+
 p = sys.argv[1]
 s = open(p, encoding='utf-8').read()
 orig = s
 
-# force gate hidden on load
-s = s.replace(
-    "window.__MOSS_ACTIVATE_UI={show:setShown,hide:()=>setShown(false)};",
-    "window.__MOSS_ACTIVATE_UI={show:setShown,hide:()=>setShown(false)};window.__MOSS_SKIP_GATE=true;"
-)
-# setShown always hides when skip flag set
-s = s.replace(
-    "function setShown(show, error, loading){\n    root.hidden=!show;",
-    "function setShown(show, error, loading){\n    if(window.__MOSS_SKIP_GATE)show=false;\n    root.hidden=!show;"
-)
-# final call: do not show
-s = s.replace("  setShown(true);\n})();", "  setShown(false);\n})();")
+# 1. setShown 强制隐藏
+old1 = "function setShown(show, error, loading){\n    root.hidden=!show;"
+new1 = "function setShown(show, error, loading){\n    if(window.__MOSS_SKIP_GATE)show=false;\n    root.hidden=!show;"
+if old1 in s:
+    s = s.replace(old1, new1, 1)
+
+# 2. 最后一次调用改为 false（缩进两空格的版本）
+old2 = "  setShown(true);\n})();"
+new2 = "  setShown(false);\n})();"
+if old2 in s:
+    s = s.replace(old2, new2)
+
+# 3. 脚本开头设置跳过标志
+if "window.__MOSS_SKIP_GATE" not in s.split("const root=document.getElementById")[0][-500:]:
+    s = s.replace(
+        "const root=document.getElementById('moss-activation');",
+        "window.__MOSS_SKIP_GATE=true;\n  const root=document.getElementById('moss-activation');",
+        1
+    )
 
 if s != orig:
     open(p, 'w', encoding='utf-8').write(s)
-    print("INDEX_PATCHED")
+    print('INDEX_PATCHED')
 else:
-    print("INDEX_UNCHANGED")
+    print('INDEX_UNCHANGED')
 PYEOF
   echo -e "${GREEN}OK${NC} activation gate patched"
 else
