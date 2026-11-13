@@ -12193,6 +12193,7 @@ requestAnimationFrame(frame);
     const MOSS_TTS_LOCAL = '';   // Mac 上没有本地语音服务，缺文件时静默
     const MOSS_TTS_PRESET = 'cold';
     const MOSS_TTS_SPEED = 0.72;
+    const MOSS_BOOT_TS = Date.now();   // 页面加载时刻：启动回放阶段不发声
     let mossTalk = null;
     const speakSignal = (sig) => {
       if (muted || !sig) return;
@@ -12266,7 +12267,11 @@ requestAnimationFrame(frame);
       recordSignal(sig);
       renderSignalFeed(sig);
       ping('focus');
-      setTimeout(() => { signalChime(); speakSignal(sig); }, 180);
+      // 重启时会先回放历史信号、再切到实时信号，容易连播两条、前一条被顶掉。
+      // 启动后 6 秒只显示不发声；之后 1.2 秒防抖，只播最后一条。
+      clearTimeout(window.__MOSS_SPEAK_T);
+      if (Date.now() - MOSS_BOOT_TS < 6000) return;
+      window.__MOSS_SPEAK_T = setTimeout(() => { signalChime(); speakSignal(sig); }, 1200);
     };
     const hideSignal = () => {
       clearInterval(signalTimerId);
@@ -12276,6 +12281,7 @@ requestAnimationFrame(frame);
       if (!el) return;
       el.classList.remove('open');
       el.setAttribute('aria-hidden', 'true');
+      try { clearTimeout(window.__MOSS_SPEAK_T); } catch (e) {}
       try { window.speechSynthesis.cancel(); } catch (e) {}
       try { if (mossTalk) { mossTalk.pause(); mossTalk = null; } } catch (e) {}
       try { sigArmIdle(); } catch (e) {}
