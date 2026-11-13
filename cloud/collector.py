@@ -673,6 +673,25 @@ class Handler(BaseHTTPRequestHandler):
             with _lock:
                 self.send_json({"ok": _status["ok"], "updatedAt": _status["updatedAt"], "lastError": _status["lastError"]})
             return
+        if path == "/history":
+            auth = self.headers.get("Authorization", "")
+            supplied = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+            if not supplied:
+                supplied = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("token", [""])[0]
+            if not supplied or (supplied != token() and license_core.validate_license(supplied) is None):
+                self.send_json({"error": "unauthorized"}, 401)
+                return
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            side = qs.get("side", [None])[0]
+            try:
+                limit = int(qs.get("limit", ["100"])[0])
+            except ValueError:
+                limit = 100
+            try:
+                self.send_json(queue_core.get_history(side=side, limit=limit))
+            except Exception as exc:
+                self.send_json({"ok": False, "error": str(exc)[:200]}, 500)
+            return
         if path == "/queue":
             auth = self.headers.get("Authorization", "")
             supplied = auth[7:].strip() if auth.lower().startswith("bearer ") else ""

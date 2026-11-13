@@ -45,6 +45,19 @@ def init():
             started_at INTEGER NOT NULL,
             ends_at INTEGER NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS last_played (
+            side TEXT PRIMARY KEY,
+            symbol TEXT NOT NULL,
+            played_at INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            side TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            played_at INTEGER NOT NULL,
+            meta TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_history_side ON history(side, played_at DESC);
         """)
 
 
@@ -130,11 +143,56 @@ def compute_side(db, side, rows, now):
     if side == "left":
         cands = [r for r in rows if left_qualifies(r)]
         cands.sort(key=lambda r: -calc_signal_win(r))
-        make_item = lambda r: {"symbol": r.get("symbol"), "win": calc_signal_win(r)}
+        def make_item(r):
+            return {
+                "symbol": r.get("symbol"),
+                "win": calc_signal_win(r),
+                "meta": {
+                    "win": calc_signal_win(r),
+                    "chg": r.get("change24h"),
+                    "side": "long" if float(r.get("change24h") or 0) >= 0 else "short",
+                    "score": r.get("score"),
+                    "oi": r.get("oiNotional"),
+                    "oi5": r.get("oi5m"),
+                    "oi15": r.get("oi15m"),
+                    "price": r.get("price"),
+                    "target": None,
+                    "stop": None,
+                },
+            }
     else:
         cands = [r for r in rows if r.get("focus") and focus_hit(r)]
         cands.sort(key=lambda r: -float(r.get("score") or 0))
-        make_item = lambda r: {"symbol": r.get("symbol"), "score": round(float(r.get("score") or 0), 1)}
+        def make_item(r):
+            oi15v = float(r.get("oi15m") or 0)
+            oi = float(r.get("oiNotional") or 0)
+            delta = oi * oi15v / (100 + oi15v) if oi else 0
+            reasons = []
+            if abs(float(r.get("change24h") or 0)) >= 10:
+                reasons.append("24H %+.2f%%" % float(r.get("change24h") or 0))
+            if abs(oi15v) >= 5:
+                reasons.append("15M OI %+.2f%%" % oi15v)
+            if float(r.get("volRatio3m") or 0) >= 1.5:
+                reasons.append("3M 放量 %.1fx" % float(r.get("volRatio3m") or 0))
+            if float(r.get("largeUsdt") or 0) >= 5000 and float(r.get("largeMultiple") or 0) >= 20:
+                reasons.append("大单 %.1f万 %.0fx" % (float(r.get("largeUsdt") or 0) / 10000, float(r.get("largeMultiple") or 0)))
+            return {
+                "symbol": r.get("symbol"),
+                "score": round(float(r.get("score") or 0), 1),
+                "meta": {
+                    "win": round(float(r.get("score") or 0)),
+                    "chg": r.get("change24h"),
+                    "side": "long" if float(r.get("change24h") or 0) >= 0 else "short",
+                    "score": r.get("score"),
+                    "oi": oi,
+                    "oi5": r.get("oi5m"),
+                    "oi15": oi15v,
+                    "delta": delta,
+                    "price": r.get("price"),
+                    "vol24": r.get("quoteVolume24h"),
+                    "reason": " · ".join(reasons) or "自选达标",
+                },
+            }
 
     pool = [make_item(r) for r in cands if r.get("symbol") not in played]
 
@@ -162,6 +220,19 @@ def compute_side(db, side, rows, now):
         pool = [c for c in pool if c["symbol"] != sym]
 
     if not pool:
+        # 无可用候选：返回最后一次播报的币，保证所有设备显示一致
+        last = db.execute(
+            "SELECT symbol, played_at FROM last_played WHERE side=?", (side,)
+        ).fetchone()
+        if last:
+            return {
+                "symbol": last[0],
+                "startedAt": last[1],
+                "endsAt": last[1],
+                "remainingMs": 0,
+                "queue": [],
+                "stale": True,
+            }
         return {"symbol": None, "queue": []}
 
     nxt = pool[0]
@@ -173,6 +244,17 @@ def compute_side(db, side, rows, now):
         "ON CONFLICT(side) DO UPDATE SET symbol=excluded.symbol, "
         "started_at=excluded.started_at, ends_at=excluded.ends_at",
         (side, nxt["symbol"], now, ends),
+    )
+    db.execute(
+        "INSERT INTO last_played(side, symbol, played_at) VALUES(?,?,?) "
+        "ON CONFLICT(side) DO UPDATE SET symbol=excluded.symbol, played_at=excluded.played_at",
+        (side, nxt["symbol"], now),
+    )
+    # 写播报历史（保留 meta 供客户端展示）
+    meta = nxt.get("meta") or {}
+    db.execute(
+        "INSERT INTO history(side, symbol, played_at, meta) VALUES(?,?,?,?)",
+        (side, nxt["symbol"], now, json.dumps(meta, ensure_ascii=False)),
     )
     return {
         "symbol": nxt["symbol"],
@@ -211,8 +293,47 @@ def reset(side=None):
             if side:
                 db.execute("DELETE FROM played WHERE side=?", (side,))
                 db.execute("DELETE FROM slot WHERE side=?", (side,))
+                db.execute("DELETE FROM last_played WHERE side=?", (side,))
             else:
                 db.execute("DELETE FROM played")
                 db.execute("DELETE FROM slot")
+                db.execute("DELETE FROM last_played")
+                db.execute("DELETE FROM last_played")
             db.commit()
     return True
+
+
+def get_history(side=None, limit=100):
+    """返回播报历史，最新在前。"""
+    init()
+    with sqlite3.connect(STATE_DB, timeout=10) as db:
+        db.row_factory = sqlite3.Row
+        if side:
+            rows = db.execute(
+                "SELECT side, symbol, played_at, meta FROM history "
+                "WHERE side=? ORDER BY played_at DESC LIMIT ?",
+                (side, int(limit)),
+            ).fetchall()
+        else:
+            rows = db.execute(
+                "SELECT side, symbol, played_at, meta FROM history "
+                "ORDER BY played_at DESC LIMIT ?",
+                (int(limit),),
+            ).fetchall()
+    out = []
+    for r in rows:
+        d = dict(r)
+        try:
+            meta = json.loads(d.get("meta") or "{}")
+        except Exception:
+            meta = {}
+        ts = d.get("played_at") or 0
+        dt = datetime.fromtimestamp(ts / 1000.0, timezone.utc)
+        out.append({
+            "side": d.get("side"),
+            "symbol": d.get("symbol"),
+            "ts": ts,
+            "time": dt.astimezone().strftime("%H:%M:%S"),
+            "meta": meta,
+        })
+    return {"ok": True, "rows": out}

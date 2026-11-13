@@ -12890,7 +12890,33 @@ requestAnimationFrame(frame);
         }
       };
 
+      const fetchHistory = async () => {
+        const tk = getToken();
+        if (!tk) return null;
+        try {
+          const res = await fetch('https://43-160-232-254.sslip.io/history?limit=100', {
+            headers: { Authorization: 'Bearer ' + tk },
+            cache: 'no-store'
+          });
+          if (!res.ok) return null;
+          const j = await res.json();
+          return (j && j.ok) ? j.rows : null;
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const refreshHistory = async () => {
+        const rows = await fetchHistory();
+        if (!rows) return;
+        const left = rows.filter((x) => x.side === 'left');
+        const right = rows.filter((x) => x.side === 'right');
+        window.__MOSS_CLOUD_HISTORY = { left, right, at: Date.now() };
+        console.log('[CLOUD-H] left=', left.length, 'right=', right.length);
+      };
+
       const tick = async () => {
+        refreshHistory().catch(() => {});
         const data = await fetchQueue();
         if (!data) return;
         const l = data.left && data.left.symbol ? data.left.symbol : null;
@@ -12927,10 +12953,32 @@ requestAnimationFrame(frame);
       if (r.includes('24H')) return { text: '涨幅强', color: '#8AB4C9' };
       return { text: '达标', color: '#8AB4C9' };
     };
+    // 云端历史缓存（优先展示，保证多设备一致）
+    window.__MOSS_CLOUD_HISTORY = window.__MOSS_CLOUD_HISTORY || { left: [], right: [], at: 0 };
+    const cloudHistoryFor = (side) => {
+      try {
+        const h = window.__MOSS_CLOUD_HISTORY || {};
+        const list = h[side] || [];
+        if (!list.length) return null;
+        return list.map((x) => {
+          const m = x.meta || {};
+          return Object.assign({}, m, {
+            symbol: x.symbol,
+            time: x.time,
+            ts: x.ts,
+            _cloud: true
+          });
+        });
+      } catch (e) {
+        return null;
+      }
+    };
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
       if (!hl) return;
-      const recs = readLog(viewKey());
+      const isRightView = logView === 'right';
+      const cloudRecs = cloudHistoryFor(isRightView ? 'right' : 'left');
+      const recs = cloudRecs && cloudRecs.length ? cloudRecs : readLog(viewKey());
       const isRight = logView === 'right';
       if (!recs.length) {
         hl.innerHTML = '<div><span>24 小时内暂无播报记录</span><b>—</b></div>';
