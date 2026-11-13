@@ -32,3 +32,6 @@ desktop-webview/*.user
 
 # local reference captures (not source)
 reference/
+
+# 本地生成的播报音频包（体积大，只上传到服务器）
+_voicepack/

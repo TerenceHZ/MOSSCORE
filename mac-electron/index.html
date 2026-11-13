@@ -12188,24 +12188,36 @@ requestAnimationFrame(frame);
         });
       } catch (e) {}
     };
+    // ── 语音播报：直接播云服务器上的音频包（和 Windows 同一份文件，声音完全一致）──
+    const MOSS_TTS_CLOUD = 'https://43-160-232-254.sslip.io/voice';
+    const MOSS_TTS_LOCAL = '';   // Mac 上没有本地语音服务，缺文件时静默
+    const MOSS_TTS_PRESET = 'cold';
+    const MOSS_TTS_SPEED = 0.72;
+    let mossTalk = null;
     const speakSignal = (sig) => {
-      if (muted || !window.speechSynthesis || !sig) return;
-      try {
-        window.speechSynthesis.cancel();
-        const base = String(sig.r.symbol || sig.r.baseAsset || '').replace(/(USDT|USDC|BUSD)$/, '');
-        const text = `系统监测到${base}强烈开${sig.side === 'long' ? '多' : '空'}信号，请立即查看`;
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'zh-CN';
-        u.rate = 0.95;
-        u.pitch = 0.5;
-        u.volume = 1;
-        const voices = window.speechSynthesis.getVoices();
-        const zhVoices = voices.filter(v => /zh|Chinese/i.test(`${v.lang} ${v.name}`));
-        const male = zhVoices.find(v => /Yunxi|Yunyang|Yunjian|Kangkang|Male|男/i.test(v.name));
-        const voice = male || zhVoices[0];
-        if (voice) u.voice = voice;
-        window.speechSynthesis.speak(u);
-      } catch (e) {}
+      if (muted || !sig) return;
+      const symbol = String(sig.r.symbol || sig.r.baseAsset || '').toUpperCase();
+      const side = sig.side === 'long' ? 'long' : 'short';
+      const play = (url, onFail) => {
+        try {
+          if (mossTalk) { try { mossTalk.pause(); } catch (e) {} mossTalk = null; }
+          const a = new Audio(url);
+          a.volume = 1;
+          if (onFail) a.onerror = () => onFail();
+          mossTalk = a;
+          const p = a.play();
+          if (p && p.catch) p.catch(() => { if (onFail) onFail(); });
+        } catch (e) { if (onFail) onFail(); }
+      };
+      const speakLocal = () => {
+        if (!MOSS_TTS_LOCAL) return;
+        const base = symbol.replace(/(USDT|USDC|BUSD)$/, '');
+        const letters = String(base).replace(/[^0-9A-Za-z]/g, '');
+        const spoken = letters ? (letters.length <= 5 ? letters.split('').join('，') : letters.split('').join(' ')) : base;
+        const text = `系统监测到，${spoken}，强烈开${sig.side === 'long' ? '多' : '空'}信号，请立即查看`;
+        play(MOSS_TTS_LOCAL + '?preset=' + MOSS_TTS_PRESET + '&speed=' + MOSS_TTS_SPEED + '&text=' + encodeURIComponent(text));
+      };
+      play(MOSS_TTS_CLOUD + '/' + symbol + '-' + side + '.wav', speakLocal);
     };
     let signalTimerId = null;
     const showSignal = (sig, row, lane) => {
@@ -12265,6 +12277,7 @@ requestAnimationFrame(frame);
       el.classList.remove('open');
       el.setAttribute('aria-hidden', 'true');
       try { window.speechSynthesis.cancel(); } catch (e) {}
+      try { if (mossTalk) { mossTalk.pause(); mossTalk = null; } } catch (e) {}
       try { sigArmIdle(); } catch (e) {}
     };
 
