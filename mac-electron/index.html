@@ -604,10 +604,11 @@ body{background:var(--page);overflow:hidden}
 .pnl::before,.pnl::after{content:"";position:absolute;width:10px;height:10px;border-color:var(--hair2);border-style:solid;pointer-events:none}
 .pnl::before{left:-1px;top:-1px;border-width:1px 0 0 1px}
 .pnl::after{right:-1px;bottom:-1px;border-width:0 1px 1px 0}
-.p-heat{flex:none;height:350px}
-.nv-alertfeed{height:calc(100% - 34px);overflow:hidden;padding:0;scrollbar-width:none;display:flex;flex-direction:column;justify-content:flex-start}
+.p-heat{flex:none;height:420px}
+.nv-alertfeed{height:calc(100% - 34px);overflow:hidden;padding:0;scrollbar-width:none;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:6px}
 .nv-alertfeed::-webkit-scrollbar{display:none}
-.nv-alertitem{position:relative;flex:0 0 auto;min-height:148px;box-sizing:border-box;padding:9px 10px;margin:0 0 4px;border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(8,7,4,.72),rgba(18,14,6,.56));animation:nvalertin .4s ease-out;overflow:hidden}
+
+.nv-alertitem{position:relative;min-height:0;height:100%;box-sizing:border-box;padding:10px 11px;margin:0;border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(8,7,4,.72),rgba(18,14,6,.56));animation:nvalertin .4s ease-out;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
 .nv-alertitem::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(105deg,transparent 22%,rgba(232,160,32,.1) 44%,rgba(255,192,67,.2) 52%,rgba(232,160,32,.1) 60%,transparent 82%);transform:translateX(-120%);animation:nvalertsweep 5.2s ease-in-out infinite}
 @keyframes nvalertsweep{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
 .nv-alertitem>div{position:relative;z-index:1}
@@ -622,12 +623,12 @@ body{background:var(--page);overflow:hidden}
 .nv-alert-top{display:flex;justify-content:space-between;align-items:baseline}
 .nv-alert-top b{font:700 15px/1 var(--mono);color:#ffffff;letter-spacing:.02em}
 .nv-alert-top span{font-size:10px;color:#e8a020;letter-spacing:1px}
-.nv-alert-tag{margin-top:6px;font:600 11px/1 var(--cjk);color:#e8a020;letter-spacing:.05em}
-.nv-alert-price{margin-top:6px;font:600 16px/1 var(--mono);color:#ffc043}
-.nv-alert-line{margin-top:5px;font:500 10.5px/1.5 var(--cjk);color:#a99a7e}
+.nv-alert-tag{margin-top:4px;font:600 11px/1 var(--cjk);color:#e8a020;letter-spacing:.05em}
+.nv-alert-price{margin-top:4px;font:600 17px/1 var(--mono);color:#ffc043}
+.nv-alert-line{margin-top:3px;font:500 10.5px/1.4 var(--cjk);color:#a99a7e}
 .nv-alert-line b{color:#e4d4a8;font-weight:600}
 .nv-alert-line em{font-style:normal;color:#e8a020}
-.nv-alert-time{margin-top:5px;font:500 8.5px/1 var(--mono);color:#7b6d58}
+.nv-alert-time{margin-top:3px;font:500 8.5px/1 var(--mono);color:#7b6d58}
 .nv-alert-record{padding:10px 0;border-bottom:1px solid rgba(232,160,32,.1)}
 .nv-alert-record .rt{display:flex;justify-content:space-between;gap:8px;font:600 11px/1.3 var(--mono);color:#d8cdb8}
 .nv-alert-record .rt em{font-style:normal;color:#e8a020}
@@ -636,6 +637,12 @@ body{background:var(--page);overflow:hidden}
 .nv-alert-pager{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:8px;font:500 9px/1 var(--mono);color:#8a7b62}
 .nv-alert-pager button{background:transparent;border:1px solid rgba(232,160,32,.25);color:#c9a35a;font:600 9px/1 var(--cjk);padding:5px 8px;cursor:pointer}
 .nv-alert-pager button:disabled{opacity:.3;cursor:default}
+.nv-alert-cats{display:flex;gap:2px;margin:0 0 7px;border-bottom:1px solid rgba(232,160,32,.14)}
+.nv-alert-cats button{flex:1;min-width:0;padding:8px 4px 7px;border:1px solid transparent;border-bottom:0;background:transparent;color:#8a7b62;font:600 10px/1 var(--cjk);letter-spacing:.03em;white-space:nowrap;cursor:pointer;transition:color .2s,background .2s,border-color .2s}
+.nv-alert-cats button b{display:inline-block;margin-left:4px;font:500 7px/1 var(--mono);color:#6d5e49}
+.nv-alert-cats button.on{color:#ffc043;background:rgba(232,160,32,.07);border-color:rgba(232,160,32,.2);border-bottom-color:transparent}
+.nv-alert-cats button.on b{color:#e8a020}
+.nv-alert-cats button:hover{color:#d8c09a}
 .nv-signal-counts{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
 .nv-signal-counts span{font:600 9px/1 var(--mono);color:#c9a35a;border:1px solid rgba(232,160,32,.22);background:rgba(232,160,32,.05);padding:5px 7px}
 .nv-signal-history{border-top:1px solid rgba(232,160,32,.12)}
@@ -804,15 +811,24 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-regime .nv-meta{display:flex;flex-direction:column;width:100%;gap:1px;margin-top:2px;font:500 8px/1.55 var(--mono);color:#8f826e;letter-spacing:.03em;white-space:normal}
 .nv-regime .nv-meta span{display:block;white-space:nowrap}
 .nv-regime .nv-meta b{color:#d8cdb8;font-weight:500}
+.nv-regime .nv-lsbar{height:4px;margin-top:7px;background:#d76456;overflow:hidden;display:flex}
+.nv-regime .nv-lsbar i{display:block;width:50%;height:100%;background:#63C08E;box-shadow:0 0 7px rgba(99,192,142,.35);transition:width .5s ease}
 .nv-fng{position:absolute;right:436px;top:80px;width:118px;z-index:12;padding:10px 10px 9px;border:1px solid rgba(232,160,32,.28);background:linear-gradient(135deg,rgba(12,12,10,.94),rgba(5,6,8,.72));box-shadow:inset 0 0 24px rgba(232,160,32,.035),0 0 24px rgba(0,0,0,.35);backdrop-filter:blur(8px);pointer-events:none;--fng:#e8a020}
 .nv-fng::before{content:"";position:absolute;right:0;top:0;width:34px;height:1px;background:var(--fng);box-shadow:0 0 8px var(--fng)}
+.nv-fng{background:linear-gradient(115deg,rgba(6,7,9,.97) 0%,rgba(6,7,9,.9) 32%,color-mix(in srgb,var(--fng) 13%,transparent) 50%,rgba(6,7,9,.9) 68%,rgba(6,7,9,.97) 100%);background-size:240% 100%;animation:nvFngFlow 8s linear infinite}
+@keyframes nvFngFlow{0%{background-position:120% 0}100%{background-position:-120% 0}}
+
+.nv-fng{overflow:hidden;box-shadow:inset 0 -20px 26px -18px var(--fng),inset 0 0 24px rgba(232,160,32,.035),0 0 24px rgba(0,0,0,.35)}
+.nv-fng::after{content:"";position:absolute;left:4%;right:4%;bottom:0;height:34px;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 50% 100%,var(--fng),transparent 72%);opacity:.52;filter:blur(9px);animation:nvFngGlow 4.8s ease-in-out infinite}
+.nv-fng>*{position:relative;z-index:1}
+@keyframes nvFngGlow{0%,100%{opacity:.26;transform:scaleX(.9)}50%{opacity:.58;transform:scaleX(1)}}
 .nv-fng .nv-k{font:600 7.5px/1.45 var(--mono);letter-spacing:.18em;color:#7a6c55;white-space:normal}
 .nv-fng-main{display:flex;align-items:baseline;gap:7px;margin-top:7px}
 .nv-fng-main b{font:800 27px/1 var(--mono);color:var(--fng);letter-spacing:-.04em}
 .nv-fng-main span{font:600 10px/1 var(--cjk);color:var(--fng)}
-.nv-fng-gauge{position:relative;height:5px;margin-top:9px;background:linear-gradient(90deg,#C96358,#e8a020 38%,#d8c56a 55%,#63C08E 78%,#42a978);box-shadow:0 0 10px rgba(232,160,32,.12)}
-.nv-fng-gauge i{position:absolute;top:-3px;width:2px;height:11px;background:#fff;box-shadow:0 0 7px #fff;transform:translateX(-1px)}
-.nv-fng-scale{display:flex;justify-content:space-between;margin-top:4px;font:500 6.5px/1 var(--cjk);color:#746a59}
+.nv-fng-gauge{position:relative;height:6px;margin-top:9px;background:linear-gradient(90deg,#e88370,#e8a020 38%,#d8c56a 55%,#63C08E 78%,#42a978);box-shadow:0 0 10px rgba(232,160,32,.12)}
+.nv-fng-gauge i{position:absolute;top:-4px;width:3px;height:14px;background:#fff;box-shadow:0 0 0 1px rgba(2,3,6,.85),0 0 8px rgba(255,255,255,.95);transform:translateX(-1px)}
+.nv-fng-scale{display:flex;justify-content:space-between;margin-top:4px;font:500 6.5px/1 var(--cjk);color:#746a59}.nv-fng-scale span:first-child{color:#f0a18e;text-shadow:0 0 7px rgba(255,146,125,.25)}
 .nv-fng-prev{margin-top:8px;padding-top:6px;border-top:1px solid rgba(232,160,32,.12);font:500 8px/1.3 var(--mono);color:#8f826e;white-space:nowrap}
 .nv-left{position:absolute;left:24px;top:236px;bottom:262px;width:384px;display:flex;flex-direction:column;gap:8px;z-index:8;min-height:0}
 .nv-mod{position:relative;display:flex;flex-direction:column;min-height:0;border:1px solid rgba(232,160,32,.22);background:linear-gradient(180deg,rgba(5,6,8,.72),rgba(3,4,6,.55));overflow:hidden;cursor:pointer;pointer-events:auto}
@@ -1015,6 +1031,60 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card-signal .nv-c-probe i{font-size:11px;color:#f0e2bf;font-weight:700}
 .nv-card-signal #nvCardSigTp{color:#63C08E}
 .nv-card-signal #nvCardSigSl{color:#C96358}
+.nv-trade-info{position:absolute;left:13px;right:13px;bottom:14px;font:500 8px/1 var(--mono);color:#6f5f48;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
+.nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:none!important;width:330px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
+.nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
+.nv-order-pop::after{content:none}
+.nv-order-pop.short{background:linear-gradient(150deg,rgba(26,8,7,.42),rgba(4,3,3,.34))}
+.nv-order-pop.short{box-shadow:0 0 30px rgba(201,99,88,.42),0 0 70px rgba(201,99,88,.16),inset 0 0 34px rgba(201,99,88,.1)}
+.nv-order-pop.short::before{background:radial-gradient(70% 120% at 16% 0%,rgba(201,99,88,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(201,99,88,.24) 38%,transparent 62%,rgba(255,255,255,.06) 80%,transparent 96%);background-size:180% 180%,220% 220%}
+.nv-order-pop.short::after{background:linear-gradient(118deg,transparent 18%,rgba(201,99,88,.16) 42%,rgba(255,255,255,.06) 52%,transparent 70%);background-size:220% 220%}
+@keyframes nvOpFlow{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+@keyframes nvOpSweep{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.nv-order-pop[hidden]{display:none}
+.nv-order-pop.short{border-color:rgba(201,99,88,.55);box-shadow:0 0 24px rgba(201,99,88,.25),inset 0 0 30px rgba(201,99,88,.06)}
+@keyframes nvOpIn{0%{opacity:0;transform:translateY(10px) scale(.97)}100%{opacity:1;transform:none}}
+.nv-op-h{display:flex;align-items:baseline;gap:8px}
+.nv-op-h b{font:700 17px/1 var(--mono);color:#f2f0e8}
+.nv-op-h span{font:700 10px/1 var(--cjk);color:#63C08E}
+.nv-order-pop.short .nv-op-h span{color:#C96358}
+.nv-op-pos{margin-left:auto;padding:3px 7px;border:1px solid rgba(99,192,142,.4);background:rgba(99,192,142,.1);font:600 8.5px/1 var(--mono);color:#8fd8b4;cursor:pointer;white-space:nowrap}
+.nv-op-pos:hover{background:rgba(99,192,142,.22);border-color:rgba(99,192,142,.75)}
+.nv-order-pop.short .nv-op-pos{border-color:rgba(201,99,88,.4);background:rgba(201,99,88,.1);color:#e0a49a}
+.nv-op-x{margin-left:8px;font:400 15px/1 var(--mono);color:#7b6d58;cursor:pointer;font-style:normal}
+.nv-op-x:hover{color:#e8a020}
+.nv-op-stage{margin-top:6px;font:500 9px/1.4 var(--cjk);color:#8a7a5e}
+.nv-op-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:12px;align-items:start}
+.nv-op-grid>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.nv-op-grid span{font:500 8.5px/1 var(--cjk);color:#6f5f48}
+.nv-op-grid b{font:600 12px/1 var(--mono);color:#f0e2bc;text-shadow:0 0 10px rgba(0,0,0,.85)}
+.nv-op-h b,.nv-op-h span,.nv-op-stage,.nv-op-mode,.nv-op-grid span{text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-mode{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:9px;border-top:1px solid rgba(99,192,142,.16);font:500 9px/1 var(--cjk);color:#8a7a5e}
+.nv-op-switch{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-style:normal;user-select:none}
+.nv-op-switch b{position:relative;display:block;width:30px;height:14px;border-radius:7px;background:rgba(255,255,255,.1);border:1px solid rgba(232,160,32,.3);transition:background .2s,border-color .2s}
+.nv-op-switch b::after{content:"";position:absolute;left:2px;top:1px;width:10px;height:10px;border-radius:50%;background:#8a7a5e;transition:transform .2s,background .2s}
+.nv-op-switch.on b{background:rgba(99,192,142,.28);border-color:rgba(99,192,142,.6)}
+.nv-op-switch.on b::after{transform:translateX(15px);background:#8fd8b4}
+.nv-op-switch em{font:600 9px/1 var(--cjk);color:#c9a35a;font-style:normal}
+.nv-op-switch.on em{color:#8fd8b4}
+.nv-op-act{display:flex;gap:8px;margin-top:12px}
+.nv-op-act button{flex:1;padding:8px 0;font:600 10px/1 var(--cjk);cursor:pointer;border-radius:0}
+.nv-op-ok{background:rgba(99,192,142,.16);border:1px solid rgba(99,192,142,.5);color:#8fd8b4}
+.nv-op-ok:disabled{opacity:.55;cursor:default}
+.nv-op-no{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a}
+.nv-op-positions{position:absolute;inset:0;z-index:3;padding:12px 13px 11px;background:linear-gradient(150deg,rgba(6,20,14,.92),rgba(3,4,4,.9));backdrop-filter:blur(4px)}
+.nv-op-positions[hidden]{display:none}
+.nv-op-pos-h{display:flex;align-items:center;justify-content:space-between;font:700 11px/1 var(--cjk);color:#f0e2bc;padding-bottom:8px;border-bottom:1px solid rgba(99,192,142,.2)}
+.nv-op-pos-x{font:600 9px/1 var(--cjk);color:#c9a35a;cursor:pointer;font-style:normal}
+.nv-op-pos-list{margin-top:8px;max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:7px}
+.nv-op-pos-row{padding:7px 8px;border:1px solid rgba(99,192,142,.2);background:rgba(99,192,142,.05)}
+.nv-op-pos-row.up{border-color:rgba(99,192,142,.45);background:rgba(99,192,142,.1)}
+.nv-op-pos-row.down{border-color:rgba(201,99,88,.45);background:rgba(201,99,88,.1)}
+.nv-op-pos-top{display:flex;justify-content:space-between;align-items:baseline}
+.nv-op-pos-top b{font:700 12px/1 var(--mono);color:#f2f0e8}
+.nv-op-pos-top i{font:600 10px/1 var(--mono);font-style:normal}
+.nv-op-pos-meta{margin-top:5px;display:flex;gap:10px;font:500 8.5px/1.3 var(--mono);color:#9a8a70}
+.nv-op-pos-empty{padding:14px 0;text-align:center;font:500 10px/1.5 var(--cjk);color:#6f5f48}
 .nv-card:hover{border-color:rgba(232,160,32,.85)}
 .nv-card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(232,160,32,.55),transparent);opacity:0}
 .nv-card.hot::after{opacity:1;animation:nvline 900s linear forwards}
@@ -1080,6 +1150,26 @@ background-size:180% 180%,220% 220%}
 @keyframes nvwinflash{0%{opacity:0}12%{opacity:.45}35%{opacity:.12}100%{opacity:0}}
 .nv-fresh::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;z-index:6;background:linear-gradient(90deg,transparent,var(--nv-fc),transparent);transform-origin:left;animation:nvline 900s linear forwards;opacity:.8}
 .nv-meteor-glow{animation:nvMeteorGlow 3.8s ease-in-out infinite}
+.nv-card.focus.nv-focus-idle{filter:brightness(.82) saturate(.9);opacity:.9;transition:filter 1.2s ease,opacity 1.2s ease}
+.nv-card.nv-card-signal.sig-idle,.nv-card.imported.nv-card-signal.nv-focus-idle{filter:brightness(.82) saturate(.9);opacity:.9;transition:filter 1.2s ease,opacity 1.2s ease}
+.nv-card.nv-card-signal.sig-idle .nv-flow,.nv-card.nv-card-signal.nv-focus-idle .nv-flow{opacity:.85!important}
+.nv-card.nv-card-signal.sig-idle .nv-hotbg,.nv-card.nv-card-signal.nv-focus-idle .nv-hotbg{opacity:.55!important}
+.nv-card.focus.meteor-arrive{animation:nvMeteorArrive 900ms ease-out}
+@keyframes nvMeteorArrive{
+  0%{box-shadow:inset 0 0 0 rgba(255,192,67,0),0 0 0 rgba(232,160,32,0)}
+  35%{box-shadow:inset 0 0 46px rgba(255,196,80,.22),0 0 34px rgba(255,192,67,.42);filter:brightness(1.5) contrast(1.15)}
+  100%{box-shadow:inset 0 0 38px rgba(232,160,32,.09),0 0 24px rgba(232,160,32,.12);filter:none}
+}
+.nv-card-signal.meteor-arrive{animation:nvMeteorArriveSignal 900ms ease-out}
+@keyframes nvMeteorArriveSignal{
+  0%{filter:none}
+  35%{filter:brightness(1.55) contrast(1.15) saturate(1.2)}
+  100%{filter:none}
+}
+
+.nv-card.focus.nv-focus-idle .nv-flow{opacity:.85!important}
+.nv-card.focus.nv-focus-idle .nv-hotbg{opacity:.55!important}
+.nv-card.focus.nv-focus-idle::after{opacity:.7!important}
 @keyframes nvMeteorGlow{0%,100%{box-shadow:inset 0 0 22px rgba(232,160,32,.05),0 0 12px rgba(232,160,32,.12)}50%{box-shadow:inset 0 0 44px rgba(232,160,32,.13),0 0 26px rgba(232,160,32,.38)}}
 .nv-trace-tools{display:flex;align-items:center;gap:5px}
 .nv-trace-tools b{font:500 8px/1 var(--mono);color:#6b7685;font-weight:500;margin-right:2px}
@@ -1087,7 +1177,7 @@ background-size:180% 180%,220% 220%}
 .nv-trace-tools button:hover{color:#ffc043;border-color:rgba(232,160,32,.5)}
 #feed.paused{opacity:.55}
 @keyframes nvline{from{transform:scaleX(1);transform-origin:left}to{transform:scaleX(0);transform-origin:left}}
-.nv-drawer{position:fixed;left:50%;top:50%;width:880px;max-width:calc(100% - 60px);height:860px;max-height:calc(100% - 30px);z-index:60;background:rgba(4,4,3,.92);border:1px solid rgba(232,160,32,.48);box-shadow:0 30px 100px rgba(0,0,0,.55),inset 0 0 60px rgba(232,160,32,.025);backdrop-filter:blur(22px);transform:translate(-50%,-50%) scale(.97);opacity:0;transition:opacity .28s,transform .28s;pointer-events:none;overflow:auto}
+.nv-drawer{position:fixed;left:50%;top:50%;width:880px;max-width:calc(100% - 60px);height:860px;max-height:calc(100% - 30px);z-index:60;overflow:hidden;display:flex;flex-direction:column;background:rgba(4,4,3,.92);border:1px solid rgba(232,160,32,.48);box-shadow:0 30px 100px rgba(0,0,0,.55),inset 0 0 60px rgba(232,160,32,.025);backdrop-filter:blur(22px);transform:translate(-50%,-50%) scale(.97);opacity:0;transition:opacity .28s,transform .28s;pointer-events:none;overflow:auto}
 .nv-drawer::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:
 linear-gradient(#e8a020,#e8a020) left top/18px 1px no-repeat,
 linear-gradient(#e8a020,#e8a020) left top/1px 18px no-repeat,
@@ -1164,7 +1254,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-drawer .nv-reasons{display:flex;flex-wrap:wrap;gap:7px}
 .nv-drawer .nv-reasons span{font:500 11.5px/1.3 var(--cjk);color:#d6b36a;border:1px solid rgba(232,160,32,.26);padding:6px 8px}
 .nv-drawer .nv-history{margin-top:7px;border-top:1px solid rgba(232,160,32,.12)}
-.nv-drawer .nv-history div{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(232,160,32,.08);font:500 11.5px/1.35 var(--mono);color:#9a8a70}
+.nv-drawer .nv-history>div:not(.nv-rec):not(.nv-signal-record):not(.nv-alert-record){display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(232,160,32,.08);font:500 11.5px/1.35 var(--mono);color:#9a8a70}
 .nv-drawer .nv-history b{color:#d8cdb8;font-weight:500}
 .nv-drawer .nv-history .nv-alert-record{display:block;padding:11px 0;border-bottom:1px solid rgba(232,160,32,.1);font:500 11.5px/1.4 var(--mono);color:#9a8a70}
 .nv-drawer .nv-history .nv-alert-record .rt{display:flex;justify-content:space-between;gap:8px;padding:0;border:0;font:600 12px/1.3 var(--mono);color:#d8cdb8}
@@ -1173,7 +1263,32 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-drawer .nv-history .nv-alert-record .nv-ar-row{padding:0;border:0}
 .nv-drawer .nv-history .nv-alert-record .nv-ar-time{margin-bottom:7px}
 .nv-drawer .nv-history .nv-alert-record .nv-ar-row{display:flex}
+.nv-d-body.nv-scroll{overflow:hidden;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.nv-d-body.nv-scroll .nv-pane{overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding-right:6px}
+.nv-d-body.nv-scroll .nv-pane::-webkit-scrollbar{width:6px}
+.nv-d-body.nv-scroll .nv-pane::-webkit-scrollbar-thumb{background:rgba(232,160,32,.3);border-radius:3px}
+.nv-d-body.nv-scroll .nv-pane::-webkit-scrollbar-track{background:transparent}
+.nv-drawer::-webkit-scrollbar,.nv-d-body::-webkit-scrollbar{display:none;width:0;height:0}
 .nv-drawer .nv-history .nv-signal-record .sg div{display:flex;padding:0;border:0;justify-content:space-between}
+.nv-rec{display:block!important;padding:14px 16px!important;margin:10px 0!important;border:1px solid rgba(232,160,32,.18)!important;background:linear-gradient(135deg,rgba(22,17,10,.5),rgba(6,6,5,.3))!important;font:normal 11px/1.5 var(--mono)!important;color:#9a8a70!important}
+.nv-rec .nv-rec-h{display:block!important;padding:0!important;margin-bottom:9px!important;border:0!important;font:600 10px/1 var(--mono)!important;color:#7d6f5b!important;letter-spacing:.04em!important}
+.nv-rec .nv-rec-name{display:flex!important;align-items:baseline!important;justify-content:flex-start!important;gap:12px!important;padding:0!important;margin-bottom:11px!important;border:0!important}
+.nv-rec .nv-rec-name b{font:700 19px/1 var(--mono)!important;color:#f5f0e4!important}
+.nv-rec .nv-rec-name em{font:700 14px/1 var(--mono)!important;font-style:normal!important}
+.nv-rec .nv-rec-main{display:flex!important;align-items:baseline!important;justify-content:flex-start!important;gap:10px!important;padding:11px 0!important;margin-bottom:11px!important;border-top:1px solid rgba(232,160,32,.12)!important;border-bottom:1px solid rgba(232,160,32,.12)!important}
+.nv-rec .nv-rec-main b{font:800 32px/1 var(--mono)!important;color:#f5c451!important;letter-spacing:-.02em!important;text-shadow:0 0 20px rgba(232,160,32,.3)!important;border:0!important}
+.nv-rec .nv-rec-main b i{font:600 15px/1 var(--mono)!important;font-style:normal!important;color:#c9a35a!important;margin-left:2px!important}
+.nv-rec .nv-rec-tag{display:inline-block!important;padding:4px 9px!important;border:1px solid!important;border-radius:2px!important;font:700 10px/1 var(--cjk)!important;letter-spacing:.03em!important;background:rgba(255,255,255,.03)!important}
+.nv-rec .nv-rec-main em{font:500 10px/1 var(--cjk)!important;color:#6f5f48!important;font-style:normal!important;margin-left:auto!important;border:0!important}
+.nv-rec .nv-rec-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:11px 18px!important;padding:0!important;border:0!important}
+.nv-rec .nv-rec-grid>div{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:4px!important;padding:0!important;border:0!important;min-width:0!important}
+.nv-rec .nv-rec-grid span{display:block!important;font:500 9px/1 var(--cjk)!important;color:#6f5f48!important;border:0!important}
+.nv-rec .nv-rec-grid b{display:block!important;font:600 12px/1.25 var(--mono)!important;color:#ddd0b2!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;border:0!important}
+.nv-rec .nv-rec-why{display:block!important;margin-top:9px!important;padding-top:8px!important;border-top:1px dashed rgba(232,160,32,.12)!important}
+.nv-rec .nv-rec-why span{display:inline-block!important;margin-right:8px!important;font:600 9px/1.4 var(--cjk)!important;color:#6f5f48!important;border:0!important}
+.nv-rec .nv-rec-why b{display:inline-block!important;font:500 10px/1.4 var(--cjk)!important;color:#c9b48a!important;border:0!important}
+
+
 .nv-drawer .nv-ms{font:700 23px/1 var(--mono);color:#f2f0e8}
 .nv-drawer .nv-ms small{font:500 10px/1 var(--cjk);color:#8a7b62;margin-left:6px}
 .nv-signal{position:fixed;inset:0;z-index:90;display:block;background:rgba(0,0,0,.64);backdrop-filter:blur(5px);opacity:0;pointer-events:none}
@@ -1234,6 +1349,51 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 .nv-sig-foot button{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a;font:600 10px/1 var(--cjk);padding:8px 12px;cursor:pointer}
 .nv-sig-foot button:first-child{background:rgba(232,160,32,.1);color:#ffc043}
 @media(max-width:1500px){.nv-regime{left:372px;width:104px}.nv-left{width:340px}.nv-card,.nv-card.focus{width:340px}}
+
+/* 数据小窗：可点击、3 分钟反差色与流光 */
+.nv-regime,.nv-fng{pointer-events:auto!important;cursor:pointer;transition:background .35s,border-color .35s,box-shadow .35s}
+.nv-regime:hover,.nv-fng:hover{border-color:rgba(255,192,67,.7)!important;box-shadow:0 0 24px rgba(232,160,32,.16)!important}
+.nv-regime.nv-data-pulse,.nv-fng.nv-data-pulse{background:linear-gradient(135deg,rgba(232,160,32,.15),rgba(7,7,5,.62) 58%,rgba(232,160,32,.06))!important;border-color:rgba(232,160,32,.58)!important;box-shadow:0 0 16px rgba(232,160,32,.13),inset 0 0 18px rgba(232,160,32,.045)!important;backdrop-filter:blur(9px)}
+.nv-data-pulse{position:relative;overflow:hidden}
+.nv-data-pulse::after{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;background:linear-gradient(108deg,transparent 20%,rgba(255,216,140,.22) 47%,transparent 74%);transform:translateX(-125%);animation:nvDataSweep 4.2s linear infinite;mix-blend-mode:screen;opacity:.75}
+@keyframes nvDataSweep{to{transform:translateX(125%)}}
+.nv-data-pulse .nv-score,.nv-data-pulse .nv-badge,.nv-data-pulse .nv-fng-main b{color:#ffd27a!important;text-shadow:0 0 12px rgba(232,160,32,.18)!important}
+.nv-data-pulse .nv-badge,.nv-data-pulse .nv-fng-main span{border-color:rgba(255,192,67,.36)!important}
+.nv-data-pulse .nv-lsbar{background:#d76456!important}
+.nv-data-pulse .nv-fng-gauge{background:rgba(232,160,32,.12)!important}
+
+/* 小数据详情弹窗 */
+.nv-info{position:fixed;inset:0;z-index:72;display:flex;align-items:center;justify-content:center;background:rgba(2,3,6,.66);backdrop-filter:blur(12px);opacity:0;transition:opacity .25s ease}
+.nv-info[hidden]{display:none!important}
+.nv-info.on{opacity:1}
+.nv-info-card{position:relative;width:min(540px,calc(100vw - 36px));max-height:calc(100vh - 48px);overflow:auto;padding:27px 30px 24px;background:linear-gradient(145deg,rgba(17,16,12,.98),rgba(5,6,9,.99));border:1px solid rgba(232,160,32,.42);box-shadow:0 30px 90px rgba(0,0,0,.72),inset 0 0 40px rgba(232,160,32,.03);clip-path:polygon(0 12px,12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px));transform:translateY(10px);transition:transform .28s ease}
+.nv-info.on .nv-info-card{transform:none}
+.nv-info-card::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,#e8a020,#ffe3a3,#e8a020,transparent);opacity:.9}
+.nv-info-h{display:flex;flex-direction:column;gap:5px;padding-right:24px}
+.nv-info-k{font:500 7.5px/1 var(--mono);letter-spacing:.19em;color:#a98952}
+.nv-info-title{font:700 26px/1.1 var(--mono);color:#f5e7cc;letter-spacing:.02em}
+.nv-info-x{position:absolute;right:14px;top:13px;width:30px;height:30px;border:1px solid rgba(232,160,32,.25);background:rgba(8,7,4,.5);color:#c4a774;font:300 20px/1 var(--mono);cursor:pointer}
+.nv-info-x:hover{color:#ffd27a;border-color:rgba(232,160,32,.6)}
+.nv-info-body{margin-top:19px}
+.nv-info-hero{display:flex;align-items:baseline;gap:12px;padding-bottom:15px;border-bottom:1px solid rgba(232,160,32,.15)}
+.nv-info-hero b{font:800 46px/1 var(--mono);color:#ffc043;letter-spacing:-.04em}.nv-info-hero b.fear{color:#ff927d;text-shadow:0 0 14px rgba(255,120,96,.22)}
+.nv-info-hero span{font:600 13px/1 var(--cjk);color:#c3a878}
+.nv-info-scale{position:relative;height:7px;margin:17px 0 6px;background:linear-gradient(90deg,#e88370,#e8a020 42%,#d8c56a 58%,#63c08e);overflow:hidden}
+.nv-info-scale i{position:absolute;top:-4px;width:3px;height:16px;background:#fff;box-shadow:0 0 0 1px rgba(2,3,6,.82),0 0 10px rgba(255,255,255,.95);transform:translateX(-50%)}
+.nv-info-scale-l{display:flex;justify-content:space-between;font:500 7px/1 var(--mono);letter-spacing:.1em;color:#79664c}.nv-info-scale-l span:first-child{color:#f0a18e;text-shadow:0 0 7px rgba(255,146,125,.2)}
+.nv-info-dual{display:flex;height:9px;margin:17px 0 8px;background:#d76456;overflow:hidden}
+.nv-info-dual i{display:block;height:100%;background:#63C08E}
+.nv-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(232,160,32,.13);border:1px solid rgba(232,160,32,.13);margin-top:17px}
+.nv-info-grid div{background:#080a0e;padding:12px 14px}
+.nv-info-grid span{display:block;font:500 7px/1 var(--mono);letter-spacing:.13em;color:#7d694e}
+.nv-info-grid b{display:block;margin-top:7px;font:600 13px/1.2 var(--mono);color:#e4d1b1}
+.nv-info-grid b.green{color:#63c08e}.nv-info-grid b.red{color:#d76759}
+.nv-info-p{font:400 12px/1.8 var(--cjk);color:#b09a7c;margin:17px 0 0}
+.nv-info-p b{color:#e3c899;font-weight:500}
+.nv-info-src{margin-top:16px;padding-top:11px;border-top:1px solid rgba(232,160,32,.12);font:500 7px/1.5 var(--mono);letter-spacing:.06em;color:#6e5b43}
+.nv-info-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:13px}.nv-info-tags span{font:500 7px/1 var(--mono);color:#ab8b5b;border:1px solid rgba(232,160,32,.17);padding:5px 7px}
+.nv-regime,.nv-fng{pointer-events:auto!important}
+@media(prefers-reduced-motion:reduce){.nv-data-pulse::after{animation:none!important}}
 </style>
 
 <canvas class="gl" id="gl" aria-label="神经星环：13 个智能体神经团，脉冲沿突触束在它们之间传递任务。拖动可转动视角，点击神经团可聚焦"></canvas>
@@ -1255,7 +1415,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="cap-line"></div>
   </div>
 
-  <div class="nv-fng" id="nvFng" style="--fng:#e8a020">
+  <div class="nv-fng" id="nvFng" role="button" tabindex="0" title="点击查看恐慌贪婪详情" style="--fng:#e8a020">
    <div class="nv-k">FEAR &amp; GREED · 今日</div>
    <div class="nv-fng-main"><b id="nvFngValue">—</b><span id="nvFngLabel">恐慌贪婪</span></div>
    <div class="nv-fng-gauge"><i id="nvFngMark"></i></div>
@@ -1263,9 +1423,10 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="nv-fng-prev" id="nvFngPrev">昨日 —</div>
   </div>
 
-  <div class="nv-regime">
-   <div class="nv-k">MARKET REGIME · 大盘势头</div>
-   <div class="nv-main"><span class="nv-badge">弱势</span><span class="nv-score">49.3</span><div class="nv-meta"><span>BTC 24h <b>+0.24%</b></span><span>流动性 <b>18.6/20</b></span><span>完整度 <b>90%</b></span><span>置信度 <b>高</b></span></div></div>
+  <div class="nv-regime" id="nvRegime" role="button" tabindex="0" title="点击查看全网多空明细">
+   <div class="nv-k">GLOBAL L/S · 全网多空</div>
+   <div class="nv-main"><span class="nv-badge" id="nvLsBias">均衡</span><span class="nv-score" id="nvLsRatio">—</span><div class="nv-meta"><span>多 <b id="nvLsLong">—</b></span><span>空 <b id="nvLsShort">—</b></span><span>TOP5 5M <b id="nvLsTime">—</b></span></div></div>
+   <div class="nv-lsbar"><i id="nvLsBar"></i></div>
   </div>
 
   <div class="tools pe">
@@ -1324,7 +1485,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 
   <div class="rc">
   <article class="pnl p-heat nv-fx">
-   <div class="sec-h"><h2>POSITION ALERTS<i>持仓异动</i></h2><span>滚屏 · 点击查看历史</span></div>
+   <div class="sec-h"><h2>ALERT STREAM<i>三类异动</i></h2><span>滚屏 · 点击查看历史</span></div>
    <div class="nv-alertfeed" id="nvAlertFeed">
     <div class="nv-alertitem">
      <div class="nv-alert-top"><b>ARIA/USDT</b><span>🔥🔥🔥</span></div>
@@ -1360,11 +1521,12 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
      <span>止盈建议：<i id="nvCardSigTp">—</i></span>
      <span>止损建议：<i id="nvCardSigSl">—</i></span>
     </span>
+    <span class="nv-trade-info" id="nvTradeInfo" title="点击配置币安 API">币安未连接 · 点击配置</span>
     <i class="nv-sigcard-progress" aria-hidden="true"></i>
     <i class="nv-hotbg" aria-hidden="true"></i><i class="nv-flow" aria-hidden="true"></i><i class="nv-flash" aria-hidden="true"></i>
    </button>
    <button class="nv-card focus" type="button" data-nv-card="focus">
-    <span class="nv-c-h">★ FOCUS · 自选主监控</span>
+    <span class="nv-c-h">★ FOCUS · 自选主监控<i id="nvFocusQueue" style="margin-left:6px;font:500 8px/1 var(--mono);letter-spacing:.06em;color:#7b6d58">LIVE</i></span>
     <span class="nv-c-sym" id="nvFocusSym">CLANKER/USDT</span>
     <span class="nv-f-chg" id="nvFocusChg">+—%</span>
     <span class="nv-f-price" id="nvFocusPrice">—</span>
@@ -1424,13 +1586,14 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
  <div class="mp-foot"><span>HIGHEST THRESHOLD</span><b id="mpFoot">MOSS // 78</b></div>
 </div>
 </div>
+
 <div class="nv-drawer" id="nvDrawer" aria-hidden="true">
  <div class="nv-d-h">
   <div><div class="nv-d-k" id="nvDKind">★ FOCUS · 自选主监控</div><div class="nv-d-title" id="nvDTitle">BLESS/USDT</div><div class="nv-d-stage" id="nvDStage">开仓信号 · 97.0</div></div>
   <button class="nv-d-x" type="button" data-nv-close>×</button>
  </div>
- <div class="nv-tabs"><button class="on" type="button" data-nv-tab="current">当前详情</button><button type="button" data-nv-tab="history">历史监控</button><button type="button" data-nv-tab="alerts">异动历史</button><button type="button" data-nv-tab="signals">建仓信号</button></div>
- <div class="nv-d-body">
+ <div class="nv-tabs"><button type="button" data-nv-tab="current" hidden>当前</button><button type="button" data-nv-tab="history">历史监控</button><button type="button" data-nv-tab="alerts">异动历史</button><button type="button" data-nv-tab="signals">建仓信号</button></div>
+ <div class="nv-d-body nv-scroll">
   <div class="nv-pane" data-pane="current">
   <div class="nv-now">
    <div class="nv-now-main"><span class="nv-now-k">24H 涨跌幅</span><b class="nv-now-chg" id="nvDChange">+25.30%</b><span class="nv-now-price" id="nvDPrice">0.12066 USDT</span></div>
@@ -1454,16 +1617,26 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div class="nv-d-sec"><h4>数据</h4><p id="nvDData">数据源：公开行情快照 · 最后更新 17:00:15 · 当前为延时快照。</p></div>
   </div>
   <div class="nv-pane" data-pane="history" hidden>
-   <div class="nv-d-sec"><h4>近 24 小时监控</h4><div class="nv-history" id="nvDHistList"><div><span>暂无建仓信号记录</span><b>—</b></div></div></div>
-   <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts" id="nvDHistStats"><div><span>信号次数</span><b id="nvHistCount">0</b></div><div><span>多单</span><b id="nvHistLong">0</b></div><div><span>空单</span><b id="nvHistShort">0</b></div><div><span>最新胜率</span><b id="nvHistWin">—</b></div></div></div>
+   <div class="nv-d-sec"><h4>24 小时播报记录</h4><div class="nv-history" id="nvDHistList"><div><span>24 小时内暂无播报</span><b>—</b></div></div>
+    <div class="nv-mh-pager" id="nvDHistPager"><button type="button" id="nvDHistPrev">上一页</button><span id="nvDHistPage">1 / 1</span><button type="button" id="nvDHistNext">下一页</button></div></div>
+   <div class="nv-d-sec"><h4>统计</h4><div class="nv-facts" id="nvDHistStats"><div><span>播报次数</span><b id="nvHistCount">0</b></div><div><span>建仓信号</span><b id="nvHistLong">0</b></div><div><span>自选监控</span><b id="nvHistShort">0</b></div><div><span>涉及币种</span><b id="nvHistWin">0</b></div></div></div>
   </div>
   <div class="nv-pane" data-pane="alerts" hidden>
-   <div class="nv-d-sec"><h4>POSITION ALERTS HISTORY</h4><div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIA/USDT</span><b>OI +49.5%</b></div></div><div class="nv-alert-pager"><button type="button" data-alert-page="prev">上一页</button><span id="nvAlertPage">1 / 1</span><button type="button" data-alert-page="next">下一页</button></div></div>
-   <div class="nv-d-sec"><h4>口径</h4><p>记录持仓快速增加/减少的异动快照，不构成交易建议。</p></div>
+   <div class="nv-d-sec"><h4>ALERT HISTORY · 异动历史</h4>
+     <div class="nv-alert-cats" id="nvAlertCats"><button class="on" type="button" data-alert-cat="oi">合约持仓 <b id="nvCatOi">0</b></button><button type="button" data-alert-cat="large">特大订单 <b id="nvCatLarge">0</b></button><button type="button" data-alert-cat="volume">激增放量 <b id="nvCatVolume">0</b></button></div>
+     <div class="nv-history" id="nvAlertHistory"><div><span>17:00:15 · ARIA/USDT</span><b>OI +49.5%</b></div></div><div class="nv-alert-pager"><button type="button" data-alert-page="prev">上一页</button><span id="nvAlertPage">1 / 1</span><button type="button" data-alert-page="next">下一页</button></div></div>
+   <div class="nv-d-sec"><h4>口径</h4><p>三类历史分开归档：合约持仓、特大主动订单、3 分钟激增放量；不构成交易建议。</p></div>
   </div>
   <div class="nv-pane" data-pane="signals" hidden>
-   <div class="nv-d-sec"><h4>SIGNAL HISTORY</h4><div class="nv-signal-counts" id="nvSignalCounts"></div><div class="nv-signal-history" id="nvSignalHistory"></div></div>
+      <div class="nv-d-sec"><h4>SIGNAL HISTORY</h4><div class="nv-signal-counts" id="nvSignalCounts"></div><div class="nv-signal-history" id="nvSignalHistory"></div></div>
   </div>
+ </div>
+</div>
+<div class="nv-info" id="nvInfo" hidden>
+ <div class="nv-info-card" role="dialog" aria-modal="true" aria-labelledby="nvInfoTitle">
+  <div class="nv-info-h"><div class="nv-info-k" id="nvInfoKick">MARKET DATA</div><div class="nv-info-title" id="nvInfoTitle">数据详情</div></div>
+  <button class="nv-info-x" type="button" data-info-close aria-label="关闭">×</button>
+  <div class="nv-info-body" id="nvInfoBody"></div>
  </div>
 </div>
 <div class="nv-signal" id="nvSignal" aria-hidden="true">
@@ -11129,7 +11302,6 @@ requestAnimationFrame(frame);
         const meta = card.querySelector('.nv-c-meta'); if (meta) meta.innerHTML = `<i class="nv-stage ${lane === 'focus' ? 'entry' : 'watch'}">${lane === 'focus' ? '开仓信号' : '重点候选'}</i><b>${lane === 'focus' ? '97.0' : '77.2'}</b> · ${stamp()} 抓取`;
         const row = [...sr.querySelectorAll(`.nv-mod.${lane} .nv-row`)].find(r => (r.querySelector('.nv-sym') || {}).textContent === d.title);
         if (row) { row.classList.add('live'); setTimeout(() => row.classList.remove('live'), 3400); }
-        captureLog.unshift([`${stamp()} · ${lane === 'focus' ? '开仓信号' : '重点候选'} · ${d.title}`, lane === 'focus' ? '97.0' : '77.2']);
         renderCaptureLog();
         const mod = sr.querySelector('.nv-mod.' + lane);
         if (mod) meteorTo(mod, lane, lane === 'focus' ? 900 : 520, () => freshPanel(mod, lane));
@@ -11163,6 +11335,7 @@ requestAnimationFrame(frame);
     try {
       const saved = JSON.parse(localStorage.getItem(ALERT_KEY) || '[]');
       if (Array.isArray(saved)) alertLog = saved.filter(a => a && a.ts && Date.now() - a.ts < ALERT_TTL);
+      localStorage.setItem(ALERT_KEY, JSON.stringify(alertLog.slice(0, 500)));
     } catch (e) {}
     if (!alertLog.length) {
       alertLog = [
@@ -11209,7 +11382,20 @@ requestAnimationFrame(frame);
       if (!alertFeed) return;
       const oldTop = new Map();
       if (animate) alertFeed.querySelectorAll('.nv-alertitem').forEach(el => oldTop.set(el.dataset.key, el.getBoundingClientRect().top));
-      alertFeed.innerHTML = alertLog.slice(0, 3).map(alertItemHtml).join('');
+      const picked = [];
+      const seenTypes = new Set();
+      for (const a of alertLog) {
+        const type = a.type || 'oi';
+        if (!seenTypes.has(type)) { picked.push(a); seenTypes.add(type); }
+        if (picked.length === 3) break;
+      }
+      if (picked.length < 3) {
+        for (const a of alertLog) {
+          if (picked.length >= 3) break;
+          if (!picked.includes(a)) picked.push(a);
+        }
+      }
+      alertFeed.innerHTML = picked.map(alertItemHtml).join('');
       if (!animate) return;
       requestAnimationFrame(() => {
         alertFeed.querySelectorAll('.nv-alertitem').forEach((el, i) => {
@@ -11232,12 +11418,18 @@ requestAnimationFrame(frame);
       el._freshT = setTimeout(() => el.classList.remove('fresh'), 900000);
       setTimeout(() => el.classList.remove('flash'), 650);
     };
+    let alertCategory = 'oi';
     const renderAlertHistory = () => {
       if (!alertHistory) return;
-      const pages = Math.max(1, Math.ceil(alertLog.length / ALERT_PAGE_SIZE));
+      const counts = { oi: 0, large: 0, volume: 0 };
+      alertLog.forEach(a => { const k = a.type || 'oi'; if (counts[k] != null) counts[k]++; });
+      const setCount = (id, n) => { const el = sr.querySelector('#' + id); if (el) el.textContent = String(n); };
+      setCount('nvCatOi', counts.oi); setCount('nvCatLarge', counts.large); setCount('nvCatVolume', counts.volume);
+      const filtered = alertLog.filter(a => (a.type || 'oi') === alertCategory);
+      const pages = Math.max(1, Math.ceil(filtered.length / ALERT_PAGE_SIZE));
       alertHistoryPage = Math.max(0, Math.min(alertHistoryPage, pages - 1));
       const start = alertHistoryPage * ALERT_PAGE_SIZE;
-      alertHistory.innerHTML = alertLog.slice(start, start + ALERT_PAGE_SIZE).map(a => {
+      alertHistory.innerHTML = filtered.slice(start, start + ALERT_PAGE_SIZE).map(a => {
         const up = Number(a.chg || 0) >= 0;
         const cls = up ? 'up' : 'down';
         const color = up ? '#63C08E' : '#C96358';
@@ -11264,6 +11456,9 @@ requestAnimationFrame(frame);
       if (prev) prev.disabled = alertHistoryPage === 0;
       if (next) next.disabled = alertHistoryPage >= pages - 1;
     };
+    const capPrev = sr.querySelector('#nvDHistPrev'), capNext = sr.querySelector('#nvDHistNext');
+    capPrev && capPrev.addEventListener('click', (e) => { e.stopPropagation(); if (capPage > 0) { capPage -= 1; renderCaptureLog(); } });
+    capNext && capNext.addEventListener('click', (e) => { e.stopPropagation(); capPage += 1; renderCaptureLog(); });
     const alertPager = sr.querySelector('.nv-alert-pager');
     alertPager && alertPager.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-alert-page]');
@@ -11271,8 +11466,17 @@ requestAnimationFrame(frame);
       alertHistoryPage += btn.dataset.alertPage === 'next' ? 1 : -1;
       renderAlertHistory();
     });
+    const alertCats = sr.querySelector('#nvAlertCats');
+    alertCats && alertCats.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-alert-cat]');
+      if (!btn) return;
+      alertCategory = btn.dataset.alertCat;
+      alertHistoryPage = 0;
+      alertCats.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+      renderAlertHistory();
+    });
     const pushAlert = (r, liveTime, announce = true, type = 'oi') => {
-      if (!r) return;
+      if (!r || window.__MOSS_LIVE_FRESH === false) return;
       const pct = Number(r.oi15m || r.oi5m || 0);
       const dir = pct >= 0 ? '↑↑↑' : '↓↓↓';
       const delta = Math.abs(Number(r.oiNotional || 0) * pct / (100 + pct));
@@ -11298,14 +11502,75 @@ requestAnimationFrame(frame);
     renderAlertFeed();
     renderAlertHistory();
     { const first = alertFeed && alertFeed.firstElementChild; if (first) markAlertFresh(first); }
+    // ===== 左右两条独立的播报记录 =====
+    const LEFT_KEY = 'moss-left-log-v1';
+    const RIGHT_KEY = 'moss-right-log-v1';
+    const LOG_TTL = 24 * 60 * 60 * 1000;
+    const SIG_COOLDOWN = 30 * 60 * 1000;
+    const readLog = (key) => {
+      try {
+        const arr = JSON.parse(localStorage.getItem(key) || '[]');
+        if (!Array.isArray(arr)) return [];
+        const cut = Date.now() - LOG_TTL;
+        return arr.filter(x => x && x.ts && x.ts >= cut).sort((a, b) => b.ts - a.ts);
+      } catch (e) { return []; }
+    };
+    const writeLog = (key, arr) => {
+      try { localStorage.setItem(key, JSON.stringify((arr || []).slice(0, 800))); } catch (e) {}
+    };
+    function pushLogTo(key, sym, meta) {
+      try {
+        const list = readLog(key);
+        const now = new Date();
+        list.unshift(Object.assign({
+          ts: Date.now(),
+          time: now.toLocaleTimeString('zh-CN', { hour12: false }),
+          day: now.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+          symbol: rawSymbol(sym)
+        }, meta || {}));
+        writeLog(key, list);
+      } catch (e) {}
+    }
+    const LOG_MIN_GAP = 60 * 1000;
+    const pushLeftLog = (sym, meta) => {
+      try {
+        const c = rawSymbol(sym);
+        const list = readLog(LEFT_KEY);
+        const last = list.find(x => x.symbol === c);
+        if (last && Date.now() - last.ts < LOG_MIN_GAP) return;
+      } catch (e) {}
+      pushLogTo(LEFT_KEY, sym, meta);
+    };
+    const pushRightLog = (sym, meta) => {
+      try {
+        const c = rawSymbol(sym);
+        const list = readLog(RIGHT_KEY);
+        const last = list.find(x => x.symbol === c);
+        if (last && Date.now() - last.ts < LOG_MIN_GAP) return;
+      } catch (e) {}
+      pushLogTo(RIGHT_KEY, sym, meta);
+    };
     const SIGNAL_KEY = 'moss-signal-log-v1', SIGNAL_TTL = 24 * 60 * 60 * 1000;
     let signalLog = [];
     try {
       const saved = JSON.parse(localStorage.getItem(SIGNAL_KEY) || '[]');
       if (Array.isArray(saved)) signalLog = saved.filter(a => a && a.ts && Date.now() - a.ts < SIGNAL_TTL);
+      localStorage.setItem(SIGNAL_KEY, JSON.stringify(signalLog.slice(0, 500)));
     } catch (e) {}
     const saveSignals = () => { try { localStorage.setItem(SIGNAL_KEY, JSON.stringify(signalLog.slice(0, 500))); } catch (e) {} };
+    const refreshSignalQuote = (rows) => {
+      const symSym = window.__MOSS_SIGNAL_SYMBOL;
+      if (!symSym || !Array.isArray(rows)) return;
+      const r = rows.find(x => x.symbol === symSym);
+      if (!r) return;
+      const chgEl = sr.querySelector('#nvCardSigChg');
+      if (chgEl) {
+        const up = Number(r.change24h || 0) >= 0;
+        chgEl.textContent = `${up ? '涨幅' : '跌幅'} ${up ? '+' : ''}${Number(r.change24h || 0).toFixed(2)}%`;
+      }
+    };
     const renderSignalFeed = (sig) => {
+      window.__MOSS_SIGNAL_SYMBOL = sig && (sig.r.symbol || sig.r.baseAsset);
       const card = sr.querySelector('#nvSignalCard');
       if (!card || !sig) return;
       const up = sig.side === 'long';
@@ -11321,16 +11586,59 @@ requestAnimationFrame(frame);
       const tp = sr.querySelector('#nvCardSigTp'); if (tp) tp.textContent = sig.targetText;
       const sl = sr.querySelector('#nvCardSigSl'); if (sl) sl.textContent = sig.stopText;
     };
+    // 左侧：按权重挑一个原因作为标签
+    const winReasonTag = (a) => {
+      const oi15 = Math.abs(Number(a.oi15 || 0));
+      const score = Number(a.score || 0);
+      const chg = Math.abs(Number(a.chg || 0));
+      const oi5 = Math.abs(Number(a.oi5 || 0));
+      const cands = [
+        { w: oi15 / 5, text: 'OI 增长', color: '#63C08E' },
+        { w: score / 90, text: '策略分高', color: '#E8A020' },
+        { w: chg / 50, text: '涨幅强', color: '#FF6B4A' },
+        { w: oi5 / 2, text: '短线动量', color: '#8AB4C9' }
+      ];
+      cands.sort((x, y) => y.w - x.w);
+      return cands[0] || { text: '达标', color: '#8AB4C9' };
+    };
+    const winLevelTag = (w) => {
+      const v = Number(w || 0);
+      if (v >= 85) return '强烈';
+      if (v >= 80) return '高优';
+      return '关注';
+    };
     const renderSignalHistory = () => {
       const box = sr.querySelector('#nvSignalHistory');
       if (!box) return;
+      const sigLog = readLog(LEFT_KEY);
       const counts = {};
-      signalLog.forEach(a => { counts[a.symbol] = (counts[a.symbol] || 0) + 1; });
+      sigLog.forEach(a => { counts[a.symbol] = (counts[a.symbol] || 0) + 1; });
       const summary = sr.querySelector('#nvSignalCounts');
-      if (summary) summary.innerHTML = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([s, n]) => `<span>${pairName(s)} × ${n}</span>`).join('');
-      box.innerHTML = signalLog.slice(0, 500).map(a => {
-        const color = a.side === 'short' ? '#C96358' : '#63C08E';
-        return `<div class="nv-signal-record"><div class="st">${a.time}</div><div class="sm"><b>${pairName(a.symbol)}</b><em class="${a.side}" style="color:${color}">${a.side === 'long' ? '建议建多' : '建议建空'} ${Number(a.chg).toFixed(2)}%</em><span>该币累计建议 ${counts[a.symbol]} 次</span></div><div class="sg"><div><span>价格</span><b>${a.price} USDT</b></div><div><span>胜率</span><b>${a.win}%</b></div><div><span>策略分</span><b>${a.score ? Number(a.score).toFixed(1) : '—'}</b></div><div><span>当前 OI</span><b>${fmtWan(a.oi)}</b></div><div><span>5M / 15M OI</span><b>${sign(a.oi5)}% / ${sign(a.oi15)}%</b></div><div><span>15M 增量</span><b>${a.delta >= 0 ? '+' : '-'}${fmtWan(Math.abs(a.delta))}</b></div><div><span>止盈</span><b>${a.target}</b></div><div><span>止损</span><b>${a.stop}</b></div><div><span>建议次数</span><b>${counts[a.symbol]} 次</b></div></div></div>`;
+      if (summary) summary.innerHTML = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, n]) => `<span>${pairName(k)} × ${n}</span>`).join('');
+      box.innerHTML = sigLog.slice(0, 500).map(a => {
+        const up = Number(a.chg || 0) >= 0;
+        const color = up ? '#63C08E' : '#C96358';
+        const delta = Number(a.delta || 0);
+        const tag = winReasonTag(a);
+        return `<div class="nv-rec">
+          <div class="nv-rec-h">${a.time} · 建仓信号 · 累计 ${counts[a.symbol]} 次</div>
+          <div class="nv-rec-name"><b>${pairName(a.symbol)}</b><em style="color:${color}">${up ? '+' : ''}${Number(a.chg || 0).toFixed(2)}%</em></div>
+          <div class="nv-rec-main">
+            <b>${a.win || '—'}<i>%</i></b>
+            <span class="nv-rec-tag" style="color:${tag.color};border-color:${tag.color}55">${tag.text}</span>
+            <em>胜率 · ${winLevelTag(a.win)}</em>
+          </div>
+          <div class="nv-rec-grid">
+            <div><span>价格</span><b>${a.price ? a.price + ' USDT' : '—'}</b></div>
+            <div><span>策略分</span><b>${a.score ? Number(a.score).toFixed(1) : '—'}</b></div>
+            <div><span>当前 OI</span><b>${fmtWan(a.oi)}</b></div>
+            <div><span>5M OI</span><b>${sign(a.oi5)}%</b></div>
+            <div><span>15M OI</span><b>${sign(a.oi15)}%</b></div>
+            <div><span>15M 增量</span><b>${delta >= 0 ? '+' : '-'}${fmtWan(Math.abs(delta))}</b></div>
+            <div><span>止盈</span><b>${a.target || '—'}</b></div>
+            <div><span>止损</span><b>${a.stop || '—'}</b></div>
+          </div>
+        </div>`;
       }).join('');
     };
     const recordSignal = (sig) => {
@@ -11348,15 +11656,17 @@ requestAnimationFrame(frame);
     const openSignalHistory = () => {
       showTab('signals');
       setDrawerMode('signal');
+      const leftRecs = readLog(LEFT_KEY);
+      const curSym = document.querySelector('#host-neural').shadowRoot.querySelector('#nvCardSigSym')?.textContent || '—';
       sr.querySelector('#nvDKind').textContent = '◉ SIGNAL FEED · 建仓信号';
-      sr.querySelector('#nvDTitle').textContent = 'SIGNAL HISTORY';
-      sr.querySelector('#nvDStage').textContent = `24 小时 · ${signalLog.length} 条 · 点击代币查看详情`;
+      sr.querySelector('#nvDTitle').textContent = curSym;
+      sr.querySelector('#nvDStage').textContent = `24 小时 · ${leftRecs.length} 条 · 点击代币查看详情`;
       renderSignalHistory();
       drawer.classList.add('open');
       drawer.setAttribute('aria-hidden', 'false');
       freshPanel(drawer, 'focus');
     };
-    { const latest = signalLog[0]; if (latest) renderSignalFeed({ r: { symbol: latest.symbol, price: latest.price, oiNotional: latest.oi }, chg: latest.chg, side: latest.side, win: latest.win, oi5: latest.oi5, oi15: latest.oi15, targetText: latest.target, stopText: latest.stop }); }
+    { const latest = signalLog[0]; if (latest && Date.now() - latest.ts < 15 * 60 * 1000) renderSignalFeed({ r: { symbol: latest.symbol, price: latest.price, oiNotional: latest.oi }, chg: latest.chg, side: latest.side, win: latest.win, oi5: latest.oi5, oi15: latest.oi15, targetText: latest.target, stopText: latest.stop }); }
     renderSignalHistory();
     const calcSignal = (r) => {
       const chg = Number(r.change24h || 0);
@@ -11381,6 +11691,426 @@ requestAnimationFrame(frame);
       const fmtPx = (v) => v ? v.toFixed(v < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
       return { r, chg, oi5, oi15, vol, score, stage, side, win, target, stop, targetText: fmtPx(target), stopText: fmtPx(stop) };
     };
+    const SIG_SLOT_MS = 5 * 60 * 1000;
+    const SIG_IDLE_MS = 15 * 60 * 1000;
+    let sigQueue = [];
+    let sigTimer = null;
+    let sigIdleTimer = null;
+    const signalCardEl = () => sr.querySelector('#nvSignalCard');
+    const renderSignalCardFrame = () => {
+      const card = signalCardEl();
+      if (!card) return;
+      const busy = Boolean(window.__MOSS_SIG_CURRENT);
+      card.classList.remove('sig-idle');
+      if (!busy) card.classList.remove('nv-focus-idle');
+    };
+    // 取消自动变暗：卡片常亮
+    const sigArmIdle = () => {
+      clearTimeout(sigIdleTimer);
+      const card = signalCardEl();
+      if (card) card.classList.remove('sig-idle', 'nv-focus-idle');
+    };
+    const sigShow = (entry) => {
+      const card = signalCardEl();
+      if (!card || !entry) return;
+      window.__MOSS_SIG_CURRENT = entry.key;
+      window.__MOSS_SIG_LAST = entry.key;
+      try {
+        pushLeftLog(entry.sig.r.symbol, {
+          win: entry.sig.win, chg: entry.sig.chg, side: entry.sig.side, score: entry.sig.score,
+          price: Number(entry.sig.r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''),
+          oi: entry.sig.r.oiNotional, oi5: entry.sig.oi5, oi15: entry.sig.oi15,
+          target: entry.sig.targetText, stop: entry.sig.stopText
+        });
+      } catch (e) {}
+      window.__MOSS_SIG_SEEN_ONCE = true;
+      card.classList.remove('sig-idle', 'nv-focus-idle');
+      renderSignalFeed(entry.sig);
+      // 每次轮播都弹一次建仓警报
+      try { showSignal(entry.sig, entry.row || null, entry.lane || 'gain'); } catch (e) {}
+      meteorTo(card, 'focus', 900, () => {
+        card.classList.remove('meteor-arrive');
+        void card.offsetWidth;
+        card.classList.add('meteor-arrive');
+        clearTimeout(card._sigArriveT);
+        card._sigArriveT = setTimeout(() => card.classList.remove('meteor-arrive'), 950);
+      });
+      card.classList.add('hot', 'flash');
+      clearTimeout(card._sigHotT);
+      card._sigHotT = setTimeout(() => card.classList.remove('hot'), 15 * 60 * 1000);
+      setTimeout(() => card.classList.remove('flash'), 650);
+      sigArmIdle();
+      try {
+        queueOrderPreview(entry);
+        if (readOrderMode() === 'auto' && LIVE_ORDER_ENABLED()) {
+          const hasSlot = (TRADE_INFO.positions || []).length < ORDER_MAX_POSITIONS;
+          if (hasSlot) {
+            const p = orderPending;
+            if (p) {
+              const stage = opEl('nvOpStage');
+              if (stage) stage.textContent = '自动下单中…';
+              sendOrder(p);
+            }
+          }
+        }
+      } catch (e) {}
+    };
+    const pushSignalSlot = (entry, delay = 1100) => {
+      if (!entry) return;
+      const sym = entry.symbol || (entry.sig && entry.sig.r && entry.sig.r.symbol);
+      if (!sym) return;
+      const curRaw = window.__MOSS_SIG_CURRENT;
+      const playing = curRaw ? String(curRaw).replace(/-(long|short)$/, '') : null;
+      if (playing === sym) return;
+      if (sigQueue.some(x => (x.symbol || (x.sig && x.sig.r && x.sig.r.symbol)) === sym)) return;
+      const wasEmpty = sigQueue.length === 0;
+      if (!playing) {
+        sigQueue.push(entry);
+      } else {
+        sigQueue.unshift(entry);
+      }
+      // 只有队列从空变为非空时才调度；已有定时器就交给它
+      if (wasEmpty && !window.__MOSS_SIG_TIMER) {
+        setTimeout(sigNext, delay);
+      }
+    };
+    // ===== 下单预演（LIVE_ORDER_ENABLED=false 时只做参数计算） =====
+    const ORDER_LEVERAGE = 5;
+    const ORDER_EQUITY_PCT = 0.05;
+    const ORDER_TP_PCT = 15;
+    const ORDER_SL_PCT = 15;
+    const ORDER_MAX_POSITIONS = 5;
+    const TRADE_INFO = { configured: false, autoTrade: false, equity: 0, available: 0, spot: 0, baseline: 0, positions: [], mode: 'manual' };
+    const ORDER_MODE_KEY = 'moss-order-mode';
+    const readOrderMode = () => {
+      if (TRADE_INFO.mode === 'auto' || TRADE_INFO.mode === 'manual') return TRADE_INFO.mode;
+      try { return localStorage.getItem(ORDER_MODE_KEY) === 'auto' ? 'auto' : 'manual'; } catch (e) { return 'manual'; }
+    };
+    const LIVE_ORDER_ENABLED = () => Boolean(TRADE_INFO.autoTrade);
+    const orderBusy = { value: false };
+    const sendOrder = (p) => {
+      if (!p || orderBusy.value) return;
+      orderBusy.value = true;
+      postTrade({ type: 'trade', action: 'market', symbol: p.symbol, side: p.side });
+    };
+    const postTrade = (payload) => {
+      try { if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(payload); } catch (e) {}
+    };
+    const EQUITY_KEY = 'moss-order-equity';
+    const readEquity = () => {
+      if (Number(TRADE_INFO.equity || 0) > 0) return Number(TRADE_INFO.equity);
+      try {
+        const stored = Number(localStorage.getItem(EQUITY_KEY) || 0);
+        if (stored > 0) return stored;
+      } catch (e) {}
+      return Number(window.__MOSS_EQUITY || 0);
+    };
+    const saveEquity = (v) => {
+      const n = Number(v);
+      if (!(n > 0)) return;
+      window.__MOSS_EQUITY = n;
+      try { localStorage.setItem(EQUITY_KEY, String(n)); } catch (e) {}
+    };
+    let orderPending = null;
+    let orderPopTimer = null;
+    const opEl = (id) => document.getElementById(id) || sr.querySelector('#' + id);
+    const fmtPrice = (v) => v ? Number(v).toFixed(Number(v) < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
+    const ORDER_POP_MS = 3 * 60 * 1000;
+    let orderPopAuto = null;
+    (() => {
+      if (document.getElementById('moss-order-style')) return;
+      const style = document.createElement('style');
+      style.id = 'moss-order-style';
+      style.textContent = `
+.nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:none!important;width:330px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate;font-family:"JetBrains Mono","Microsoft YaHei",ui-monospace,monospace}
+.nv-order-pop[hidden]{display:none}
+.nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
+.nv-order-pop.short{border-color:rgba(201,99,88,.62);background:linear-gradient(150deg,rgba(26,8,7,.42),rgba(4,3,3,.34));box-shadow:0 0 30px rgba(201,99,88,.42),0 0 70px rgba(201,99,88,.16),inset 0 0 34px rgba(201,99,88,.1)}
+.nv-order-pop.short::before{background:radial-gradient(70% 120% at 16% 0%,rgba(201,99,88,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(201,99,88,.24) 38%,transparent 62%,rgba(255,255,255,.06) 80%,transparent 96%);background-size:180% 180%,220% 220%}
+@keyframes nvOpIn{0%{opacity:0;transform:translateY(10px) scale(.97)}100%{opacity:1;transform:none}}
+.nv-op-h{display:flex;align-items:baseline;gap:8px}
+.nv-op-h b{font:700 17px/1 inherit;color:#f2f0e8;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-h span{font:700 10px/1 "Microsoft YaHei",sans-serif;color:#63C08E;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-order-pop.short .nv-op-h span{color:#C96358}
+.nv-op-pos{margin-left:auto;padding:3px 7px;border:1px solid rgba(99,192,142,.4);background:rgba(99,192,142,.1);font:600 8.5px/1 inherit;color:#8fd8b4;cursor:pointer;white-space:nowrap}
+.nv-op-pos:hover{background:rgba(99,192,142,.22);border-color:rgba(99,192,142,.75)}
+.nv-order-pop.short .nv-op-pos{border-color:rgba(201,99,88,.4);background:rgba(201,99,88,.1);color:#e0a49a}
+.nv-op-x{margin-left:8px;font:400 15px/1 inherit;color:#7b6d58;cursor:pointer;font-style:normal}
+.nv-op-x:hover{color:#e8a020}
+.nv-op-stage{margin-top:6px;font:500 9px/1.4 "Microsoft YaHei",sans-serif;color:#8a7a5e;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:12px;align-items:start}
+.nv-op-grid>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.nv-op-grid span{font:500 8.5px/1 "Microsoft YaHei",sans-serif;color:#6f5f48;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-grid b{font:600 12px/1 inherit;color:#f0e2bc;text-shadow:0 0 10px rgba(0,0,0,.85)}
+.nv-op-mode{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:9px;border-top:1px solid rgba(99,192,142,.16);font:500 9px/1 "Microsoft YaHei",sans-serif;color:#8a7a5e;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-switch{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-style:normal;user-select:none}
+.nv-op-switch b{position:relative;display:block;width:30px;height:14px;border-radius:7px;background:rgba(255,255,255,.1);border:1px solid rgba(232,160,32,.3);transition:background .2s,border-color .2s}
+.nv-op-switch b::after{content:"";position:absolute;left:2px;top:1px;width:10px;height:10px;border-radius:50%;background:#8a7a5e;transition:transform .2s,background .2s}
+.nv-op-switch.on b{background:rgba(99,192,142,.28);border-color:rgba(99,192,142,.6)}
+.nv-op-switch.on b::after{transform:translateX(15px);background:#8fd8b4}
+.nv-op-switch em{font:600 9px/1 "Microsoft YaHei",sans-serif;color:#c9a35a;font-style:normal}
+.nv-op-switch.on em{color:#8fd8b4}
+.nv-op-act{display:flex;gap:8px;margin-top:12px}
+.nv-op-act button{flex:1;padding:8px 0;font:600 10px/1 "Microsoft YaHei",sans-serif;cursor:pointer;border-radius:0}
+.nv-op-ok{background:rgba(99,192,142,.16);border:1px solid rgba(99,192,142,.5);color:#8fd8b4}
+.nv-op-ok:disabled{opacity:.55;cursor:default}
+.nv-op-no{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a}
+.nv-op-positions{position:absolute;inset:0;z-index:3;padding:12px 13px 11px;background:linear-gradient(150deg,rgba(6,20,14,.93),rgba(3,4,4,.91))}
+.nv-op-positions[hidden]{display:none}
+.nv-op-pos-h{display:flex;align-items:center;justify-content:space-between;font:700 11px/1 "Microsoft YaHei",sans-serif;color:#f0e2bc;padding-bottom:8px;border-bottom:1px solid rgba(99,192,142,.2)}
+.nv-op-pos-x{font:600 9px/1 "Microsoft YaHei",sans-serif;color:#c9a35a;cursor:pointer;font-style:normal}
+.nv-op-pos-list{margin-top:8px;max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:7px}
+.nv-op-pos-row{padding:7px 8px;border:1px solid rgba(99,192,142,.2);background:rgba(99,192,142,.05)}
+.nv-op-pos-row.up{border-color:rgba(99,192,142,.45);background:rgba(99,192,142,.1)}
+.nv-op-pos-row.down{border-color:rgba(201,99,88,.45);background:rgba(201,99,88,.1)}
+.nv-op-pos-top{display:flex;justify-content:space-between;align-items:baseline}
+.nv-op-pos-top b{font:700 12px/1 inherit;color:#f2f0e8}
+.nv-op-pos-top i{font:600 10px/1 inherit;font-style:normal}
+.nv-op-pos-meta{margin-top:5px;display:flex;gap:10px;font:500 8.5px/1.3 inherit;color:#9a8a70}
+.nv-op-pos-empty{padding:14px 0;text-align:center;font:500 10px/1.5 "Microsoft YaHei",sans-serif;color:#6f5f48}
+@keyframes nvhotbg{0%,100%{background-position:0% 50%,0% 50%}50%{background-position:100% 50%,100% 50%}}
+`;
+      document.head.appendChild(style);
+    })();
+    (() => {
+      if (document.getElementById('moss-binance-style')) return;
+      const st = document.createElement('style');
+      st.id = 'moss-binance-style';
+      st.textContent = `
+.nv-binance-entry{position:fixed;right:18px;bottom:18px;z-index:1800;padding:7px 12px;border:1px solid rgba(232,160,32,.45);background:rgba(10,8,4,.72);color:#c9a35a;font:600 10px/1 "Microsoft YaHei",sans-serif;cursor:pointer;letter-spacing:.04em}
+.nv-binance-entry:hover{border-color:rgba(232,160,32,.85);color:#e8a020;box-shadow:0 0 18px rgba(232,160,32,.25)}
+.nv-binance-setup{position:fixed;inset:0;z-index:2500;display:grid;place-items:center;background:rgba(0,0,0,.55)}
+.nv-binance-setup[hidden]{display:none}
+.nv-bs-card{width:380px;padding:16px;border:1px solid rgba(232,160,32,.5);background:linear-gradient(150deg,rgba(10,10,8,.97),rgba(3,4,4,.97));box-shadow:0 0 40px rgba(232,160,32,.18);font-family:"JetBrains Mono","Microsoft YaHei",monospace}
+.nv-bs-h{display:flex;align-items:center;justify-content:space-between;font:700 14px/1 "Microsoft YaHei",sans-serif;color:#f2f0e8}
+.nv-bs-h i{font:400 18px/1 inherit;color:#7b6d58;cursor:pointer;font-style:normal}
+.nv-bs-h i:hover{color:#e8a020}
+.nv-bs-note{margin-top:7px;font:500 9.5px/1.5 "Microsoft YaHei",sans-serif;color:#8a7a5e}
+.nv-bs-row{display:block;margin-top:12px}
+.nv-bs-row span{display:block;font:600 9px/1 "Microsoft YaHei",sans-serif;color:#c9a35a;margin-bottom:5px}
+.nv-bs-row input{width:100%;box-sizing:border-box;padding:8px 9px;background:rgba(0,0,0,.5);border:1px solid rgba(232,160,32,.28);color:#f2f0e8;font:500 11px/1.2 inherit;outline:none}
+.nv-bs-row input:focus{border-color:rgba(232,160,32,.7)}
+.nv-bs-status{margin-top:11px;padding:7px 9px;background:rgba(255,255,255,.04);border-left:2px solid #8a7a5e;font:500 9.5px/1.4 "Microsoft YaHei",sans-serif;color:#9a8a70}
+.nv-bs-status.ok{border-left-color:#63C08E;color:#8fd8b4}
+.nv-bs-status.err{border-left-color:#C96358;color:#e0a49a}
+.nv-bs-actions{display:flex;gap:8px;margin-top:13px}
+.nv-bs-actions button{flex:1;padding:9px 0;font:600 11px/1 "Microsoft YaHei",sans-serif;cursor:pointer}
+#nvBsTest{background:transparent;border:1px solid rgba(232,160,32,.4);color:#c9a35a}
+#nvBsSave{background:rgba(99,192,142,.15);border:1px solid rgba(99,192,142,.55);color:#8fd8b4}
+.nv-bs-tip{margin-top:11px;font:500 9px/1.5 "Microsoft YaHei",sans-serif;color:#6f5f48}
+`;
+      document.head.appendChild(st);
+    })();
+    (() => {
+      const setup = document.getElementById('nvBinanceSetup');
+      if (!setup) return;
+      const keyEl = document.getElementById('nvBsKey');
+      const secEl = document.getElementById('nvBsSecret');
+      const statusEl = document.getElementById('nvBsStatus');
+      const setStatus = (txt, cls) => { if (!statusEl) return; statusEl.textContent = txt; statusEl.className = 'nv-bs-status' + (cls ? ' ' + cls : ''); };
+      const openSetup = () => { setup.hidden = false; setTimeout(() => keyEl && keyEl.focus(), 60); };
+      const closeSetup = () => { setup.hidden = true; };
+      window.__MOSS_OPEN_SETUP = openSetup;
+      document.getElementById('nvBinanceEntry')?.addEventListener('click', openSetup);
+      document.getElementById('nvTradeInfo')?.addEventListener('click', (e) => { e.stopPropagation(); openSetup(); });
+      document.getElementById('nvBsClose')?.addEventListener('click', closeSetup);
+      setup.addEventListener('click', (e) => { if (e.target === setup) closeSetup(); });
+      document.getElementById('nvBsTest')?.addEventListener('click', () => {
+        const k = (keyEl.value || '').trim(), v = (secEl.value || '').trim();
+        if (!k || !v) { setStatus('请先填写 API Key 和 Secret', 'err'); return; }
+        setStatus('测试中…', '');
+        postTrade({ type: 'tradeConfig', action: 'test', apiKey: k, apiSecret: v });
+      });
+      document.getElementById('nvBsSave')?.addEventListener('click', () => {
+        const k = (keyEl.value || '').trim(), v = (secEl.value || '').trim();
+        if (!k || !v) { setStatus('请先填写 API Key 和 Secret', 'err'); return; }
+        postTrade({ type: 'tradeConfig', action: 'save', apiKey: k, apiSecret: v, autoTrade: false });
+        setStatus('已保存到本机加密文件', 'ok');
+        setTimeout(closeSetup, 700);
+      });
+      window.addEventListener('moss:binance', (ev) => {
+        const d = (ev && ev.detail) || {};
+        if (d.type === 'test') {
+          if (d.ok) setStatus(`连接成功 · 合约权益 ${Number(d.equity || 0).toFixed(2)} USDT`, 'ok');
+          else setStatus(`连接失败：${d.message || ''}`, 'err');
+        }
+      });
+    })();
+    const closeOrderPop = () => {
+      const pop = opEl('nvOrderPop');
+      if (pop) pop.hidden = true;
+      const sub = opEl('nvOpPositions');
+      if (sub) sub.hidden = true;
+      orderPending = null;
+      clearTimeout(orderPopAuto);
+      orderPopAuto = null;
+    };
+    const renderPositions = () => {
+      const posBtn = opEl('nvOpPos');
+      const positions = Array.isArray(TRADE_INFO.positions) ? TRADE_INFO.positions : [];
+      if (posBtn) posBtn.textContent = `持仓 ${positions.length}/${ORDER_MAX_POSITIONS}`;
+      const list = opEl('nvOpPosList');
+      if (!list) return;
+      if (!positions.length) {
+        list.innerHTML = '<div class="nv-op-pos-empty">暂无持仓</div>';
+        return;
+      }
+      list.innerHTML = positions.map(p => {
+        const amt = Number(p.amount || 0);
+        const pnl = Number(p.pnl || 0);
+        const up = pnl >= 0;
+        const dir = amt >= 0 ? '多' : '空';
+        return `<div class="nv-op-pos-row ${up ? 'up' : 'down'}">
+          <div class="nv-op-pos-top"><b>${pairName(p.symbol || '')}</b><i style="color:${up ? '#63C08E' : '#C96358'}">${up ? '+' : ''}${pnl.toFixed(2)} USDT</i></div>
+          <div class="nv-op-pos-meta"><span>${dir} ${Math.abs(amt)}</span><span>开仓 ${p.entryPrice || '—'}</span></div>
+        </div>`;
+      }).join('');
+    };
+    const queueOrderPreview = (entry) => {
+      if (!entry || !entry.sig) return;
+      const sig = entry.sig;
+      const price = Number(sig.r.price || 0);
+      if (!price) return;
+      const equity = readEquity();
+      const margin = equity > 0 ? equity * ORDER_EQUITY_PCT : 0;
+      const notional = margin * ORDER_LEVERAGE;
+      const qty = notional > 0 ? notional / price : 0;
+      orderPending = {
+        symbol: sig.r.symbol,
+        side: sig.side,
+        entry: price,
+        target: Number(sig.target || 0),
+        stop: Number(sig.stop || 0),
+        margin, notional, qty, leverage: ORDER_LEVERAGE,
+        win: sig.win,
+        demo: !LIVE_ORDER_ENABLED()
+      };
+      const pop = opEl('nvOrderPop');
+      if (!pop) return;
+      pop.classList.toggle('short', sig.side === 'short');
+      opEl('nvOpSym').textContent = pairName(sig.r.symbol);
+      opEl('nvOpSide').textContent = sig.side === 'long' ? '建议建多' : '建议建空';
+      const stageLabel = LIVE_ORDER_ENABLED() ? '真实下单' : '预演 · 不会真实下单';
+      opEl('nvOpStage').textContent = `${stageLabel} · 胜率 ${sig.win}% · ${Math.round(ORDER_POP_MS / 60000)} 分钟后自动关闭`;
+      opEl('nvOpStage').dataset.base = stageLabel + ' · 胜率 ' + sig.win + '%';
+      opEl('nvOpLev').textContent = `${ORDER_LEVERAGE}×`;
+      opEl('nvOpMargin').textContent = margin > 0 ? `${margin.toFixed(2)} USDT` : '待设置权益';
+      opEl('nvOpNotional').textContent = notional > 0 ? `${notional.toFixed(2)} USDT` : '—';
+      opEl('nvOpQty').textContent = qty > 0 ? qty.toFixed(4) : '—';
+      const tpPx = sig.side === 'long' ? price * (1 + ORDER_TP_PCT / 100) : price * (1 - ORDER_TP_PCT / 100);
+      const slPx = sig.side === 'long' ? price * (1 - ORDER_SL_PCT / 100) : price * (1 + ORDER_SL_PCT / 100);
+      opEl('nvOpEntry').textContent = fmtPrice(price);
+      opEl('nvOpTp').textContent = `${fmtPrice(tpPx)} (+${ORDER_TP_PCT}%)`;
+      opEl('nvOpSl').textContent = `${fmtPrice(slPx)} (-${ORDER_SL_PCT}%)`;
+      const risk = margin > 0 ? Math.abs(price - slPx) / price * notional : 0;
+      opEl('nvOpRisk').textContent = risk > 0 ? `最大亏 ${risk.toFixed(2)} USDT` : '—';
+      const mode = readOrderMode();
+      const sw = opEl('nvOpSwitch');
+      if (sw) sw.classList.toggle('on', mode === 'auto');
+      const mt = opEl('nvOpModeText');
+      if (mt) mt.textContent = mode === 'auto' ? '自动' : '手动';
+      const ok = opEl('nvOpOk');
+      if (ok) {
+        const live = LIVE_ORDER_ENABLED();
+        const hasSlot = (TRADE_INFO.positions || []).length < ORDER_MAX_POSITIONS;
+        if (mode === 'auto') {
+          ok.textContent = live ? (hasSlot ? '自动建仓模式' : '已满 5 单 · 暂停开仓') : '自动建仓模式 · 未开启';
+        } else {
+          ok.textContent = live ? (hasSlot ? '确认下单' : '已满 5 单 · 暂停开仓') : '预演模式 · 下单未开启';
+        }
+        ok.disabled = !live || !hasSlot || mode === 'auto';
+      }
+      pop.hidden = false;
+      // 定位：紧贴左侧「最新建仓」卡片右侧，底部与卡片对齐（渲染完成后校正）
+      try {
+        const place = () => {
+          const anchor = document.querySelector('#host-neural').shadowRoot.querySelector('#nvSignalCard');
+          if (!anchor) return;
+          const ar = anchor.getBoundingClientRect();
+          const gap = 14;
+          const pw = pop.offsetWidth, ph = pop.offsetHeight;
+          let left = Math.round(ar.right + gap);
+          let top = Math.round(ar.bottom - ph);
+          if (left + pw > window.innerWidth - 16) {
+            left = Math.round(ar.left);
+            top = Math.round(ar.bottom - ph);
+          }
+          top = Math.max(16, Math.min(top, window.innerHeight - ph - 16));
+          left = Math.max(16, left);
+          pop.style.left = left + 'px';
+          pop.style.top = top + 'px';
+        };
+        place();
+        requestAnimationFrame(place);
+        // 内容异步填充后高度会变化 → 持续校正几次
+        [40, 120, 260, 500, 900].forEach(ms => setTimeout(place, ms));
+        if (window.__MOSS_POPUP_RO) { try { window.__MOSS_POPUP_RO.disconnect(); } catch (e) {} }
+        try {
+          window.__MOSS_POPUP_RO = new ResizeObserver(() => place());
+          window.__MOSS_POPUP_RO.observe(pop);
+        } catch (e) {}
+      } catch (e) {}
+      clearTimeout(orderPopTimer);
+      clearTimeout(orderPopAuto);
+      orderPopAuto = setTimeout(() => { closeOrderPop(); }, ORDER_POP_MS);
+    };
+    // 左侧：队列空时先补一轮，补不到才进入空闲
+    const sigRefill = () => {
+      const played = (() => { try { return JSON.parse(localStorage.getItem('moss-sig-played-v1') || '{}') || {}; } catch (e) { return {}; } })();
+      const now = Date.now();
+      const entries = window.__MOSS_SIGNAL_ENTRIES || [];
+      const queued = new Set(sigQueue.map(x => x.symbol || (x.sig && x.sig.r && x.sig.r.symbol)));
+      const playing = window.__MOSS_SIG_CURRENT
+        ? String(window.__MOSS_SIG_CURRENT).replace(/-(long|short)$/, '')
+        : null;
+      entries.forEach(([key, c]) => {
+        const sym = c.symbol;
+        if (!sym) return;
+        if (sym === playing || queued.has(sym)) return;
+        const at = played[sym] || 0;
+        if (at && now - at < SIG_COOLDOWN) return;
+        sigQueue.push({ sig: c.sig, key, symbol: sym, lane: c.lane });
+        queued.add(sym);
+      });
+    };
+    let sigInFlight = false;
+    const sigNext = () => {
+      if (sigInFlight) return;
+      sigInFlight = true;
+      try {
+      clearTimeout(sigTimer);
+      window.__MOSS_SIG_TIMER = null;
+      // 上一条播完，写入播放时间
+      const prev = window.__MOSS_SIG_CURRENT;
+      if (prev) {
+        try {
+          const played = JSON.parse(localStorage.getItem('moss-sig-played-v1') || '{}') || {};
+          played[String(prev).replace(/-(long|short)$/, '')] = Date.now();
+          localStorage.setItem('moss-sig-played-v1', JSON.stringify(played));
+        } catch (e) {}
+      }
+      if (!sigQueue.length) sigRefill();
+      if (!sigQueue.length) {
+        window.__MOSS_SIG_CURRENT = null;
+        renderSignalCardFrame();
+        sigArmIdle();
+        return;
+      }
+      const entry = sigQueue.shift();
+      try {
+        const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+        const fresh = rows.find(x => x.symbol === (entry.sig.r.symbol));
+        if (fresh) entry.sig = calcSignal(fresh);
+        sigShow(entry);
+      } catch (e) {
+        console.error('sigShow failed:', e);
+      }
+      const wait = sigQueue.length ? SIG_SLOT_MS : SIG_IDLE_MS;
+      window.__MOSS_SIG_TIMER = setTimeout(sigNext, wait);
+      sigTimer = window.__MOSS_SIG_TIMER;
+      } finally { sigInFlight = false; }
+    };
+    const refreshSignalCardFrame = () => renderSignalCardFrame();
     const signalChime = async () => {
       if (muted) return;
       try {
@@ -11420,7 +12150,7 @@ requestAnimationFrame(frame);
     let signalTimerId = null;
     const showSignal = (sig, row, lane) => {
       const el = document.querySelector('#nvSignal');
-      if (!el || !sig) return;
+      if (!el || !sig || window.__MOSS_LIVE_FRESH === false) return;
       el.className = 'nv-signal open ' + sig.side;
       el.setAttribute('aria-hidden', 'false');
       clearInterval(signalTimerId);
@@ -11474,7 +12204,9 @@ requestAnimationFrame(frame);
       el.classList.remove('open');
       el.setAttribute('aria-hidden', 'true');
       try { window.speechSynthesis.cancel(); } catch (e) {}
+      try { sigArmIdle(); } catch (e) {}
     };
+
     const renderSmart = (sm) => {
       if (!sm) return;
       const pct = (v) => `${Number(v || 0).toFixed(1)}%`;
@@ -11495,11 +12227,61 @@ requestAnimationFrame(frame);
       set('bSmBuy', fmtWan(sm.buyUsdt)); set('bSmSell', fmtWan(sm.sellUsdt));
       setBar('bSmBuyBar', 1, 1); setBar('bSmSellBar', 1, 1);
     };
+    let currentFng = null, currentLs = null, lastFngValue = null, lastLsKey = null;
+    const esc = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const pulseBox = (el) => {
+      if (!el) return;
+      el.classList.remove('nv-data-pulse'); void el.offsetWidth; el.classList.add('nv-data-pulse');
+      clearTimeout(el._dataPulseT);
+      el._dataPulseT = setTimeout(() => el.classList.remove('nv-data-pulse'), 180000);
+    };
+    const openInfo = (kind) => {
+      const info = sr.querySelector('#nvInfo'); if (!info) return;
+      const kick = sr.querySelector('#nvInfoKick'), title = sr.querySelector('#nvInfoTitle'), body = sr.querySelector('#nvInfoBody');
+      if (kind === 'ls') {
+        const d = currentLs || {};
+        const long = Number(d.longAccount || 0), short = Number(d.shortAccount || 0), ratio = Number(d.ratio || 0);
+        kick.textContent = 'GLOBAL LONG / SHORT · 5M';
+        title.textContent = '全网合约多空比';
+        body.innerHTML = `<div class="nv-info-hero"><b>${ratio ? ratio.toFixed(2) : '—'}</b><span>${ratio >= 1.15 ? '多头占优' : ratio <= .87 ? '空头占优' : '多空均衡'}</span></div>
+          <div class="nv-info-dual"><i style="width:${Math.max(0, Math.min(100, long))}%"></i></div>
+          <div class="nv-info-scale-l"><span>LONG ${long.toFixed(1)}%</span><span>SHORT ${short.toFixed(1)}%</span></div>
+          <div class="nv-info-grid"><div><span>多头账户</span><b class="green">${long.toFixed(1)}%</b></div><div><span>空头账户</span><b class="red">${short.toFixed(1)}%</b></div><div><span>多空比值</span><b>${ratio ? ratio.toFixed(3) : '—'}</b></div><div><span>更新时间</span><b>${esc(d.updatedAt || '—')} · 5M</b></div></div>
+          <div class="nv-info-tags">${(d.symbols || ['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','DOGEUSDT']).map(x => `<span>${esc(x.replace('USDT',''))}</span>`).join('')}</div>
+          <p class="nv-info-p">当前统计为 <b>TOP5 主力合约账户多空</b> 的等权聚合。多头账户占比高于空头，说明散户账户整体更偏多；数值越高，多头拥挤度越明显。账户比例不等于持仓金额比例，也不构成交易建议。</p>
+          <div class="nv-info-src">SOURCE · BINANCE FUTURES / GLOBAL LONG-SHORT ACCOUNT RATIO · 5M</div>`;
+      } else {
+        const d = currentFng || {};
+        const value = Math.max(0, Math.min(100, Number(d.value || 0)));
+        const labelMap = { 'Extreme Fear': '极度恐慌', 'Fear': '恐慌', 'Neutral': '中性', 'Greed': '贪婪', 'Extreme Greed': '极度贪婪' };
+        const label = labelMap[d.label] || d.label || '恐慌贪婪';
+        const prev = d.previous != null ? Number(d.previous) : null;
+        kick.textContent = 'FEAR & GREED · DAILY';
+        title.textContent = '恐慌贪婪指数';
+        body.innerHTML = `<div class="nv-info-hero"><b class="fear">${Number.isFinite(value) ? Math.round(value) : '—'}</b><span>${esc(label)}</span></div>
+          <div class="nv-info-scale"><i style="left:${value}%"></i></div><div class="nv-info-scale-l"><span>极度恐慌 0</span><span>极度贪婪 100</span></div>
+          <div class="nv-info-grid"><div><span>当前指数</span><b class="red">${Number.isFinite(value) ? Math.round(value) : '—'}</b></div><div><span>昨日</span><b>${prev != null ? prev : '—'}</b></div><div><span>日变化</span><b class="${prev != null && value < prev ? 'red' : 'green'}">${prev != null ? (value - prev >= 0 ? '+' : '') + (value - prev) : '—'}</b></div><div><span>更新日期</span><b>${esc(d.date || '—')}</b></div></div>
+          <p class="nv-info-p">恐慌贪婪指数综合波动率、市场动量、社交媒体、调查、BTC 主导率与搜索趋势，用 <b>0–100</b> 表示市场情绪。越低代表越恐慌，越高代表越贪婪；它反映情绪，不是价格预测。</p>
+          <div class="nv-info-src">SOURCE · ALTERNATIVE.ME / CRYPTO FEAR &amp; GREED INDEX · DAILY</div>`;
+      }
+      info.hidden = false;
+      requestAnimationFrame(() => info.classList.add('on'));
+    };
+    const closeInfo = () => {
+      const info = sr.querySelector('#nvInfo'); if (!info) return;
+      info.classList.remove('on');
+      setTimeout(() => { info.hidden = true; }, 220);
+    };
+    sr.querySelector('#nvFng')?.addEventListener('click', () => openInfo('fng'));
+    sr.querySelector('#nvRegime')?.addEventListener('click', () => openInfo('ls'));
+    sr.querySelector('#nvInfo')?.addEventListener('click', (e) => { if (e.target === e.currentTarget || e.target.closest('[data-info-close]')) closeInfo(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeInfo(); });
     const renderFearGreed = (fg) => {
       if (!fg) return;
+      currentFng = fg; lastFngValue = Number(fg.value);
       const v = Math.max(0, Math.min(100, Number(fg.value || 0)));
       const labelMap = { 'Extreme Fear': '极度恐慌', 'Fear': '恐慌', 'Neutral': '中性', 'Greed': '贪婪', 'Extreme Greed': '极度贪婪' };
-      const color = v <= 25 ? '#C96358' : v <= 45 ? '#e8a020' : v <= 55 ? '#d8c56a' : v <= 75 ? '#63C08E' : '#42a978';
+      const color = v <= 25 ? '#ff927d' : v <= 45 ? '#e8a020' : v <= 55 ? '#d8c56a' : v <= 75 ? '#63C08E' : '#42a978';
       const box = sr.querySelector('#nvFng');
       if (box) box.style.setProperty('--fng', color);
       const val = sr.querySelector('#nvFngValue'); if (val) val.textContent = String(Math.round(v));
@@ -11523,10 +12305,46 @@ requestAnimationFrame(frame);
         renderFearGreed({ value: Number(a.value), label: a.value_classification, previous: Number(b.value), date });
       } catch (e) {}
     };
+    const renderLongShort = (ls) => {
+      if (!ls) return;
+      const lsKey = `${ls.updatedAt || ''}:${ls.ratio || ''}:${ls.longAccount || ''}`;
+      const changed = lastLsKey !== null && lsKey !== lastLsKey;
+      currentLs = ls; lastLsKey = lsKey;
+      if (changed) pulseBox(sr.querySelector('#nvRegime'));
+      const long = Math.max(0, Math.min(100, Number(ls.longAccount || 0)));
+      const short = Math.max(0, Math.min(100, Number(ls.shortAccount || 0)));
+      const ratio = Number(ls.ratio || 0);
+      const bias = ratio >= 1.15 ? '多头' : ratio <= .87 ? '空头' : '均衡';
+      const color = bias === '多头' ? '#63C08E' : bias === '空头' ? '#C96358' : '#e8a020';
+      const put = (id, text) => { const el = sr.querySelector('#' + id); if (el) el.textContent = text; };
+      put('nvLsBias', bias);
+      put('nvLsRatio', ratio ? ratio.toFixed(2) : '—');
+      put('nvLsLong', `${long.toFixed(1)}%`);
+      put('nvLsShort', `${short.toFixed(1)}%`);
+      put('nvLsTime', ls.updatedAt || '—');
+      const badge = sr.querySelector('#nvLsBias'); if (badge) { badge.style.color = color; badge.style.borderColor = color; }
+      const score = sr.querySelector('#nvLsRatio'); if (score) score.style.color = color;
+      const longEl = sr.querySelector('#nvLsLong'); if (longEl) longEl.style.color = color;
+      const bar = sr.querySelector('#nvLsBar');
+      if (bar) { bar.style.width = `${long}%`; bar.style.background = `linear-gradient(90deg,${color},#d8e9c8)`; }
+    };
+    const liveIsFresh = (live) => {
+      const text = String((live && live.updatedAt) || '');
+      const match = text.match(/^(\d{1,2}):(\d{2}):(\d{2})/);
+      if (!match) return false;
+      const t = new Date();
+      t.setHours(Number(match[1]), Number(match[2]), Number(match[3]), 0);
+      let age = Date.now() - t.getTime();
+      if (age < 0) age += 24 * 60 * 60 * 1000;
+      return age <= 15 * 60 * 1000;
+    };
     const applyLive = (live) => {
       if (!live || !Array.isArray(live.rows) || !live.rows.length) return;
+      const liveFresh = liveIsFresh(live);
       window.__MOSS_LIVE_ACTIVE = true;
+      window.__MOSS_LIVE_FRESH = liveFresh;
       renderFearGreed(live.fearGreed);
+      renderLongShort(live.longShort);
       const rows = [...live.rows].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
       const gainRows = rows.filter(r => (r.change24h || 0) >= 0).slice(0, 3);
       const gainSet = new Set(gainRows.map(r => r.symbol));
@@ -11587,31 +12405,172 @@ requestAnimationFrame(frame);
       fillRows(importMod, lossRows, 'loss');
       const gc = sr.querySelector('#nvGainCount'); if (gc) gc.textContent = gainRows.length;
       const lc = sr.querySelector('#nvLossCount'); if (lc) lc.textContent = lossRows.length;
-      const updCard = (lane, r) => {
+      const FOCUS_COOLDOWN = 30 * 60 * 1000;
+    const FOCUS_SLOT_MS = 5 * 60 * 1000;
+    const FOCUS_IDLE_MS = 15 * 60 * 1000;
+    let focusSeen = {};
+    let focusQueue = [];
+    let focusTimer = null;
+    let focusIdleTimer = null;
+    try { focusSeen = JSON.parse(localStorage.getItem('moss-focus-rotate-v1') || '{}') || {}; } catch (e) { focusSeen = {}; }
+    {
+      const bootNow = Date.now();
+      Object.keys(focusSeen).forEach(k => { if (bootNow - focusSeen[k] >= 60 * 60 * 1000) delete focusSeen[k]; });
+    }
+    const focusPersist = () => { try { localStorage.setItem('moss-focus-rotate-v1', JSON.stringify(focusSeen)); } catch (e) {} };
+    const focusHit = (r) => {
+      const vol = Number(r.quoteVolume24h || 0);
+      if (vol < 2e6) return false;
+      return Math.abs(Number(r.change24h || 0)) >= 10
+        || Math.abs(Number(r.oi15m || 0)) >= 5
+        || Number(r.volRatio3m || 0) >= 1.5
+        || (Number(r.largeUsdt || 0) >= 5000 && Number(r.largeMultiple || 0) >= 20);
+    };
+    const focusFlash = (card) => {
+      if (!card) return;
+      card.classList.add('flash');
+      clearTimeout(card._focusFlash);
+      card._focusFlash = setTimeout(() => card.classList.remove('flash'), 900);
+    };
+    const focusShow = (r) => {
+      const card = sr.querySelector('[data-nv-card="focus"]');
+      if (!card || !r) return;
+      clearTimeout(focusIdleTimer);
+      card.classList.remove('nv-focus-idle');
+      window.__MOSS_FOCUS_CURRENT = r.symbol;
+      renderFocusCard(r);
+      try {
+        const oi15v = Number(r.oi15m || 0);
+        const deltaV = Number(r.oiNotional || 0) * oi15v / (100 + oi15v);
+        const reasons = [];
+        if (Math.abs(Number(r.change24h || 0)) >= 10) reasons.push(`24H ${Number(r.change24h || 0) >= 0 ? '+' : ''}${Number(r.change24h || 0).toFixed(2)}%`);
+        if (Math.abs(oi15v) >= 5) reasons.push(`15M OI ${oi15v >= 0 ? '+' : ''}${oi15v.toFixed(2)}%`);
+        if (Number(r.volRatio3m || 0) >= 1.5) reasons.push(`3M 放量 ${Number(r.volRatio3m).toFixed(1)}x`);
+        if (Number(r.largeUsdt || 0) >= 5000 && Number(r.largeMultiple || 0) >= 20) reasons.push(`大单 ${(Number(r.largeUsdt) / 10000).toFixed(1)}万 ${Number(r.largeMultiple).toFixed(0)}x`);
+        pushRightLog(r.symbol, {
+          win: Math.round(Number(r.score || 0)), chg: Number(r.change24h || 0),
+          side: Number(r.change24h || 0) >= 0 ? 'long' : 'short',
+          score: r.score, oi: r.oiNotional, oi5: r.oi5m, oi15: oi15v,
+          delta: deltaV, price: r.price,
+          reason: reasons.join(' · ') || '自选达标',
+          vol24: r.quoteVolume24h
+        });
+      } catch (e) {}
+      meteorTo(card, 'focus', 900, () => {
+        card.classList.add('hot', 'flash');
+        clearTimeout(card._hotTimer);
+        card._hotTimer = setTimeout(() => card.classList.remove('hot'), 15 * 60 * 1000);
+        setTimeout(() => card.classList.remove('flash'), 650);
+        focusFlash(card);
+        card.classList.remove('meteor-arrive');
+        void card.offsetWidth;
+        card.classList.add('meteor-arrive');
+        clearTimeout(card._arriveT);
+        card._arriveT = setTimeout(() => card.classList.remove('meteor-arrive'), 950);
+      });
+    };
+    const focusArmIdle = () => {
+      const card = sr.querySelector('[data-nv-card="focus"]');
+      clearTimeout(focusIdleTimer);
+      if (card) card.classList.remove('nv-focus-idle');
+      focusIdleTimer = setTimeout(() => {
+        if (focusQueue.length || focusTimer) return;
+        const el = sr.querySelector('[data-nv-card="focus"]');
+        if (el) el.classList.add('nv-focus-idle');
+      }, FOCUS_IDLE_MS);
+    };
+    // 取消自动变暗：卡片常亮
+    const focusStartIdle = () => {
+      clearTimeout(focusIdleTimer);
+      const card = sr.querySelector('[data-nv-card="focus"]');
+      if (card) card.classList.remove('nv-focus-idle');
+    };
+    const markFocusDone = (sym) => {
+      if (!sym) return;
+      focusSeen[sym] = Date.now();
+      focusPersist();
+    };
+    const focusCleanSeen = () => {
+      const now = Date.now();
+      Object.keys(focusSeen).forEach(k => { if (now - focusSeen[k] >= FOCUS_COOLDOWN) delete focusSeen[k]; });
+    };
+    const focusEligible = () => {
+      focusCleanSeen();
+      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+      const cur = window.__MOSS_FOCUS_CURRENT;
+      return rows.filter(r => r.focus && focusHit(r) && !focusSeen[r.symbol] && r.symbol !== cur);
+    };
+    const focusNext = () => {
+      clearTimeout(focusTimer);
+      focusTimer = null;
+      const prevSym = window.__MOSS_FOCUS_CURRENT;
+      if (prevSym) markFocusDone(prevSym);
+      if (!focusQueue.length) focusQueue = focusEligible();
+      if (!focusQueue.length) { focusStartIdle(); return; }
+      const item = focusQueue.shift();
+      const sym = item ? (item.symbol || (item.r && item.r.symbol)) : null;
+      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+      const fresh = sym ? rows.find(x => x.symbol === sym) : null;
+      if (!fresh) { focusNext(); return; }
+      focusShow(fresh);
+      window.__MOSS_FOCUS_SLOT_START = Date.now();
+      focusTimer = setTimeout(focusNext, focusQueue.length ? FOCUS_SLOT_MS : FOCUS_IDLE_MS);
+    };
+    const rotateFocusCard = (rows, live) => {
+      focusCleanSeen();
+      const cur = window.__MOSS_FOCUS_CURRENT;
+      const hit = (rows || []).filter(r => r.focus && focusHit(r) && !focusSeen[r.symbol] && r.symbol !== cur);
+      if (!hit.length) return;
+      const queued = new Set(focusQueue.map(x => (x ? (x.symbol || (x.r && x.r.symbol)) : null)));
+      const fresh = hit.filter(r => !queued.has(r.symbol));
+      if (!fresh.length) return;
+      if (!cur) {
+        focusQueue = focusQueue.concat(fresh);
+        focusNext();
+        return;
+      }
+      // 当前槽位还没播满 5 分钟 → 新币只排队，不抢占
+      const slotStart = Number(window.__MOSS_FOCUS_SLOT_START || 0);
+      if (slotStart && Date.now() - slotStart < FOCUS_SLOT_MS) {
+        focusQueue = focusQueue.concat(fresh);
+        return;
+      }
+      // 没有槽位在跑：立刻切
+      focusQueue = fresh.concat(focusQueue);
+      focusNext();
+    };
+    const renderFocusCard = (r) => {
+      const card = sr.querySelector('[data-nv-card="focus"]');
+      if (!card || !r) return;
+      const set = (id, text) => { const el = sr.querySelector('#' + id); if (el) el.textContent = text; };
+      const chgColor = Number(r.change24h || 0) >= 0 ? '#63C08E' : '#C96358';
+      set('nvFocusSym', pairName(r.symbol || r.baseAsset));
+      set('nvFocusPrice', `${Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USDT`);
+      set('nvFocusChg', `${sign(r.change24h)}%`);
+      const chgEl = sr.querySelector('#nvFocusChg'); if (chgEl) chgEl.style.color = chgColor;
+      set('nvFocusVol', `24H量 ${fmtQv(r.quoteVolume24h)}`);
+      const oi15 = Number(r.oi15m || 0);
+      const d15 = Math.abs(Number(r.oiNotional || 0) * oi15 / (100 + oi15));
+      set('nvFocusOi15', `15M OI ${oi15 >= 0 ? '+' : '-'}${fmtWan(d15)} (${sign(oi15)}%)`);
+      const oi15El = sr.querySelector('#nvFocusOi15'); if (oi15El) oi15El.style.color = oi15 >= 0 ? '#63C08E' : '#C96358';
+      set('nvFocusOi', `当前 OI ${fmtWan(r.oiNotional)}`);
+      const oi24 = Number(r.oi24h || 0), d24 = Number(r.oi24hDelta || 0);
+      set('nvFocusOi24', `24H OI ${d24 >= 0 ? '+' : '-'}${fmtWan(Math.abs(d24))} (${sign(oi24)}%)`);
+      const oi24El = sr.querySelector('#nvFocusOi24'); if (oi24El) oi24El.style.color = d24 >= 0 ? '#63C08E' : '#C96358';
+      set('nvFocusTime', `抓取 ${live.updatedAt}`);
+      window.__MOSS_FOCUS_SYMBOL = r.symbol || r.baseAsset;
+      card.dataset.liveSymbol = r.symbol || r.baseAsset;
+      card.dataset.liveSymbol = r.symbol;
+      card.dataset.liveTime = live.updatedAt;
+    };
+    const updCard = (lane, r) => {
         const card = sr.querySelector(`[data-nv-card="${lane}"]`);
         if (!card || !r) return;
-        if (lane === 'focus') {
-          const set = (id, text) => { const el = sr.querySelector('#' + id); if (el) el.textContent = text; };
-          const chgColor = Number(r.change24h || 0) >= 0 ? '#63C08E' : '#C96358';
-          set('nvFocusSym', pairName(r.symbol || r.baseAsset));
-          set('nvFocusPrice', `${Number(r.price || 0).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USDT`);
-          set('nvFocusChg', `${sign(r.change24h)}%`);
-          const chgEl = sr.querySelector('#nvFocusChg'); if (chgEl) chgEl.style.color = chgColor;
-          set('nvFocusVol', `24H量 ${fmtQv(r.quoteVolume24h)}`);
-          const oi15 = Number(r.oi15m || 0);
-          const d15 = Math.abs(Number(r.oiNotional || 0) * oi15 / (100 + oi15));
-          set('nvFocusOi15', `15M OI ${oi15 >= 0 ? '+' : '-'}${fmtWan(d15)} (${sign(oi15)}%)`);
-          const oi15El = sr.querySelector('#nvFocusOi15'); if (oi15El) oi15El.style.color = oi15 >= 0 ? '#63C08E' : '#C96358';
-          set('nvFocusOi', `当前 OI ${fmtWan(r.oiNotional)}`);
-          const oi24 = Number(r.oi24h || 0), d24 = Number(r.oi24hDelta || 0);
-          set('nvFocusOi24', `24H OI ${d24 >= 0 ? '+' : '-'}${fmtWan(Math.abs(d24))} (${sign(oi24)}%)`);
-          const oi24El = sr.querySelector('#nvFocusOi24'); if (oi24El) oi24El.style.color = d24 >= 0 ? '#63C08E' : '#C96358';
-          set('nvFocusTime', `抓取 ${live.updatedAt}`);
-        }
+        if (lane === 'focus') renderFocusCard(r);
         card.dataset.liveSymbol = r.symbol;
         const changed = card.dataset.liveTime && card.dataset.liveTime !== live.updatedAt;
         card.dataset.liveTime = live.updatedAt;
-        if (lane === 'focus' && window.__MOSS_CARD_READY && changed) {
+        if (lane === 'focus' && window.__MOSS_CARD_READY && changed && !window.__MOSS_FOCUS_EFFECT_ONLY) {
           meteorTo(card, 'focus', 900, () => {
             card.classList.add('hot', 'flash');
             clearTimeout(card._hotTimer);
@@ -11623,7 +12582,35 @@ requestAnimationFrame(frame);
       };
       const focusRows = rows.filter(r => r.focus);
       const focusPick = focusRows[0] || gainRows[0];
-      updCard('focus', focusPick);
+      window.__MOSS_CARD_SRC = { focus: focusPick, imported: lossRows[0], rows };
+      if (!window.__MOSS_FOCUS_CARD_SEEDED) {
+        // 启动首屏：不用"当前列表第一个"，而是用"最新一轮达标"里最强的那个
+        const bootHits = focusRows.filter(r => focusHit(r))
+          .sort((a, b) => Number(b.quoteVolume24h || 0) - Number(a.quoteVolume24h || 0));
+        if (!window.__MOSS_FOCUS_CURRENT) {
+          const firstHit = bootHits[0];
+          const seed = firstHit || focusPick;
+          renderFocusCard(seed);
+          window.__MOSS_FOCUS_CURRENT = seed ? seed.symbol : '';
+          window.__MOSS_FOCUS_SCORE = seed ? Math.abs(Number(seed.change24h || 0)) + Math.abs(Number(seed.oi15m || 0)) : 0;
+          const seedCard = sr.querySelector('[data-nv-card="focus"]');
+          if (seedCard) {
+            seedCard.classList.remove('nv-focus-idle');
+            seedCard.classList.add('hot');
+            clearTimeout(seedCard._hotTimer);
+            seedCard._hotTimer = setTimeout(() => seedCard.classList.remove('hot'), 15 * 60 * 1000);
+          }
+          focusArmIdle();
+        }
+        window.__MOSS_FOCUS_CARD_SEEDED = true;
+      }
+      try {
+        const cur = window.__MOSS_FOCUS_CURRENT;
+        const fresh = cur ? rows.find(r => r.symbol === cur) : null;
+        if (fresh) renderFocusCard(fresh);
+      } catch (e) {}
+      try { rotateFocusCard(rows, live); } catch (e) {}
+      try { refreshSignalQuote(rows); } catch (e) {}
       updCard('imported', lossRows[0]);
       const f = focusPick, im = lossRows[0];
       const alertPrev = window.__MOSS_ALERT_PREV || {};
@@ -11646,14 +12633,29 @@ requestAnimationFrame(frame);
       const eventSeen = window.__MOSS_EVENT_SEEN || {};
       const eventNow = Date.now();
       const eventCool = 15 * 60 * 1000;
-      rows.slice(0, 40).forEach(r => {
+      if (!window.__MOSS_EVENT_SEEDED) {
+        const volSeed = rows.filter(r => Number(r.volRatio3m || 0) >= 1.5 && Math.abs(Number(r.change3m || 0)) >= .3)
+          .sort((a, b) => Number(b.volRatio3m) - Number(a.volRatio3m))[0];
+        if (volSeed) {
+          eventSeen[`${volSeed.symbol}-volume`] = eventNow;
+          pushAlert(volSeed, live.updatedAt, false, 'volume');
+        }
+        const largeSeed = rows.filter(r => Number(r.largeUsdt || 0) >= 5000 && Number(r.largeMultiple || 0) >= 20)
+          .sort((a, b) => Number(b.largeUsdt) - Number(a.largeUsdt))[0];
+        if (largeSeed) {
+          eventSeen[`${largeSeed.symbol}-large`] = eventNow;
+          pushAlert(largeSeed, live.updatedAt, false, 'large');
+        }
+        window.__MOSS_EVENT_SEEDED = true;
+      }
+      rows.slice(0, 80).forEach(r => {
         const volKey = `${r.symbol}-volume`, largeKey = `${r.symbol}-large`;
-        if (Number(r.volRatio3m || 0) >= 10 && Math.abs(Number(r.change3m || 0)) >= 5
+        if (Number(r.volRatio3m || 0) >= 1.5 && Math.abs(Number(r.change3m || 0)) >= .3
             && (!eventSeen[volKey] || eventNow - eventSeen[volKey] >= eventCool)) {
           eventSeen[volKey] = eventNow;
           pushAlert(r, live.updatedAt, true, 'volume');
         }
-        if (Number(r.largeUsdt || 0) >= 100000 && Number(r.largeMultiple || 0) >= 200
+        if (Number(r.largeUsdt || 0) >= 5000 && Number(r.largeMultiple || 0) >= 20
             && (!eventSeen[largeKey] || eventNow - eventSeen[largeKey] >= eventCool)) {
           eventSeen[largeKey] = eventNow;
           pushAlert(r, live.updatedAt, true, 'large');
@@ -11664,7 +12666,7 @@ requestAnimationFrame(frame);
       window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       if (f) { data.focus.title = f.baseAsset || f.symbol; data.focus.stage = `${f.stage === 'entry' ? '开仓信号' : f.stage === 'watch' ? '重点候选' : '观察'} · ${Number(f.score || 0).toFixed(1)}`; data.focus.why = `${f.symbol} 现价 ${f.price}，24H ${sign(f.change24h)}%，5M ${sign(f.change5m)}%。`; }
       if (im) { data.imported.title = im.baseAsset || im.symbol; data.imported.stage = `${im.stage === 'entry' ? '开仓信号' : im.stage === 'watch' ? '重点候选' : '观察'} · ${Number(im.score || 0).toFixed(1)}`; data.imported.why = `${im.symbol} 现价 ${im.price}，24H ${sign(im.change24h)}%，5M ${sign(im.change5m)}%。`; }
-      try { const k = sr.querySelector('.nv-k'); if (k) k.textContent = `MARKET REGIME · SNAPSHOT ${live.updatedAt}`; } catch (e) {}
+
       const runRowEffects = (mod, oldRows, newRows, lane) => {
         if (!mod || !window.__MOSS_ROW_READY) return;
         const oldMap = new Map(oldRows.map(o => [o.symbol, o]));
@@ -11693,52 +12695,212 @@ requestAnimationFrame(frame);
       runRowEffects(importMod, oldLoss, lossRows, 'loss');
       window.__MOSS_ROW_READY = true;
       const seen = window.__MOSS_SIGNAL_SEEN || {};
-      const candidates = [];
-      [[focusMod, gainRows, 'gain'], [importMod, lossRows, 'loss']].forEach(([mod, list, lane]) => {
-        list.forEach((r, i) => {
-          const sig = calcSignal(r);
-          if (sig.win >= 72 && (r.stage === 'entry' || sig.win >= 82)) {
-            candidates.push({ sig, row: mod && mod.querySelectorAll('.nv-row')[i], lane });
-          }
-        });
-      });
-      const best = candidates.sort((a, b) => b.sig.win - a.sig.win)[0];
-      const key = best ? `${best.sig.r.symbol}-${best.sig.side}` : '';
-      const signalEl = document.querySelector('#nvSignal');
       const firstSignalPass = !window.__MOSS_SIGNAL_BASELINE;
-      const lastSeen = best ? (seen[key] || 0) : 0;
-      if (best) {
-        const repeatMs = 15 * 60 * 1000;
-        const shouldRepeat = !firstSignalPass && !signalEl.classList.contains('open')
-          && (!lastSeen || Date.now() - lastSeen >= repeatMs);
-        seen[key] = Date.now();
-        window.__MOSS_SIGNAL_SEEN = seen;
-        if (shouldRepeat) {
-          setTimeout(() => showSignal(best.sig, best.row, best.lane), 1100);
+      const sigCandidates = [];
+      (rows || []).forEach(r => {
+        const sig = calcSignal(r);
+        if (sig.win >= 72 && (r.stage === 'entry' || sig.win >= 82)) {
+          sigCandidates.push({ sig, lane: Number(r.change24h || 0) >= 0 ? 'gain' : 'loss' });
         }
+      });
+      const uniq = new Map();
+      sigCandidates.sort((a, b) => b.sig.win - a.sig.win).forEach(c => {
+        const key = `${c.sig.r.symbol}-${c.sig.side}`;
+        if (!uniq.has(key)) uniq.set(key, c);
+      });
+      const signalEntries = [...uniq.entries()];
+      signalEntries.forEach(([key, c]) => {
+        (c.row = null);
+        c.key = key;
+        c.symbol = c.sig.r.symbol;
+      });
+      window.__MOSS_SIGNAL_ENTRIES = signalEntries;
+      const sigReady = ([key, c]) => {
+        const now = Date.now();
+        let played = {};
+        try { played = JSON.parse(localStorage.getItem('moss-sig-played-v1') || '{}') || {}; } catch (e) { played = {}; }
+        const at = played[c.symbol] || 0;
+        return !at || now - at >= SIG_COOLDOWN;
+      };
+      if (liveFresh && !firstSignalPass) {
+        const due = signalEntries.filter(sigReady);
+        due.forEach(([key, c], idx) => {
+          const now = Date.now();
+          seen[key] = now;
+          seen[`symbol:${c.symbol}`] = now;
+          if (idx < 5) pushSignalSlot(c, 0);
+        });
       }
+      if (firstSignalPass) {
+        signalEntries.forEach(([key, c], idx) => {
+          if (seen[key]) return;
+          const now = Date.now();
+          seen[key] = now;
+          seen[`symbol:${c.symbol}`] = now;
+          if (idx < 5) pushSignalSlot(c, 1200);
+        });
+      }
+      window.__MOSS_SIGNAL_SEEN = seen;
       window.__MOSS_SIGNAL_BASELINE = true;
+      renderSignalCardFrame();
     };
+    // 每次启动重置展示状态：不用上次会话遗留的卡片内容
+    try {
+      window.__MOSS_FOCUS_CURRENT = '';
+      window.__MOSS_FOCUS_SCORE = 0;
+      window.__MOSS_FOCUS_CARD_SEEDED = false;
+      window.__MOSS_SIGNAL_SEEN = {};
+      window.__MOSS_SIGNAL_BASELINE = false;
+      window.__MOSS_SIG_CURRENT = null;
+      window.__MOSS_SIG_SEEN_ONCE = false;
+      window.__MOSS_ALERT_SEEDED = false;
+      window.__MOSS_ALERT_PREV = {};
+      window.__MOSS_EVENT_SEEN = {};
+      window.__MOSS_EVENT_SEEDED = false;
+      const fCard = sr.querySelector('[data-nv-card="focus"]');
+      if (fCard) fCard.classList.remove('nv-focus-idle', 'hot', 'flash');
+      const sCard = sr.querySelector('#nvSignalCard');
+      if (sCard) sCard.classList.remove('sig-idle', 'nv-focus-idle', 'hot', 'flash');
+    } catch (e) {}
+    window.addEventListener('moss:trade', (ev) => {
+      try {
+        const d = (ev && ev.detail) || {};
+        if (d.type === 'account' || d.type === 'config') {
+          if (typeof d.configured === 'boolean') TRADE_INFO.configured = d.configured;
+          if (typeof d.autoTrade === 'boolean') TRADE_INFO.autoTrade = d.autoTrade;
+          if (typeof d.equity === 'number') TRADE_INFO.equity = d.equity;
+          if (typeof d.available === 'number') TRADE_INFO.available = d.available;
+          if (typeof d.spot === 'number') TRADE_INFO.spot = d.spot;
+          if (typeof d.baseline === 'number') TRADE_INFO.baseline = d.baseline;
+          if (Array.isArray(d.positions)) TRADE_INFO.positions = d.positions;
+          try { renderPositions(); } catch (e) {}
+          const info = sr.querySelector('#nvTradeInfo');
+          if (info) {
+            info.textContent = d.ok === false
+              ? `币安连接失败：${d.message || ''}`
+              : `合约权益 ${Number(TRADE_INFO.equity || 0).toFixed(2)} USDT · 持仓 ${(TRADE_INFO.positions || []).length}/${ORDER_MAX_POSITIONS} · 初始 ${Number(TRADE_INFO.baseline || 0).toFixed(2)}`;
+          }
+          if (orderPending) {
+            const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+            const cur = rows.find(r => r.symbol === orderPending.symbol);
+            if (cur) {
+              const sig = calcSignal(cur);
+              const entry = { sig, key: `${sig.r.symbol}-${sig.side}` };
+              queueOrderPreview(entry);
+            }
+          }
+        }
+        if (d.type === 'order') {
+          orderBusy.value = false;
+          const okBtn = document.getElementById('nvOpOk');
+          if (okBtn) {
+            okBtn.textContent = d.ok ? '已下单' : '下单失败';
+            okBtn.disabled = true;
+          }
+          const stage = sr.querySelector('#nvOpStage');
+          if (stage) stage.textContent = (d.ok ? '下单成功：' : '下单失败：') + (d.message || '');
+          postTrade({ type: 'tradeConfig', action: 'status' });
+        }
+        if (d.type === 'transfer') {
+          const info = sr.querySelector('#nvTradeInfo');
+          if (info) info.textContent = (d.ok ? '划转完成：' : '划转跳过：') + (d.message || '');
+        }
+      } catch (e) {}
+    });
+    setTimeout(() => postTrade({ type: 'tradeConfig', action: 'status' }), 2500);
+    setInterval(() => postTrade({ type: 'tradeConfig', action: 'status' }), 60 * 1000);
     window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
     setTimeout(loadFearGreed, 800);
     setInterval(loadFearGreed, 15 * 60 * 1000);
-    const captureLog = [];
+    let logView = 'left';
+    const viewKey = () => (logView === 'right' ? RIGHT_KEY : LEFT_KEY);
+    const CAP_PAGE = 10;
+    let capPage = 0;
+    // 右侧：按权重挑一个原因作为标签
+    const scoreReasonTag = (a) => {
+      const r = String(a.reason || '');
+      if (r.includes('放量')) return { text: '放量', color: '#E8A020' };
+      if (r.includes('大单')) return { text: '大单', color: '#FF6B4A' };
+      if (r.includes('OI')) return { text: 'OI 增长', color: '#63C08E' };
+      if (r.includes('24H')) return { text: '涨幅强', color: '#8AB4C9' };
+      return { text: '达标', color: '#8AB4C9' };
+    };
     const renderCaptureLog = () => {
       const hl = sr.querySelector('#nvDHistList');
       if (!hl) return;
-      const symbol = window.__NOVA_HISTORY_SYMBOL || '';
-      const recs = signalLog.filter(a => a.symbol === symbol);
+      const recs = readLog(viewKey());
+      const isRight = logView === 'right';
       if (!recs.length) {
-        hl.innerHTML = `<div><span>${symbol ? '近 24 小时暂无建仓信号' : '暂无建仓信号记录'}</span><b>—</b></div>`;
-      } else {
-        hl.innerHTML = recs.map(a => `<div><span>${a.time} · ${a.side === 'long' ? '建多' : '建空'} ${Number(a.chg).toFixed(2)}%</span><b>${a.win}%</b></div>`).join('');
+        hl.innerHTML = '<div><span>24 小时内暂无播报记录</span><b>—</b></div>';
+        const pg = sr.querySelector('#nvDHistPage'); if (pg) pg.textContent = '1 / 1';
+        const pv = sr.querySelector('#nvDHistPrev'), nx = sr.querySelector('#nvDHistNext');
+        if (pv) pv.disabled = true; if (nx) nx.disabled = true;
+        ['nvHistCount', 'nvHistLong', 'nvHistShort', 'nvHistWin'].forEach(id => {
+          const el = sr.querySelector('#' + id); if (el) el.textContent = '0';
+        });
+        return;
       }
+      const counts = {};
+      recs.forEach(a => { counts[a.symbol] = (counts[a.symbol] || 0) + 1; });
+      const pages = Math.max(1, Math.ceil(recs.length / CAP_PAGE));
+      capPage = Math.max(0, Math.min(capPage, pages - 1));
+      const pageRecs = recs.slice(capPage * CAP_PAGE, capPage * CAP_PAGE + CAP_PAGE);
+      hl.innerHTML = pageRecs.map(a => {
+        const up = Number(a.chg || 0) >= 0;
+        const color = up ? '#63C08E' : '#C96358';
+        const delta = Number(a.delta || 0);
+        const tag = isRight ? scoreReasonTag(a) : winReasonTag(a);
+        const mainNum = isRight ? (a.score ? Number(a.score).toFixed(1) : '—') : (a.win || '—');
+        const mainLabel = isRight ? '评分' : '胜率';
+        return `<div class="nv-rec">
+          <div class="nv-rec-h">${a.time} · ${isRight ? '自选监控' : '建仓信号'} · 累计 ${counts[a.symbol]} 次</div>
+          <div class="nv-rec-name"><b>${pairName(a.symbol)}</b><em style="color:${color}">${up ? '+' : ''}${Number(a.chg || 0).toFixed(2)}%</em></div>
+          <div class="nv-rec-main">
+            <b>${mainNum}${isRight ? '' : '<i>%</i>'}</b>
+            <span class="nv-rec-tag" style="color:${tag.color};border-color:${tag.color}55">${tag.text}</span>
+            <em>${mainLabel}</em>
+          </div>
+          <div class="nv-rec-grid">
+            <div><span>价格</span><b>${a.price ? a.price + ' USDT' : '—'}</b></div>
+            <div><span>策略分</span><b>${a.score ? Number(a.score).toFixed(1) : '—'}</b></div>
+            <div><span>当前 OI</span><b>${fmtWan(a.oi)}</b></div>
+            <div><span>5M OI</span><b>${sign(a.oi5)}%</b></div>
+            <div><span>15M OI</span><b>${sign(a.oi15)}%</b></div>
+            <div><span>15M 增量</span><b>${delta >= 0 ? '+' : '-'}${fmtWan(Math.abs(delta))}</b></div>
+            <div><span>24H 成交</span><b>${fmtQv(a.vol24 || 0)}</b></div>
+            ${isRight ? '' : `<div><span>止盈</span><b>${a.target || '—'}</b></div><div><span>止损</span><b>${a.stop || '—'}</b></div>`}
+          </div>
+          ${a.reason ? `<div class="nv-rec-why"><span>抓取理由</span><b>${a.reason}</b></div>` : ''}
+        </div>`;
+      }).join('');
+      const pg = sr.querySelector('#nvDHistPage'); if (pg) pg.textContent = `${capPage + 1} / ${pages}`;
+      const pv = sr.querySelector('#nvDHistPrev'), nx = sr.querySelector('#nvDHistNext');
+      if (pv) pv.disabled = capPage === 0;
+      if (nx) nx.disabled = capPage >= pages - 1;
       const count = sr.querySelector('#nvHistCount'); if (count) count.textContent = recs.length;
-      const longs = sr.querySelector('#nvHistLong'); if (longs) longs.textContent = recs.filter(a => a.side === 'long').length;
-      const shorts = sr.querySelector('#nvHistShort'); if (shorts) shorts.textContent = recs.filter(a => a.side === 'short').length;
-      const win = sr.querySelector('#nvHistWin'); if (win) win.textContent = recs.length ? `${recs[0].win}%` : '—';
+      const longs = sr.querySelector('#nvHistLong'); if (longs) longs.textContent = recs.filter(a => Number(a.win || 0) >= 80).length;
+      const shorts = sr.querySelector('#nvHistShort'); if (shorts) shorts.textContent = recs.filter(a => Number(a.win || 0) < 80).length;
+      const uniq = sr.querySelector('#nvHistWin'); if (uniq) uniq.textContent = new Set(recs.map(a => a.symbol)).size;
     };
+    const pruneHistories = () => {
+      const nowTs = Date.now();
+      const TTL = 24 * 60 * 60 * 1000;
+      let changed = false;
+      const beforeSignal = signalLog.length;
+      signalLog = signalLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
+      if (signalLog.length !== beforeSignal) { saveSignals(); changed = true; }
+      const beforeAlert = alertLog.length;
+      alertLog = alertLog.filter(a => a && a.ts && nowTs - a.ts < TTL);
+      if (alertLog.length !== beforeAlert) { saveAlerts(); changed = true; }
+      writeLog(LEFT_KEY, readLog(LEFT_KEY));
+      writeLog(RIGHT_KEY, readLog(RIGHT_KEY));
+      if (changed) {
+        try { renderSignalHistory(); } catch (e) {}
+        try { renderAlertHistory(); } catch (e) {}
+      }
+    };
+    setInterval(pruneHistories, 10 * 60 * 1000);
     const msRows = [...sr.querySelectorAll('.p-heat .nv-msrow')];
     let msTotal = 1.2;
     setInterval(() => {
@@ -11748,7 +12910,7 @@ requestAnimationFrame(frame);
       const amount = row.querySelector('b'); if (amount) amount.textContent = '$' + msTotal.toFixed(1) + 'M';
       const bar = row.querySelector('.nv-msbar i'); if (bar) bar.style.width = '100%';
       row.classList.add('live'); setTimeout(() => row.classList.remove('live'), 3200);
-      const full = sr.querySelector('#nvDMsFull'); if (full) full.innerHTML = `$${msTotal.toFixed(1)}M <small>累计 · ${captureLog.length + 2} 笔 · 2 条链</small>`;
+      const full = sr.querySelector('#nvDMsFull'); if (full) full.innerHTML = `$${msTotal.toFixed(1)}M <small>累计 · ${readLog(RIGHT_KEY).length + 2} 笔 · 2 条链</small>`;
       const msPanel = sr.querySelector('.p-heat');
       if (msPanel) meteorTo(msPanel, 'focus', 900, () => freshPanel(msPanel, 'focus'));
       ping('multi');
@@ -11756,13 +12918,15 @@ requestAnimationFrame(frame);
     let auto = 0;
     setTimeout(() => { if (!window.__MOSS_LIVE_ACTIVE) fire('focus'); }, 30000);
     setInterval(() => { if (!window.__MOSS_LIVE_ACTIVE) { auto = 1 - auto; fire(auto ? 'imported' : 'focus'); } }, 180000);
-    const open = (key) => {
+    const open = (key, keepTab) => {
       setDrawerMode('detail');
       const d = data[key] || data.focus;
-      showTab('current');
+      // 直接进历史页，跳过重复的当前详情块
+      if (!keepTab) showTab('history');
       sr.querySelector('#nvDKind').textContent = d.kind;
       sr.querySelector('#nvDTitle').textContent = pairName(d.title);
       window.__NOVA_HISTORY_SYMBOL = rawSymbol(d.title);
+      capPage = 0;
       sr.querySelector('#nvDStage').textContent = d.stage;
       const why = sr.querySelector('#nvDWhy'); if (why) why.textContent = d.why;
       const facts = sr.querySelector('#nvDFacts'); if (facts) facts.innerHTML = d.facts.map(([a,b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
@@ -11773,9 +12937,31 @@ requestAnimationFrame(frame);
       drawer.setAttribute('aria-hidden', 'false');
       freshPanel(drawer, 'focus');
     };
+    const rowFromSnapshot = (r) => {
+      const div = document.createElement('div');
+      div.className = 'nv-row ' + ((Number(r.change24h || 0) >= 0) ? 'gain' : 'loss');
+      div.dataset.symbol = r.symbol;
+      div.dataset.price = r.price || 0;
+      div.dataset.chg = r.change24h || 0;
+      div.dataset.oi = r.oiNotional || 0;
+      div.dataset.vol = r.quoteVolume24h || 0;
+      div.dataset.oi5 = r.oi5m || 0;
+      div.dataset.oi15 = r.oi15m || 0;
+      div.dataset.stage = r.stage || '';
+      div.dataset.score = r.score || '';
+      div.dataset.pullback = r.pullback || 0;
+      div.innerHTML = `<div class="nv-row-head"><span class="nv-sym">${r.focus ? '★' : '○'}${pairName(r.symbol)}</span><span class="nv-price">${Number(r.price || 0)}</span><span class="nv-change">${sign(r.change24h)}%</span></div>
+        <div class="nv-row-oi"><span>OI <b>${fmtWan(r.oiNotional)}</b></span><span>5M <b>${sign(r.oi5m)}%</b></span><span>15M <b>${sign(r.oi15m)}%</b></span></div>
+        <div class="nv-row-foot"><span>VOL 24H <b>${fmtQv(r.quoteVolume24h)}</b></span><span>ΔOI <b>${fmtWan(r.oiNotional * r.oi15m / (100 + r.oi15m))}</b></span></div>`;
+      return div;
+    };
+    const openSymbol = (snap, lane) => {
+      if (!snap) return;
+      openRow(rowFromSnapshot(snap), lane);
+    };
     const openRow = (row, lane) => {
       setDrawerMode('detail');
-      open(lane);
+      open(lane, true);
       const sym = rawSymbol((row.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, ''));
       const changeText = row.querySelector('.nv-change')?.textContent || '0%';
       const oiText = row.querySelectorAll('.nv-row-oi span')[0]?.textContent || '';
@@ -11847,14 +13033,18 @@ requestAnimationFrame(frame);
       const winSignal = sr.querySelector('#nvWinSignal'); winSignal.textContent = sigLabel;
       sr.querySelector('#nvEntryScore').textContent = score;
       sr.querySelector('#nvEntrySide').textContent = lane === 'focus' ? '顺势' : '回避';
-      showTab('current');
+      showTab('history');
+      try { renderCaptureLog(); } catch (e) {}
     };
     const openAlerts = () => {
       setDrawerMode('alerts');
       alertHistoryPage = 0;
       showTab('alerts');
-      sr.querySelector('#nvDKind').textContent = 'POSITION ALERTS · 持仓异动';
+      sr.querySelector('#nvDKind').textContent = '◉ ALERT STREAM · 三类异动';
       sr.querySelector('#nvDTitle').textContent = 'ALERT HISTORY';
+      alertCategory = (alertLog[0] && alertLog[0].type) || 'oi';
+      const catBar = sr.querySelector('#nvAlertCats');
+      catBar && catBar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.alertCat === alertCategory));
       sr.querySelector('#nvDStage').textContent = `滚屏记录 · ${alertLog.length} 条 · ${window.__MOSS_LIVE ? 'SNAPSHOT' : '样例'}`;
       renderAlertHistory();
       drawer.classList.add('open');
@@ -11886,31 +13076,126 @@ requestAnimationFrame(frame);
     }
     cards.forEach(card => card.addEventListener('click', () => {
       window.__NOVA_SELECTED = card.dataset.nvCard;
-      if (card.dataset.nvCard === 'signal') { openSignalHistory(); return; }
+      if (card.dataset.nvCard === 'signal') { card.classList.remove('sig-idle', 'nv-focus-idle'); logView = 'left'; capPage = 0; openSignalHistory(); return; }
+      logView = card.dataset.nvCard === 'focus' ? 'right' : 'left';
+      capPage = 0;
+      if (card.dataset.nvCard === 'signals') return;
       const lane = card.dataset.nvCard === 'focus' ? 'focus' : 'imported';
+      const shown = card.querySelector('.nv-c-sym')?.textContent || sr.querySelector('#nvFocusSym')?.textContent || '';
+      const cardSymbol = rawSymbol(shown);
+      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+      const snap = rows.find(r => r.symbol === cardSymbol);
+      if (snap) { openSymbol(snap, lane); return; }
       const mod = sr.querySelector(lane === 'focus' ? '.nv-mod.focus' : '.nv-mod.imported');
-      const cardSymbol = rawSymbol(card.dataset.liveSymbol || card.querySelector('.nv-c-sym')?.textContent || '');
-      const row = mod ? [...mod.querySelectorAll('.nv-row')].find(r => {
-        const s = rawSymbol((r.dataset.symbol || r.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, ''));
-        return s === cardSymbol || s.startsWith(cardSymbol) || cardSymbol.startsWith(s);
-      }) : null;
-      if (row) {
-        row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
-        setTimeout(() => row.classList.remove('flash'), 650);
-        openRow(row, lane);
-      } else {
-        open(lane);
-      }
+      const row = mod ? [...mod.querySelectorAll('.nv-row')].find(r => rawSymbol((r.dataset.symbol || '')) === cardSymbol) : null;
+      if (row) openRow(row, lane);
+      else open(lane);
     }));
     sr.querySelectorAll('.nv-row').forEach(row => row.addEventListener('click', (e) => {
       e.stopPropagation();
       row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
       setTimeout(() => row.classList.remove('flash'), 650);
       const mod = row.closest('.nv-mod');
-      openRow(row, mod && mod.classList.contains('focus') ? 'focus' : 'imported');
+      const lane = mod && mod.classList.contains('focus') ? 'focus' : 'imported';
+      logView = lane === 'focus' ? 'right' : 'left';
+      capPage = 0;
+      openRow(row, lane);
     }));
     const msPanel = sr.querySelector('.p-heat');
     msPanel && msPanel.addEventListener('click', (e) => { e.stopPropagation(); openAlerts(); });
+    document.querySelectorAll('[data-nv-op-close]').forEach(el => el.addEventListener('click', (e) => { e.stopPropagation(); closeOrderPop(); }));
+    (() => {
+      const posBtn = document.getElementById('nvOpPos');
+      const posPanel = document.getElementById('nvOpPositions');
+      if (posBtn && posPanel) {
+        const openPositions = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          try { renderPositions(); } catch (err) {}
+          posPanel.hidden = false;
+          postTrade({ type: 'tradeConfig', action: 'status' });
+        };
+        posBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); }, true);
+        posBtn.addEventListener('mousedown', openPositions, true);
+      }
+      const posBack = document.getElementById('nvOpPosBack');
+      if (posBack && posPanel) posBack.addEventListener('click', (e) => { e.stopPropagation(); posPanel.hidden = true; });
+      const sw = document.getElementById('nvOpSwitch');
+      if (sw) {
+        sw.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const next = readOrderMode() === 'auto' ? 'manual' : 'auto';
+          TRADE_INFO.mode = next;
+          try { localStorage.setItem(ORDER_MODE_KEY, next); } catch (e) {}
+          postTrade({ type: 'tradeConfig', action: 'mode', mode: next });
+          if (orderPending) {
+            const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+            const cur = rows.find(r => r.symbol === orderPending.symbol);
+            if (cur) queueOrderPreview({ sig: calcSignal(cur), key: `${cur.symbol}-${calcSignal(cur).side}` });
+          }
+        });
+      }
+      const okBtn = document.getElementById('nvOpOk');
+      if (!okBtn) return;
+      okBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!orderPending || okBtn.disabled) return;
+        const p = orderPending;
+        okBtn.disabled = true;
+        okBtn.textContent = '下单中…';
+        sendOrder(p);
+      });
+    })();
+    (() => {
+      const pop = document.getElementById('nvOrderPop');
+      if (!pop) return;
+      ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup'].forEach(t => {
+        pop.addEventListener(t, (e) => { e.stopPropagation(); }, true);
+      });
+    })();
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      if (!t || !t.closest) return;
+      const pop = t.closest('#nvOrderPop');
+      if (!pop) return;
+      e.stopPropagation();
+      if (t.closest('#nvOpPos')) {
+        e.preventDefault();
+        try { renderPositions(); } catch (err) {}
+        const panel = document.getElementById('nvOpPositions');
+        if (panel) panel.hidden = false;
+        postTrade({ type: 'tradeConfig', action: 'status' });
+        return;
+      }
+      if (t.closest('#nvOpPosBack')) {
+        const panel = document.getElementById('nvOpPositions');
+        if (panel) panel.hidden = true;
+        return;
+      }
+      if (t.closest('[data-nv-op-close]')) {
+        closeOrderPop();
+        return;
+      }
+      if (t.closest('#nvOpSwitch')) {
+        const next = readOrderMode() === 'auto' ? 'manual' : 'auto';
+        TRADE_INFO.mode = next;
+        try { localStorage.setItem(ORDER_MODE_KEY, next); } catch (err) {}
+        postTrade({ type: 'tradeConfig', action: 'mode', mode: next });
+        if (orderPending) {
+          const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+          const cur = rows.find(r => r.symbol === orderPending.symbol);
+          if (cur) { const sig = calcSignal(cur); queueOrderPreview({ sig, key: `${cur.symbol}-${sig.side}` }); }
+        }
+        return;
+      }
+      if (t.closest('#nvOpOk')) {
+        const okBtn = document.getElementById('nvOpOk');
+        if (!orderPending || (okBtn && okBtn.disabled)) return;
+        const pend = orderPending;
+        if (okBtn) { okBtn.disabled = true; okBtn.textContent = '下单中…'; }
+        sendOrder(pend);
+        return;
+      }
+    }, true);
     close && close.addEventListener('click', shut);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideSignal(); shut(); } });
     sr.addEventListener('click', e => {
@@ -11952,4 +13237,113 @@ requestAnimationFrame(frame);
 </script>
 
 
+<div id="moss-activation" role="dialog" aria-modal="true" aria-label="MOSS CORE 激活">
+  <div class="moss-auth-card">
+    <div class="moss-auth-corner tl"></div><div class="moss-auth-corner tr"></div>
+    <div class="moss-auth-corner bl"></div><div class="moss-auth-corner br"></div>
+    <div class="moss-auth-scan"></div>
+    <div class="moss-auth-kicker">MOSS CORE <span>// SECURE ACCESS</span></div>
+    <div class="moss-auth-title">激活监控终端</div>
+    <div class="moss-auth-sub">首次使用需要绑定邀请码。激活完成后才可进入监控界面。</div>
+    <div class="moss-auth-field">
+      <label for="mossAuthCode">INVITE CODE <em>邀请码</em></label>
+      <input id="mossAuthCode" type="text" maxlength="32" autocomplete="off" spellcheck="false" placeholder="MOSS-XXXX-XXXX-XXXX">
+    </div>
+    <button id="mossAuthBtn" type="button">验证并进入 <span>ENTER</span></button>
+    <div id="mossAuthStatus" class="moss-auth-status">等待验证</div>
+    <div class="moss-auth-foot"><span>DEVICE BINDING</span><span>ONE CODE / ONE MACHINE</span></div>
+    <button id="mossAuthExit" class="moss-auth-exit" type="button">退出</button>
+  </div>
+</div>
+<style>
+#moss-activation{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(2,4,7,.58);backdrop-filter:blur(20px) saturate(.55);-webkit-backdrop-filter:blur(20px) saturate(.55);font-family:var(--mono,Consolas,"SFMono-Regular",monospace);color:#ece5d5}
+#moss-activation[hidden]{display:none!important}
+.moss-auth-card{position:relative;width:min(520px,100%);padding:30px 34px 24px;background:linear-gradient(145deg,rgba(17,16,12,.92),rgba(4,6,9,.9));border:1px solid rgba(232,160,32,.42);box-shadow:0 0 0 1px rgba(232,160,32,.06),0 30px 100px rgba(0,0,0,.72),inset 0 0 50px rgba(232,160,32,.035);clip-path:polygon(0 14px,14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px));overflow:hidden}
+.moss-auth-card::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,#e8a020 18%,#ffe3a3 50%,#e8a020 82%,transparent);opacity:.9;animation:mossAuthLine 4.5s ease-in-out infinite}
+.moss-auth-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.018) 3px 4px);mix-blend-mode:screen}
+.moss-auth-corner{position:absolute;width:24px;height:24px;border-color:#e8a020;border-style:solid;opacity:.85;filter:drop-shadow(0 0 5px rgba(232,160,32,.55));z-index:2}
+.moss-auth-corner.tl{left:8px;top:8px;border-width:1px 0 0 1px}.moss-auth-corner.tr{right:8px;top:8px;border-width:1px 1px 0 0}.moss-auth-corner.bl{left:8px;bottom:8px;border-width:0 0 1px 1px}.moss-auth-corner.br{right:8px;bottom:8px;border-width:0 1px 1px 0}
+.moss-auth-scan{position:absolute;left:0;right:0;height:1px;top:30%;background:linear-gradient(90deg,transparent,rgba(232,160,32,.55),transparent);animation:mossAuthScan 5s linear infinite;pointer-events:none;opacity:.45}
+.moss-auth-kicker{font-size:9px;letter-spacing:.26em;color:#8a7b62}.moss-auth-kicker span{color:#e8a020}
+.moss-auth-title{margin-top:12px;font:700 28px/1.2 "Microsoft YaHei UI",sans-serif;letter-spacing:.08em;color:#fff3d4;text-shadow:0 0 22px rgba(232,160,32,.14)}
+.moss-auth-sub{margin-top:12px;font:400 12px/1.8 "Microsoft YaHei UI",sans-serif;color:#9a8a70;max-width:420px}
+.moss-auth-field{margin-top:24px}.moss-auth-field label{display:block;font-size:9px;letter-spacing:.2em;color:#b8aa91;margin-bottom:8px}.moss-auth-field label em{font-style:normal;font-family:"Microsoft YaHei UI",sans-serif;letter-spacing:.08em;color:#7b6d58;margin-left:8px}
+#mossAuthCode{width:100%;height:48px;box-sizing:border-box;padding:0 14px;background:rgba(2,4,7,.72);border:1px solid rgba(232,160,32,.28);outline:none;color:#ffe0a0;font:600 18px/48px Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;box-shadow:inset 0 0 18px rgba(232,160,32,.035)}
+#mossAuthCode::placeholder{color:#51483a;font-size:13px;letter-spacing:.12em}#mossAuthCode:focus{border-color:rgba(232,160,32,.78);box-shadow:inset 0 0 24px rgba(232,160,32,.08),0 0 18px rgba(232,160,32,.08)}
+#mossAuthBtn{margin-top:16px;width:100%;height:44px;border:1px solid rgba(232,160,32,.7);background:linear-gradient(90deg,rgba(232,160,32,.94),rgba(255,196,67,.98));color:#171006;font:700 13px/1 "Microsoft YaHei UI",sans-serif;letter-spacing:.1em;cursor:pointer;position:relative;overflow:hidden}
+#mossAuthBtn span{font:600 8px/1 Consolas,monospace;opacity:.55;margin-left:8px;letter-spacing:.18em}#mossAuthBtn:disabled{opacity:.5;cursor:wait}#mossAuthBtn:hover:not(:disabled){filter:brightness(1.08)}
+.moss-auth-status{margin-top:12px;min-height:18px;font:500 11px/1.5 "Microsoft YaHei UI",sans-serif;color:#8a7b62}.moss-auth-status.error{color:#e08a7f}.moss-auth-status.loading{color:#e8a020}
+.moss-auth-foot{margin-top:22px;padding-top:12px;border-top:1px solid rgba(232,160,32,.12);display:flex;justify-content:space-between;font-size:7px;letter-spacing:.18em;color:#6b5e4a}
+.moss-auth-exit{margin-top:10px;background:none;border:0;padding:0;color:#6b5e4a;font:500 9px/1 "Microsoft YaHei UI",sans-serif;text-decoration:underline;cursor:pointer}
+@keyframes mossAuthScan{0%{top:-4%;opacity:0}12%{opacity:.5}88%{opacity:.5}100%{top:104%;opacity:0}}
+@keyframes mossAuthLine{0%,100%{opacity:.55}50%{opacity:1}}
+</style>
+<script>
+(function(){
+  const root=document.getElementById('moss-activation');
+  const input=document.getElementById('mossAuthCode');
+  const button=document.getElementById('mossAuthBtn');
+  const status=document.getElementById('mossAuthStatus');
+  const exit=document.getElementById('mossAuthExit');
+  let busy=false;
+  const native=window.chrome && window.chrome.webview;
+  function post(message){ if(!native){ status.textContent='客户端通信不可用'; return; } native.postMessage(JSON.stringify(message)); }
+  function setStatus(text, kind){ status.textContent=text; status.className='moss-auth-status'+(kind?' '+kind:''); }
+  function setShown(show, error, loading){
+    root.hidden=!show;
+    if(show){ busy=!!loading; button.disabled=!!loading; input.disabled=!!loading; if(error)setStatus(error,'error'); else if(!loading)setStatus('等待验证'); else setStatus('正在验证邀请码...','loading'); setTimeout(()=>input.focus(),30); }
+  }
+  window.__MOSS_ACTIVATE_UI={show:setShown,hide:()=>setShown(false)};
+  function submit(){
+    if(busy)return;
+    const code=input.value.trim().toUpperCase();
+    if(code.length<8){setStatus('请输入完整的邀请码。','error');input.focus();return}
+    busy=true;button.disabled=true;input.disabled=true;setStatus('正在连接激活服务器...','loading');
+    post({type:'activate',code});
+  }
+  button.addEventListener('click',submit);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit()}});
+  exit.addEventListener('click',()=>post({type:'quit'}));
+  if(native){ native.addEventListener('message',e=>{let m=e.data;if(typeof m==='string'){try{m=JSON.parse(m)}catch{return}}if(!m)return;if(m.type==='activation-state'){setShown(!!m.show,m.error,m.loading)}}); }
+  setShown(true);
+})();
+</script>
+
+   <div class="nv-order-pop" id="nvOrderPop" hidden>
+    <div class="nv-op-h"><b id="nvOpSym">—</b><span id="nvOpSide">—</span><button class="nv-op-pos" type="button" id="nvOpPos">持仓 0/5</button><i class="nv-op-x" data-nv-op-close>×</i></div>
+    <div class="nv-op-stage" id="nvOpStage">预演 · 不会真实下单</div>
+    <div class="nv-op-grid">
+     <div><span>杠杆</span><b id="nvOpLev">5×</b></div>
+     <div><span>保证金（账户权益 20%）</span><b id="nvOpMargin">—</b></div>
+     <div><span>名义价值</span><b id="nvOpNotional">—</b></div>
+     <div><span>下单数量</span><b id="nvOpQty">—</b></div>
+     <div><span>入场价</span><b id="nvOpEntry">—</b></div>
+     <div><span>止盈</span><b id="nvOpTp">—</b></div>
+     <div><span>止损</span><b id="nvOpSl">—</b></div>
+     <div><span>风控</span><b id="nvOpRisk">—</b></div>
+    </div>
+    <div class="nv-op-mode"><span>下单模式</span><i class="nv-op-switch" id="nvOpSwitch" role="switch" aria-checked="false"><b></b><em id="nvOpModeText">手动</em></i></div>
+    <div class="nv-op-act"><button type="button" class="nv-op-ok" id="nvOpOk" disabled>预演模式 · 下单未开启</button><button type="button" class="nv-op-no" data-nv-op-close>关闭</button></div>
+    <div class="nv-op-positions" id="nvOpPositions" hidden>
+     <div class="nv-op-pos-h"><span>持仓明细</span><i class="nv-op-pos-x" id="nvOpPosBack">返回</i></div>
+     <div class="nv-op-pos-list" id="nvOpPosList"><div class="nv-op-pos-empty">暂无持仓</div></div>
+    </div>
+   </div>
+
+
+ <button class="nv-binance-entry" id="nvBinanceEntry" type="button">⚙ 币安 API</button>
+ <div class="nv-binance-setup" id="nvBinanceSetup" hidden>
+  <div class="nv-bs-card">
+   <div class="nv-bs-h"><b>币安 API 配置</b><i id="nvBsClose">×</i></div>
+   <div class="nv-bs-note">密钥只保存在本机加密文件，不会上传云端。</div>
+   <label class="nv-bs-row"><span>API Key</span><input id="nvBsKey" type="text" autocomplete="off" spellcheck="false" placeholder="粘贴 API Key"></label>
+   <label class="nv-bs-row"><span>Secret</span><input id="nvBsSecret" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴 Secret Key"></label>
+   <div class="nv-bs-status" id="nvBsStatus">未测试</div>
+   <div class="nv-bs-actions">
+    <button type="button" id="nvBsTest">测试连接</button>
+    <button type="button" id="nvBsSave">保存并启用</button>
+   </div>
+   <div class="nv-bs-tip">权限只需要「合约交易 + 读取」，不要开「提现」。若填了 IP 白名单，需包含当前公网 IP。</div>
+  </div>
+ </div>
 </body></html>
