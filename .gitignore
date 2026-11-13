@@ -44,3 +44,8 @@ _work/state.json
 _work/workflow.html
 _work/workflow.md
 
+
+_work/panel.log
+_work/panel-out.log
+_work/panel-err.log
+
