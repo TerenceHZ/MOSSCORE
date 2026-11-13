@@ -11691,162 +11691,7 @@ requestAnimationFrame(frame);
       const fmtPx = (v) => v ? v.toFixed(v < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
       return { r, chg, oi5, oi15, vol, score, stage, side, win, target, stop, targetText: fmtPx(target), stopText: fmtPx(stop) };
     };
-    // ===== 云端统一队列（可选增强，失败自动回退本地）=====
-    const CLOUD_QUEUE_TTL = 45 * 1000;      // 云端结果缓存 45 秒
-    const CLOUD_QUEUE_TIMEOUT = 4000;       // 请求超时 4 秒
-    let cloudQueueCache = { at: 0, data: null, inflight: null };
-
-    const cloudQueueUrl = () => {
-      try {
-        const cfg = window.__MOSS_DATA_SOURCE || {};
-        if (cfg.url) return String(cfg.url).replace(/\/+$/, '') + '/queue';
-      } catch (e) {}
-      return 'https://43-160-232-254.sslip.io/queue';
-    };
-    const cloudQueueToken = () => {
-      try {
-        // 优先从快照里取的队列凭证
-        const live = window.__MOSS_LIVE || {};
-        if (live.queueToken) return live.queueToken;
-      } catch (e) {}
-      try {
-        const cfg = window.__MOSS_DATA_SOURCE || {};
-        return cfg.token || '';
-      } catch (e) {}
-      return '';
-    };
-
-    // 拉取云端队列（带缓存与超时，永不抛错）
-    const fetchCloudQueue = () => {
-      const now = Date.now();
-      if (cloudQueueCache.data && now - cloudQueueCache.at < CLOUD_QUEUE_TTL) {
-        return Promise.resolve(cloudQueueCache.data);
-      }
-      if (cloudQueueCache.inflight) return cloudQueueCache.inflight;
-
-      const tk = cloudQueueToken();
-      if (!tk) { console.log('[CQ] no token'); return Promise.resolve(null); }
-
-      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-      const timer = setTimeout(() => { try { ctrl && ctrl.abort(); } catch (e) {} }, CLOUD_QUEUE_TIMEOUT);
-
-      const promise = fetch(cloudQueueUrl(), {
-        method: 'GET',
-        headers: { Authorization: 'Bearer ' + tk },
-        signal: ctrl ? ctrl.signal : undefined,
-        cache: 'no-store'
-      })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((json) => {
-          clearTimeout(timer);
-          console.log('[CQ] resp ok=', json && json.ok, 'left=', json && json.left && json.left.symbol, 'right=', json && json.right && json.right.symbol);
-          if (json && json.ok) {
-            cloudQueueCache = { at: Date.now(), data: json, inflight: null };
-            return json;
-          }
-          cloudQueueCache.inflight = null;
-          return null;
-        })
-        .catch(() => {
-          clearTimeout(timer);
-          cloudQueueCache.inflight = null;
-          return null;
-        });
-
-      cloudQueueCache.inflight = promise;
-      return promise;
-    };
-
-    // 问云端「这一侧现在该播哪个币」，失败返回 null
-    const cloudPick = async (side) => {
-      try {
-        const data = await fetchCloudQueue();
-        if (!data || !data[side] || !data[side].symbol) return null;
-        return String(data[side].symbol);
-      } catch (e) {
-        return null;
-      }
-    };
-
-    // ===== 云端时槽驱动：打开即同步，到点统一切换 =====
-    let cloudSynced = false;
-    let cloudSlotTimer = null;
-
-    // 让左侧立刻显示云端指定的币，并按云端剩余时间定时
-    const syncLeftFromCloud = async (force) => {
-      const data = await fetchCloudQueue();
-      if (!data || !data.left || !data.left.symbol) { console.log('[SL] no data'); return false; }
-      const want = String(data.left.symbol);
-      const remain = Math.max(1000, Number(data.left.remainingMs) || SIG_SLOT_MS);
-      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
-      const row = rows.find((x) => String(x.symbol) === want);
-      if (!row) return false;
-      const cur = window.__MOSS_SIG_CURRENT;
-      if (!force && cur && String(cur).replace(/-(long|short)$/, '') === want) {
-        return true;
-      }
-      try {
-        const sig = calcSignal(row);
-        (window.__MOSS_SIG_SHOW || sigShow)({ key: row.symbol + '-' + sig.side, sig });
-        clearTimeout(window.__MOSS_CLOUD_L_TIMER);
-        window.__MOSS_CLOUD_L_TIMER = setTimeout(() => { syncLeftFromCloud(true); }, remain);
-      } catch (e) {
-        return false;
-      }
-      return true;
-    };
-
-    // 让右侧立刻显示云端指定的币
-    const syncRightFromCloud = async (force) => {
-      const data = await fetchCloudQueue();
-      if (!data || !data.right || !data.right.symbol) {
-        console.log('[SR] no data');
-        return false;
-      }
-      const want = String(data.right.symbol);
-      const remain = Math.max(1000, Number(data.right.remainingMs) || FOCUS_SLOT_MS);
-      const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
-      const row = rows.find((x) => String(x.symbol) === want);
-      if (!row) {
-        console.log('[SR] not in rows:', want, 'rowsLen=', rows.length);
-        return false;
-      }
-      const cur = window.__MOSS_FOCUS_CURRENT;
-      if (!force && cur && String(cur) === want) return true;
-      try {
-        (window.__MOSS_FOCUS_SHOW || focusShow)(row);
-        clearTimeout(window.__MOSS_CLOUD_R_TIMER);
-        window.__MOSS_CLOUD_R_TIMER = setTimeout(() => { syncRightFromCloud(true); }, remain);
-        console.log('[SR] applied', want);
-      } catch (e) {
-        console.log('[SR] error:', String(e && e.message || e).slice(0, 150));
-        return false;
-      }
-      return true;
-    };
-
-    const syncBothFromCloud = async () => {
-      try {
-        const [L, R] = await Promise.all([syncLeftFromCloud(true), syncRightFromCloud(true)]);
-        cloudSynced = !!(L || R);
-        return cloudSynced;
-      } catch (e) {
-        return false;
-      }
-    };
-    window.__MOSS_SYNC_CLOUD = syncBothFromCloud;
-
-    // 每 30 秒对齐一次云端（发现不一致立即纠正）
-    if (!window.__MOSS_CLOUD_POLL) {
-      window.__MOSS_CLOUD_POLL = setInterval(() => {
-        try {
-          if (typeof window.__MOSS_SYNC_CLOUD === 'function') {
-            window.__MOSS_SYNC_CLOUD().catch(() => {});
-          }
-        } catch (e) {}
-      }, 30 * 1000);
-    }
-
+    window.__MOSS_CALC_SIGNAL = calcSignal;
     const SIG_SLOT_MS = 5 * 60 * 1000;
     const SIG_IDLE_MS = 15 * 60 * 1000;
     let sigQueue = [];
@@ -12259,17 +12104,6 @@ requestAnimationFrame(frame);
         const fresh = rows.find(x => x.symbol === (entry.sig.r.symbol));
         if (fresh) entry.sig = calcSignal(fresh);
         sigShow(entry);
-        // 云端对齐：若云端该播别的币，下一轮补播（不打断当前 5 分钟）
-        cloudPick('left').then((sym) => {
-          if (!sym) return;
-          if (String(entry.sig.r.symbol) === sym) return;
-          const idx = sigQueue.findIndex((it) => it && it.sig && it.sig.r
-            && String(it.sig.r.symbol) === sym);
-          if (idx > 0) {
-            const moved = sigQueue.splice(idx, 1)[0];
-            sigQueue.unshift(moved);
-          }
-        }).catch(() => {});
       } catch (e) {
         console.error('sigShow failed:', e);
       }
@@ -12682,18 +12516,6 @@ requestAnimationFrame(frame);
       const fresh = sym ? rows.find(x => x.symbol === sym) : null;
       if (!fresh) { focusNext(); return; }
       focusShow(fresh);
-      // 云端对齐：把云端要播的币提到队首，下一轮优先
-      cloudPick('right').then((want) => {
-        if (!want || want === sym) return;
-        const idx = focusQueue.findIndex((it) => {
-          const s2 = it ? (it.symbol || (it.r && it.r.symbol)) : null;
-          return String(s2) === want;
-        });
-        if (idx > 0) {
-          const moved = focusQueue.splice(idx, 1)[0];
-          focusQueue.unshift(moved);
-        }
-      }).catch(() => {});
       window.__MOSS_FOCUS_SLOT_START = Date.now();
       focusTimer = setTimeout(focusNext, focusQueue.length ? FOCUS_SLOT_MS : FOCUS_IDLE_MS);
     };
@@ -12990,30 +12812,104 @@ requestAnimationFrame(frame);
     });
     setTimeout(() => postTrade({ type: 'tradeConfig', action: 'status' }), 2500);
     setInterval(() => postTrade({ type: 'tradeConfig', action: 'status' }), 60 * 1000);
-    window.addEventListener('moss:live', () => {
-      applyLive(window.__MOSS_LIVE);
-      // 首次拿到数据后，立即与云端时槽对齐（只做一次，避免反复打断）
-      if (!window.__MOSS_CLOUD_INIT) {
-        window.__MOSS_CLOUD_INIT = setTimeout(() => {
-          try { syncBothFromCloud().catch(() => {}); } catch (e) {}
-        }, 1200);
-      }
-    });
+    window.addEventListener('moss:live', () => applyLive(window.__MOSS_LIVE));
     if (window.__MOSS_LIVE) applyLive(window.__MOSS_LIVE);
-    // 启动云端时槽同步（延迟到所有函数定义完成后）
-    (function bootCloudSync() {
-      let tries = 0;
-      const attempt = () => {
-        tries++;
-        const fn = window.__MOSS_SYNC_CLOUD;
-        const hasData = window.__MOSS_LIVE && Array.isArray(window.__MOSS_LIVE.rows) && window.__MOSS_LIVE.rows.length > 0;
-        if (typeof fn === 'function' && hasData) {
-          try { fn().catch(() => {}); } catch (e) {}
+    // ============================================================
+    // 云端驱动层：只决定「现在该显示哪个币」，其余逻辑完全不动
+    // 通过调用既有的 __MOSS_SIG_SHOW / __MOSS_FOCUS_SHOW 触发切换，
+    // 因此特效、警报、记录、冷却等全部沿用原逻辑。
+    // ============================================================
+    (function cloudDriver() {
+      const POLL_MS = 30 * 1000;
+      let lastL = null;
+      let lastR = null;
+
+      const getToken = () => {
+        try {
+          const live = window.__MOSS_LIVE || {};
+          if (live.queueToken) return live.queueToken;
+        } catch (e) {}
+        return '';
+      };
+
+      const fetchQueue = async () => {
+        const tk = getToken();
+        if (!tk) return null;
+        try {
+          const res = await fetch('https://43-160-232-254.sslip.io/queue', {
+            headers: { Authorization: 'Bearer ' + tk },
+            cache: 'no-store'
+          });
+          if (!res.ok) return null;
+          const j = await res.json();
+          return (j && j.ok) ? j : null;
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const rowOf = (sym) => {
+        const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+        return rows.find((r) => String(r.symbol) === String(sym)) || null;
+      };
+
+      // 左侧：若云端指定的币与当前不同，调用既有 sigShow 切换
+      const applyLeft = (sym) => {
+        if (!sym) return;
+        const cur = window.__MOSS_SIG_CURRENT;
+        const curBase = cur ? String(cur).replace(/-(long|short)$/, '') : '';
+        if (curBase === String(sym)) return;
+        const row = rowOf(sym);
+        if (!row) return;
+        const show = window.__MOSS_SIG_SHOW;
+        if (typeof show !== 'function') return;
+        try {
+          const sig = window.__MOSS_CALC_SIGNAL ? window.__MOSS_CALC_SIGNAL(row) : null;
+          if (!sig) return;
+          show({ key: String(sym) + '-' + sig.side, sig });
+          console.log('[CLOUD-L] switch ->', sym);
+        } catch (e) {
+          console.log('[CLOUD-L] error', String(e).slice(0, 100));
+        }
+      };
+
+      // 右侧：同理
+      const applyRight = (sym) => {
+        if (!sym) return;
+        const cur = window.__MOSS_FOCUS_CURRENT;
+        if (cur && String(cur) === String(sym)) return;
+        const row = rowOf(sym);
+        if (!row) return;
+        const show = window.__MOSS_FOCUS_SHOW;
+        if (typeof show !== 'function') return;
+        try {
+          show(row);
+          console.log('[CLOUD-R] switch ->', sym);
+        } catch (e) {
+          console.log('[CLOUD-R] error', String(e).slice(0, 100));
+        }
+      };
+
+      const tick = async () => {
+        const data = await fetchQueue();
+        if (!data) return;
+        const l = data.left && data.left.symbol ? data.left.symbol : null;
+        const r = data.right && data.right.symbol ? data.right.symbol : null;
+        if (l) { applyLeft(l); lastL = l; }
+        if (r) { applyRight(r); lastR = r; }
+        window.__MOSS_CLOUD_LAST = { t: Date.now(), left: l, right: r };
+      };
+
+      const start = () => {
+        if (!getToken()) {
+          setTimeout(start, 1000);
           return;
         }
-        if (tries < 30) setTimeout(attempt, 800);
+        tick().catch(() => {});
+        setInterval(() => { tick().catch(() => {}); }, POLL_MS);
+        console.log('[CLOUD] driver started');
       };
-      setTimeout(attempt, 1500);
+      setTimeout(start, 3000);
     })();
 
     setTimeout(loadFearGreed, 800);
