@@ -12961,6 +12961,25 @@ requestAnimationFrame(frame);
         console.log('[CLOUD-H] left=', left.length, 'right=', right.length);
       };
 
+      // 按云端 endsAt 定时切换：所有设备在同一毫秒切到下一个币
+      const scheduleAtEndsAt = (side, slot) => {
+        if (!slot || !slot.symbol || !slot.endsAt) return;
+        const timerKey = side === 'left' ? '__MOSS_CLOUD_END_L' : '__MOSS_CLOUD_END_R';
+        try { clearTimeout(window[timerKey]); } catch (e) {}
+        window[timerKey] = null;
+
+        const remain = Number(slot.endsAt) - Date.now();
+        // 已过期或超过 6 分钟（异常值）→ 不调度，靠轮询兜底
+        if (remain <= 0 || remain > 6 * 60 * 1000) return;
+
+        window[timerKey] = setTimeout(() => {
+          console.log('[CLOUD-END]', side, 'slot ended, refreshing');
+          // 到点立即重新拉云端，拿下一个币
+          tick().catch(() => {});
+        }, remain);
+        console.log('[CLOUD-END]', side, 'scheduled in', Math.round(remain / 1000), 's');
+      };
+
       let failCount = 0;
 
       const tick = async () => {
@@ -12992,6 +13011,16 @@ requestAnimationFrame(frame);
         const r = data.right && data.right.symbol ? data.right.symbol : null;
         if (l) { applyLeft(l); lastL = l; }
         if (r) { applyRight(r); lastR = r; }
+
+        // 按云端 endsAt 精确调度下一次切换（多设备同时切）
+        try {
+          console.log('[CLOUD-END] scheduling, L.endsAt=', data.left && data.left.endsAt, 'R.endsAt=', data.right && data.right.endsAt);
+          scheduleAtEndsAt('left', data.left);
+          scheduleAtEndsAt('right', data.right);
+        } catch (e) {
+          console.log('[CLOUD-END] schedule error:', String(e).slice(0, 120));
+        }
+
         window.__MOSS_CLOUD_LAST = { t: Date.now(), left: l, right: r };
       };
 
