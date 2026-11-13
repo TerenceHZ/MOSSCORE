@@ -2,6 +2,9 @@
 Description=MOSS CORE central market collector
 After=network-online.target
 Wants=network-online.target
+# 5 分钟内最多重启 5 次，超过则进入 failed 状态（便于发现严重问题）
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -10,12 +13,15 @@ Group=moss
 WorkingDirectory=/opt/moss-core
 ExecStart=/usr/bin/python3 /opt/moss-core/collector.py
 Restart=always
-RestartSec=10
+RestartSec=5
 Environment=MOSS_BIND=127.0.0.1
 Environment=MOSS_PORT=8787
 Environment=MOSS_POLL=60
+Environment=PYTHONUNBUFFERED=1
 NoNewPrivileges=true
 PrivateTmp=true
+# 内存超限自动重启（防内存泄漏拖垮服务）
+MemoryMax=512M
 
 [Install]
 WantedBy=multi-user.target
