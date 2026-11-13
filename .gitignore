@@ -38,3 +38,9 @@ _voicepack/
 
 # 本地打包临时目录
 _package/
+
+# 工作流面板运行时状态
+_work/state.json
+_work/workflow.html
+_work/workflow.md
+
