@@ -1641,7 +1641,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
 </div>
 <div class="nv-signal" id="nvSignal" aria-hidden="true">
  <div class="nv-signal-card">
-  <div class="nv-sig-h"><span>⚠ MOSS SIGNAL · 建仓警报</span><div class="nv-sig-clock"><small>AUTO CLOSE</small><b id="nvSigTimer">05:00</b></div><button class="nv-sig-x" type="button" data-signal-close>×</button></div>
+  <div class="nv-sig-h"><span>⚠ MOSS SIGNAL · 建仓警报</span><div class="nv-sig-clock"><small>AUTO CLOSE</small><b id="nvSigTimer">01:30</b></div><button class="nv-sig-x" type="button" data-signal-close>×</button></div>
   <div class="nv-sig-hero"><div><b id="nvSigSym">ARIA/USDT</b><span id="nvSigPrice">0.12066</span></div><em id="nvSigChg">+25.30%</em></div>
   <div class="nv-sig-side" id="nvSigSide">建议建多 · LONG</div>
   <div class="nv-sig-grid">
@@ -12108,9 +12108,15 @@ requestAnimationFrame(frame);
       } catch (e) {
         console.error('sigShow failed:', e);
       }
-      const wait = sigQueue.length ? SIG_SLOT_MS : SIG_IDLE_MS;
-      window.__MOSS_SIG_TIMER = setTimeout(sigNext, wait);
-      sigTimer = window.__MOSS_SIG_TIMER;
+      // 云驱动接管时，本地不再自行排下一轮
+      if (window.__MOSS_CLOUD_ACTIVE) {
+        window.__MOSS_SIG_TIMER = null;
+        sigTimer = null;
+      } else {
+        const wait = sigQueue.length ? SIG_SLOT_MS : SIG_IDLE_MS;
+        window.__MOSS_SIG_TIMER = setTimeout(sigNext, wait);
+        sigTimer = window.__MOSS_SIG_TIMER;
+      }
       } finally { sigInFlight = false; }
     };
     const refreshSignalCardFrame = () => renderSignalCardFrame();
@@ -12159,13 +12165,14 @@ requestAnimationFrame(frame);
       clearInterval(signalTimerId);
       const timerEl = document.querySelector('#nvSigTimer');
       const clockEl = timerEl && timerEl.parentElement;
-      const deadline = Date.now() + 5 * 60 * 1000;
+      const ALERT_SHOW_MS = 90 * 1000;
+      const deadline = Date.now() + ALERT_SHOW_MS;
       const renderTimer = () => {
         const left = Math.max(0, deadline - Date.now());
         const m = Math.floor(left / 60000);
         const s = Math.floor((left % 60000) / 1000);
         if (timerEl) timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        if (clockEl) clockEl.classList.toggle('urgent', left <= 60000);
+        if (clockEl) clockEl.classList.toggle('urgent', left <= 20000);
         if (left <= 0) {
           clearInterval(signalTimerId);
           hideSignal();
@@ -12201,7 +12208,7 @@ requestAnimationFrame(frame);
     const hideSignal = () => {
       clearInterval(signalTimerId);
       const timerEl = document.querySelector('#nvSigTimer');
-      if (timerEl) { timerEl.textContent = '05:00'; timerEl.parentElement?.classList.remove('urgent'); }
+      if (timerEl) { timerEl.textContent = '01:30'; timerEl.parentElement?.classList.remove('urgent'); }
       const el = document.querySelector('#nvSignal');
       if (!el) return;
       el.classList.remove('open');
@@ -12519,8 +12526,13 @@ requestAnimationFrame(frame);
       if (!fresh) { focusNext(); return; }
       focusShow(fresh);
       window.__MOSS_FOCUS_SLOT_START = Date.now();
-      focusTimer = setTimeout(focusNext, focusQueue.length ? FOCUS_SLOT_MS : FOCUS_IDLE_MS);
+      if (window.__MOSS_CLOUD_ACTIVE) {
+        focusTimer = null;
+      } else {
+        focusTimer = setTimeout(focusNext, focusQueue.length ? FOCUS_SLOT_MS : FOCUS_IDLE_MS);
+      }
     };
+    window.__MOSS_RESTART_LOCAL = () => { try { focusNext(); } catch (e) {} };
     const rotateFocusCard = (rows, live) => {
       focusCleanSeen();
       const cur = window.__MOSS_FOCUS_CURRENT;
@@ -12931,10 +12943,33 @@ requestAnimationFrame(frame);
         console.log('[CLOUD-H] left=', left.length, 'right=', right.length);
       };
 
+      let failCount = 0;
+
       const tick = async () => {
         refreshHistory().catch(() => {});
         const data = await fetchQueue();
-        if (!data) return;
+
+        if (!data) {
+          failCount++;
+          console.log('[CLOUD] fetch failed, count=', failCount);
+          // 连续失败 3 次（约 90 秒）→ 回退本地调度
+          if (failCount >= 3 && window.__MOSS_CLOUD_ACTIVE) {
+            window.__MOSS_CLOUD_ACTIVE = false;
+            console.log('[CLOUD] fallback to local scheduling');
+            // 重新启动本地调度
+            try {
+              if (typeof window.__MOSS_RESTART_LOCAL === 'function') window.__MOSS_RESTART_LOCAL();
+            } catch (e) {}
+          }
+          return;
+        }
+
+        failCount = 0;
+        if (!window.__MOSS_CLOUD_ACTIVE) {
+          window.__MOSS_CLOUD_ACTIVE = true;
+          console.log('[CLOUD] resumed, cloud active');
+        }
+
         const l = data.left && data.left.symbol ? data.left.symbol : null;
         const r = data.right && data.right.symbol ? data.right.symbol : null;
         if (l) { applyLeft(l); lastL = l; }
@@ -12947,9 +12982,10 @@ requestAnimationFrame(frame);
           setTimeout(start, 1000);
           return;
         }
+        window.__MOSS_CLOUD_ACTIVE = true;
         tick().catch(() => {});
         setInterval(() => { tick().catch(() => {}); }, POLL_MS);
-        console.log('[CLOUD] driver started');
+        console.log('[CLOUD] driver started, cloud active');
       };
       setTimeout(start, 3000);
     })();
