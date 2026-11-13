@@ -11696,6 +11696,7 @@ requestAnimationFrame(frame);
     const SIG_IDLE_MS = 15 * 60 * 1000;
     let sigQueue = [];
     let sigTimer = null;
+    Object.defineProperty(window, "__MOSS_SIG_TIMER_REF", { get: () => sigTimer, set: (v) => { sigTimer = v; }, configurable: true });
     let sigIdleTimer = null;
     const signalCardEl = () => sr.querySelector('#nvSignalCard');
     const renderSignalCardFrame = () => {
@@ -12413,6 +12414,7 @@ requestAnimationFrame(frame);
     let focusSeen = {};
     let focusQueue = [];
     let focusTimer = null;
+    Object.defineProperty(window, "__MOSS_FOCUS_TIMER_REF", { get: () => focusTimer, set: (v) => { focusTimer = v; }, configurable: true });
     let focusIdleTimer = null;
     try { focusSeen = JSON.parse(localStorage.getItem('moss-focus-rotate-v1') || '{}') || {}; } catch (e) { focusSeen = {}; }
     {
@@ -12854,11 +12856,18 @@ requestAnimationFrame(frame);
       };
 
       // 左侧：若云端指定的币与当前不同，调用既有 sigShow 切换
+      const stopLocalLeft = () => {
+        try { clearTimeout(window.__MOSS_SIG_TIMER); } catch (e) {}
+        try { window.__MOSS_SIG_TIMER = null; } catch (e) {}
+        try { if (window.__MOSS_SIG_TIMER_REF) clearTimeout(window.__MOSS_SIG_TIMER_REF); window.__MOSS_SIG_TIMER_REF = null; } catch (e) {}
+      };
+
       const applyLeft = (sym) => {
         if (!sym) return;
         const cur = window.__MOSS_SIG_CURRENT;
         const curBase = cur ? String(cur).replace(/-(long|short)$/, '') : '';
         if (curBase === String(sym)) return;
+        stopLocalLeft();
         const row = rowOf(sym);
         if (!row) return;
         const show = window.__MOSS_SIG_SHOW;
@@ -12874,10 +12883,17 @@ requestAnimationFrame(frame);
       };
 
       // 右侧：同理
+      const stopLocalRight = () => {
+        try { clearTimeout(window.__MOSS_FOCUS_TIMER); } catch (e) {}
+        try { window.__MOSS_FOCUS_TIMER = null; } catch (e) {}
+        try { if (window.__MOSS_FOCUS_TIMER_REF) clearTimeout(window.__MOSS_FOCUS_TIMER_REF); window.__MOSS_FOCUS_TIMER_REF = null; } catch (e) {}
+      };
+
       const applyRight = (sym) => {
         if (!sym) return;
         const cur = window.__MOSS_FOCUS_CURRENT;
         if (cur && String(cur) === String(sym)) return;
+        stopLocalRight();
         const row = rowOf(sym);
         if (!row) return;
         const show = window.__MOSS_FOCUS_SHOW;

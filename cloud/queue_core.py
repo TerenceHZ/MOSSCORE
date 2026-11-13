@@ -196,19 +196,17 @@ def compute_side(db, side, rows, now):
 
     pool = [make_item(r) for r in cands if r.get("symbol") not in played]
 
-    # 当前槽位是否还有效
+    # 当前槽位是否还有效（只要未到期就继续播，不因数据波动打断）
     if slot:
         sym, started_at, ends_at = slot
         if now < ends_at:
-            still = any(c["symbol"] == sym for c in pool)
-            if still:
-                return {
-                    "symbol": sym,
-                    "startedAt": started_at,
-                    "endsAt": ends_at,
-                    "remainingMs": ends_at - now,
-                    "queue": [c["symbol"] for c in pool if c["symbol"] != sym],
-                }
+            return {
+                "symbol": sym,
+                "startedAt": started_at,
+                "endsAt": ends_at,
+                "remainingMs": ends_at - now,
+                "queue": [c["symbol"] for c in pool if c["symbol"] != sym],
+            }
         # 槽位到期 → 标记已播
         db.execute(
             "INSERT INTO played(side, symbol, played_at) VALUES(?,?,?) "
