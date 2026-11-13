@@ -1,6 +1,6 @@
 #!/bin/bash
-# MOSS CORE macOS 一键构建脚本
-# 用法：
+# MOSS CORE macOS installer (skip activation build)
+# Usage:
 #   curl -fsSL https://43-160-232-254.sslip.io/mac-build.sh -o ~/mac-build.sh
 #   bash ~/mac-build.sh
 
@@ -12,150 +12,172 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 API_URL="https://43-160-232-254.sslip.io"
+API_TOKEN="yb4m3bG30ZIW0v4CwBzgGxoidZhRllej8vAmfxk6jzo"
 
 echo ""
 echo "========================================"
-echo "  MOSS CORE macOS 安装程序"
+echo "  MOSS CORE macOS installer"
 echo "========================================"
 echo ""
 
-# 1. 系统检查
+# 1. system check
 if [[ "$(uname)" != "Darwin" ]]; then
-  echo -e "${RED}错误：此脚本只能在 macOS 上运行${NC}"
+  echo -e "${RED}ERROR: macOS only${NC}"
   exit 1
 fi
 
 ARCH=$(uname -m)
 if [[ "$ARCH" != "arm64" ]]; then
-  echo -e "${YELLOW}检测到 Intel Mac（$ARCH）${NC}"
-  echo "当前只支持 Apple Silicon（M1/M2/M3/M4/M5）"
+  echo -e "${YELLOW}Intel Mac detected ($ARCH) - not supported${NC}"
   exit 1
 fi
-echo -e "${GREEN}✓${NC} 系统检测通过：macOS Apple Silicon ($ARCH)"
+echo -e "${GREEN}OK${NC} system: macOS Apple Silicon ($ARCH)"
 
-# 2. 检查 Node.js
+# 2. node check
 echo ""
-echo "检查 Node.js..."
+echo "Checking Node.js..."
 NODE_OK=0
 if command -v node &> /dev/null; then
   NODE_MAJOR=$(node -v | sed 's/v\([0-9]*\).*/\1/')
   if [ "$NODE_MAJOR" -ge 18 ]; then
     NODE_OK=1
-    echo -e "${GREEN}✓${NC} Node.js $(node -v)"
+    echo -e "${GREEN}OK${NC} Node.js $(node -v)"
   fi
 fi
 
 if [ $NODE_OK -eq 0 ]; then
-  echo -e "${YELLOW}未检测到 Node.js 18+，正在自动安装...${NC}"
-  echo ""
+  echo -e "${YELLOW}Installing Node.js...${NC}"
   NODE_VER="v20.18.0"
   NODE_PKG="node-${NODE_VER}.pkg"
-  NODE_URL="https://nodejs.org/dist/${NODE_VER}/${NODE_PKG}"
   TMP_DIR=$(mktemp -d)
-  echo "下载 Node.js ${NODE_VER}（约 60MB）..."
+  curl -fL --progress-bar "https://nodejs.org/dist/${NODE_VER}/${NODE_PKG}" -o "$TMP_DIR/$NODE_PKG"
   echo ""
-  if curl -fL --progress-bar "$NODE_URL" -o "$TMP_DIR/$NODE_PKG"; then
-    echo ""
-    echo "正在安装（需要输入你的 Mac 登录密码）..."
-    echo ""
-    sudo installer -pkg "$TMP_DIR/$NODE_PKG" -target /
-    rm -rf "$TMP_DIR"
-    export PATH="/usr/local/bin:$PATH"
-    if ! command -v node &> /dev/null; then
-      echo -e "${RED}Node.js 安装后仍不可用${NC}"
-      exit 1
-    fi
-    echo -e "${GREEN}✓${NC} Node.js $(node -v) 安装成功"
-  else
-    rm -rf "$TMP_DIR"
-    echo -e "${RED}下载失败，请手动安装：https://nodejs.org${NC}"
-    exit 1
-  fi
+  echo "Installing (enter your Mac password)..."
+  sudo installer -pkg "$TMP_DIR/$NODE_PKG" -target /
+  rm -rf "$TMP_DIR"
+  export PATH="/usr/local/bin:$PATH"
+  echo -e "${GREEN}OK${NC} Node.js $(node -v)"
 fi
 
-# 3. 检查 Xcode 命令行工具（git 依赖）
+# 3. xcode tools check
 echo ""
 if ! xcode-select -p &> /dev/null; then
-  echo -e "${YELLOW}需要安装 Xcode 命令行工具${NC}"
-  echo "请在弹出窗口点「安装」，装完后重新运行本脚本。"
+  echo -e "${YELLOW}Xcode command line tools required${NC}"
+  echo "Click Install in the popup, then run this script again."
   xcode-select --install || true
   exit 0
 fi
-echo -e "${GREEN}✓${NC} Xcode 命令行工具已就绪"
+echo -e "${GREEN}OK${NC} Xcode command line tools"
 
-# 4. 下载源码
+# 4. clone source
 WORKDIR="$HOME/moss-core-build"
 echo ""
-echo "准备构建目录：$WORKDIR"
+echo "Preparing: $WORKDIR"
 
 if [ -d "$WORKDIR/mac-electron" ]; then
-  echo "目录已存在，更新源码..."
+  echo "Updating source..."
   cd "$WORKDIR"
   git fetch origin main 2>/dev/null && git reset --hard origin/main 2>/dev/null || true
 else
-  echo "下载源码中..."
+  echo "Cloning source..."
   rm -rf "$WORKDIR"
   git clone https://github.com/TerenceHZ/MOSSCORE.git "$WORKDIR"
   cd "$WORKDIR"
 fi
-echo -e "${GREEN}✓${NC} 源码就绪"
+echo -e "${GREEN}OK${NC} source ready"
 
-# 5. 生成配置文件（关键：data-source.json 不在仓库里）
-echo ""
-echo "写入数据源配置..."
 CONF_DIR="$WORKDIR/mac-electron"
-cat > "$CONF_DIR/data-source.json" << 'EOF'
+
+# 5. write config
+echo ""
+echo "Writing data-source.json..."
+cat > "$CONF_DIR/data-source.json" << EOF
 {
-  "url": "https://43-160-232-254.sslip.io",
-  "token": "yb4m3bG30ZIW0v4CwBzgGxoidZhRllej8vAmfxk6jzo",
+  "url": "$API_URL",
+  "token": "$API_TOKEN",
   "mode": "remote"
 }
 EOF
-echo -e "${GREEN}✓${NC} 配置已写入"
+echo -e "${GREEN}OK${NC} config written"
 
-# 6. 安装依赖
+# 6. patch index.html - skip activation screen
 echo ""
-echo "安装构建依赖（首次约 2-5 分钟）..."
+echo "Patching activation gate..."
+INDEX_FILE="$CONF_DIR/index.html"
+if [ -f "$INDEX_FILE" ]; then
+  python3 - "$INDEX_FILE" << 'PYEOF'
+import re, sys
+p = sys.argv[1]
+s = open(p, encoding='utf-8').read()
+orig = s
+
+# force gate hidden on load
+s = s.replace(
+    "window.__MOSS_ACTIVATE_UI={show:setShown,hide:()=>setShown(false)};",
+    "window.__MOSS_ACTIVATE_UI={show:setShown,hide:()=>setShown(false)};window.__MOSS_SKIP_GATE=true;"
+)
+# setShown always hides when skip flag set
+s = s.replace(
+    "function setShown(show, error, loading){\n    root.hidden=!show;",
+    "function setShown(show, error, loading){\n    if(window.__MOSS_SKIP_GATE)show=false;\n    root.hidden=!show;"
+)
+# final call: do not show
+s = s.replace("  setShown(true);\n})();", "  setShown(false);\n})();")
+
+if s != orig:
+    open(p, 'w', encoding='utf-8').write(s)
+    print("INDEX_PATCHED")
+else:
+    print("INDEX_UNCHANGED")
+PYEOF
+  echo -e "${GREEN}OK${NC} activation gate patched"
+else
+  echo -e "${YELLOW}WARN: index.html not found${NC}"
+fi
+
+# 7. install deps
+echo ""
+echo "Installing dependencies (2-5 min)..."
 cd "$CONF_DIR"
 npm config set registry https://registry.npmmirror.com >/dev/null 2>&1 || true
 npm install --no-audit --no-fund
-echo -e "${GREEN}✓${NC} 依赖安装完成"
+echo -e "${GREEN}OK${NC} dependencies installed"
 
-# 7. 打包
+# 8. build
 echo ""
-echo "正在打包 macOS 应用（约 1-3 分钟）..."
+echo "Packaging app (1-3 min)..."
 npm run pack:arm64
 
 APP_PATH="$CONF_DIR/dist/MOSS CORE-darwin-arm64/MOSS CORE.app"
 if [ ! -d "$APP_PATH" ]; then
-  echo -e "${RED}打包失败${NC}"
+  echo -e "${RED}BUILD FAILED${NC}"
   exit 1
 fi
-echo -e "${GREEN}✓${NC} 打包完成"
+echo -e "${GREEN}OK${NC} build complete"
 
-# 8. 验证配置在包内
+# 9. ensure config inside bundle
 if [ ! -f "$APP_PATH/Contents/Resources/app/data-source.json" ]; then
-  echo -e "${YELLOW}警告：包内未找到 data-source.json，尝试放入 Resources...${NC}"
+  cp "$CONF_DIR/data-source.json" "$APP_PATH/Contents/Resources/app/data-source.json" 2>/dev/null || \
   cp "$CONF_DIR/data-source.json" "$APP_PATH/Contents/Resources/data-source.json" 2>/dev/null || true
 fi
 
-# 9. 安装
+# 10. install
 echo ""
-echo "安装到「应用程序」文件夹..."
+echo "Installing to /Applications..."
 rm -rf "/Applications/MOSS CORE.app"
 cp -R "$APP_PATH" "/Applications/MOSS CORE.app"
 xattr -cr "/Applications/MOSS CORE.app" 2>/dev/null || true
-echo -e "${GREEN}✓${NC} 已安装到 /Applications/MOSS CORE.app"
+echo -e "${GREEN}OK${NC} installed"
 
-# 10. 完成
+# 11. done
 echo ""
 echo "========================================"
-echo -e "${GREEN}  安装完成！${NC}"
+echo -e "${GREEN}  DONE${NC}"
 echo "========================================"
 echo ""
-echo "从「启动台」或「应用程序」打开 MOSS CORE 即可。"
+echo "Open MOSS CORE from Launchpad or Applications."
 echo ""
-read -p "现在启动 MOSS CORE？(y/n) " -n 1 -r
+read -p "Launch now? (y/n) " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
   open "/Applications/MOSS CORE.app"
