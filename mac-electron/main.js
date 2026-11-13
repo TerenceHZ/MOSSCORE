@@ -10,7 +10,24 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 app.setName('MOSS CORE');
 
 const ROOT = app.getAppPath();
-const CONFIG_PATH = path.join(ROOT, 'data-source.json');
+const RES = process.resourcesPath || path.join(ROOT, '..');
+
+// data-source.json 不在 asar 内，优先从 Resources 目录读取
+function findConfig() {
+  const candidates = [
+    path.join(RES, 'data-source.json'),
+    path.join(path.dirname(app.getPath('exe')), '..', 'Resources', 'data-source.json'),
+    path.join(ROOT, 'data-source.json'),
+    path.join(app.getPath('userData'), 'data-source.json')
+  ];
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c)) return c;
+    } catch {}
+  }
+  return null;
+}
+
 const CACHE_PATH = () => path.join(app.getPath('userData'), 'live-snapshot.json');
 const LICENSE_PATH = () => path.join(app.getPath('userData'), 'license.dat');
 const LOG_PATH = () => path.join(app.getPath('userData'), 'mac.log');
@@ -33,7 +50,12 @@ function log(...parts) {
 
 function readConfig() {
   try {
-    const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    const cfgPath = findConfig();
+    if (!cfgPath) {
+      log('config file not found in any candidate path');
+      return null;
+    }
+    const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
     if (!cfg || !cfg.url) return null;
     return { url: String(cfg.url).replace(/\/+$/, ''), token: String(cfg.token || '') };
   } catch (e) {
@@ -64,11 +86,6 @@ function saveCache(data) {
 function buildDeviceId() {
   let input = os.hostname();
   try {
-    const idPath = '/Library/Preferences/com.apple.computerInfo.plist';
-    if (fs.existsSync(idPath)) input = idPath;
-  } catch {}
-  // macOS 上使用硬件 UUID
-  try {
     const out = require('node:child_process')
       .execSync('ioreg -rd1 -c IOPlatformExpertDevice | grep IOPlatformUUID', { encoding: 'utf8', timeout: 3000 })
       .toString();
@@ -80,7 +97,7 @@ function buildDeviceId() {
 
 const DEVICE_ID = buildDeviceId();
 
-// ---------- 许可证存储 ----------
+// ---------- 许可证 ----------
 function saveLicense(license, expires) {
   try {
     const p = LICENSE_PATH();
@@ -112,7 +129,7 @@ function clearLicense() {
 // ---------- 激活 ----------
 async function activate(code) {
   const cfg = readConfig();
-  if (!cfg) return { ok: false, error: '配置缺失' };
+  if (!cfg) return { ok: false, error: '配置文件缺失，请重新安装。' };
   try {
     log('activating:', code);
     const resp = await fetch(cfg.url + '/license/activate', {
@@ -132,7 +149,7 @@ async function activate(code) {
       let msg = `激活失败：HTTP ${resp.status}`;
       try {
         const j = JSON.parse(text);
-        if (j.error === 'already_bound') msg = '邀请码已绑定其他电脑，请先在旧电脑解绑或联系管理员。';
+        if (j.error === 'already_bound') msg = '邀请码已绑定其他电脑。';
         else if (j.error === 'invalid_code') msg = '邀请码无效。';
         else if (j.error === 'code_expired_or_revoked') msg = '邀请码已过期或被停用。';
       } catch {}
@@ -143,6 +160,7 @@ async function activate(code) {
     if (!data.license) return { ok: false, error: '服务器没有返回许可证。' };
     saveLicense(data.license, data.expires_at);
     licenseKey = data.license;
+    log('license saved, expires:', data.expires_at);
     return { ok: true, error: '', expires: data.expires_at || '' };
   } catch (e) {
     log('activate error', e.message);
@@ -165,25 +183,12 @@ async function validateLicense() {
     return !!data.ok;
   } catch (e) {
     log('validate error', e.message);
-    return true; // 网络问题时放行，避免断网踢人
+    return true;
   }
 }
 
-// ---------- 页面注入 ----------
-async function sendToPage(eventName, detail) {
-  if (!win || win.isDestroyed()) return;
-  try {
-    const json = JSON.stringify(detail);
-    await win.webContents.executeJavaScript(
-      `window.dispatchEvent(new CustomEvent('${eventName}',{detail:${json}}));`, true
-    );
-  } catch (e) {
-    log('sendToPage error', e.message);
-  }
-}
-
+// ---------- 页面通信 ----------
 async function sendGate(mode, error) {
-  // 模拟 WebView2 的 activation-state 消息
   if (!win || win.isDestroyed()) return;
   try {
     const payload = {
@@ -194,7 +199,7 @@ async function sendGate(mode, error) {
     };
     const json = JSON.stringify(JSON.stringify(payload));
     await win.webContents.executeJavaScript(
-      `(function(){try{var m=JSON.parse(${json});window.dispatchEvent(new MessageEvent('message',{data:m}));var n=window.chrome&&window.chrome.webview;if(n&&n.__dispatch)n.__dispatch(m);}catch(e){}})();`,
+      `(function(){try{var m=JSON.parse(${json});window.dispatchEvent(new MessageEvent('message',{data:m}));}catch(e){}})();`,
       true
     );
   } catch (e) {
@@ -220,7 +225,7 @@ async function poll() {
   if (stopped || busy) return;
   const cfg = readConfig();
   if (!cfg) {
-    log('remote config missing or invalid');
+    log('config missing, retry later');
     return;
   }
   busy = true;
@@ -252,7 +257,7 @@ function schedule() {
   }, POLL_MS);
 }
 
-// ---------- 消息处理 ----------
+// ---------- 消息 ----------
 async function handleMessage(payload) {
   const type = payload && payload.type;
 
@@ -270,6 +275,7 @@ async function handleMessage(payload) {
       if (result.ok) {
         await sendGate('ok', '');
         await poll();
+        schedule();
       } else {
         await sendGate('need', result.error);
       }
@@ -286,8 +292,10 @@ async function handleMessage(payload) {
   }
 
   if (type === 'trade' || type === 'tradeConfig') {
-    // macOS 版暂不支持币安下单
-    await sendToPage('moss:trade', { type: 'error', ok: false, message: 'macOS 版暂不支持自动下单' });
+    await win.webContents.executeJavaScript(
+      `window.dispatchEvent(new CustomEvent('moss:trade',{detail:{type:'error',ok:false,message:'macOS 版暂不支持自动下单'}}));`,
+      true
+    ).catch(() => {});
     return;
   }
 }
@@ -315,12 +323,13 @@ function createWindow() {
   win.loadFile(path.join(ROOT, 'index.html'));
 
   win.webContents.on('did-finish-load', async () => {
-    // 检查许可证
+    log('page loaded, checking license...');
     const stored = loadLicense();
     if (stored) {
       licenseKey = stored.license;
       const ok = await validateLicense();
       if (ok) {
+        log('license valid, entering main');
         await sendGate('ok', '');
         const cached = readCache();
         if (cached) await inject(cached);
@@ -328,8 +337,10 @@ function createWindow() {
         schedule();
         return;
       }
+      log('license invalid, clearing');
       clearLicense();
     }
+    log('showing activation gate');
     await sendGate('need', '');
   });
 
@@ -341,7 +352,11 @@ function createWindow() {
 }
 
 ipcMain.on('moss-message', (event, payload) => {
-  handleMessage(payload).catch((e) => log('handleMessage error', e.message));
+  let msg = payload;
+  if (typeof msg === 'string') {
+    try { msg = JSON.parse(msg); } catch { return; }
+  }
+  handleMessage(msg).catch((e) => log('handleMessage error', e.message));
 });
 
 if (!app.requestSingleInstanceLock()) {
