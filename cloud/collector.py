@@ -21,6 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import license_core
+import queue_core
 
 ROOT = Path(__file__).resolve().parent
 WATCHLIST = ROOT / "watchlist.json"
@@ -672,6 +673,25 @@ class Handler(BaseHTTPRequestHandler):
             with _lock:
                 self.send_json({"ok": _status["ok"], "updatedAt": _status["updatedAt"], "lastError": _status["lastError"]})
             return
+        if path == "/queue":
+            auth = self.headers.get("Authorization", "")
+            supplied = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+            if not supplied:
+                supplied = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("token", [""])[0]
+            if not supplied or (supplied != token() and license_core.validate_license(supplied) is None):
+                self.send_json({"error": "unauthorized"}, 401)
+                return
+            with _lock:
+                snap = _snapshot
+            if snap is None:
+                self.send_json({"error": "not ready"}, 503)
+                return
+            try:
+                result = queue_core.build(snap.get("rows") or [])
+                self.send_json(result)
+            except Exception as exc:
+                self.send_json({"ok": False, "error": str(exc)[:200]}, 500)
+            return
         if path != "/snapshot":
             self.send_json({"error": "not found"}, 404)
             return
@@ -687,7 +707,10 @@ class Handler(BaseHTTPRequestHandler):
         if snap is None:
             self.send_json({"error": "not ready"}, 503)
             return
-        self.send_json(snap)
+        # 附带队列访问凭证，供客户端调用 /queue（与快照同权限）
+        payload = dict(snap)
+        payload["queueToken"] = token()
+        self.send_json(payload)
 
 
 def main():

@@ -11691,6 +11691,82 @@ requestAnimationFrame(frame);
       const fmtPx = (v) => v ? v.toFixed(v < 1 ? 6 : 4).replace(/0+$/, '').replace(/\.$/, '') : '—';
       return { r, chg, oi5, oi15, vol, score, stage, side, win, target, stop, targetText: fmtPx(target), stopText: fmtPx(stop) };
     };
+    // ===== 云端统一队列（可选增强，失败自动回退本地）=====
+    const CLOUD_QUEUE_TTL = 45 * 1000;      // 云端结果缓存 45 秒
+    const CLOUD_QUEUE_TIMEOUT = 4000;       // 请求超时 4 秒
+    let cloudQueueCache = { at: 0, data: null, inflight: null };
+
+    const cloudQueueUrl = () => {
+      try {
+        const cfg = window.__MOSS_DATA_SOURCE || {};
+        if (cfg.url) return String(cfg.url).replace(/\/+$/, '') + '/queue';
+      } catch (e) {}
+      return 'https://43-160-232-254.sslip.io/queue';
+    };
+    const cloudQueueToken = () => {
+      try {
+        // 优先从快照里取的队列凭证
+        const live = window.__MOSS_LIVE || {};
+        if (live.queueToken) return live.queueToken;
+      } catch (e) {}
+      try {
+        const cfg = window.__MOSS_DATA_SOURCE || {};
+        return cfg.token || '';
+      } catch (e) {}
+      return '';
+    };
+
+    // 拉取云端队列（带缓存与超时，永不抛错）
+    const fetchCloudQueue = () => {
+      const now = Date.now();
+      if (cloudQueueCache.data && now - cloudQueueCache.at < CLOUD_QUEUE_TTL) {
+        return Promise.resolve(cloudQueueCache.data);
+      }
+      if (cloudQueueCache.inflight) return cloudQueueCache.inflight;
+
+      const tk = cloudQueueToken();
+      if (!tk) return Promise.resolve(null);
+
+      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timer = setTimeout(() => { try { ctrl && ctrl.abort(); } catch (e) {} }, CLOUD_QUEUE_TIMEOUT);
+
+      const promise = fetch(cloudQueueUrl(), {
+        method: 'GET',
+        headers: { Authorization: 'Bearer ' + tk },
+        signal: ctrl ? ctrl.signal : undefined,
+        cache: 'no-store'
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          clearTimeout(timer);
+          if (json && json.ok) {
+            cloudQueueCache = { at: Date.now(), data: json, inflight: null };
+            return json;
+          }
+          cloudQueueCache.inflight = null;
+          return null;
+        })
+        .catch(() => {
+          clearTimeout(timer);
+          cloudQueueCache.inflight = null;
+          return null;
+        });
+
+      cloudQueueCache.inflight = promise;
+      return promise;
+    };
+
+    // 问云端「这一侧现在该播哪个币」，失败返回 null
+    const cloudPick = async (side) => {
+      try {
+        const data = await fetchCloudQueue();
+        if (!data || !data[side] || !data[side].symbol) return null;
+        return String(data[side].symbol);
+      } catch (e) {
+        return null;
+      }
+    };
+
     const SIG_SLOT_MS = 5 * 60 * 1000;
     const SIG_IDLE_MS = 15 * 60 * 1000;
     let sigQueue = [];
@@ -12102,6 +12178,17 @@ requestAnimationFrame(frame);
         const fresh = rows.find(x => x.symbol === (entry.sig.r.symbol));
         if (fresh) entry.sig = calcSignal(fresh);
         sigShow(entry);
+        // 云端对齐：若云端该播别的币，下一轮补播（不打断当前 5 分钟）
+        cloudPick('left').then((sym) => {
+          if (!sym) return;
+          if (String(entry.sig.r.symbol) === sym) return;
+          const idx = sigQueue.findIndex((it) => it && it.sig && it.sig.r
+            && String(it.sig.r.symbol) === sym);
+          if (idx > 0) {
+            const moved = sigQueue.splice(idx, 1)[0];
+            sigQueue.unshift(moved);
+          }
+        }).catch(() => {});
       } catch (e) {
         console.error('sigShow failed:', e);
       }
@@ -12513,6 +12600,18 @@ requestAnimationFrame(frame);
       const fresh = sym ? rows.find(x => x.symbol === sym) : null;
       if (!fresh) { focusNext(); return; }
       focusShow(fresh);
+      // 云端对齐：把云端要播的币提到队首，下一轮优先
+      cloudPick('right').then((want) => {
+        if (!want || want === sym) return;
+        const idx = focusQueue.findIndex((it) => {
+          const s2 = it ? (it.symbol || (it.r && it.r.symbol)) : null;
+          return String(s2) === want;
+        });
+        if (idx > 0) {
+          const moved = focusQueue.splice(idx, 1)[0];
+          focusQueue.unshift(moved);
+        }
+      }).catch(() => {});
       window.__MOSS_FOCUS_SLOT_START = Date.now();
       focusTimer = setTimeout(focusNext, focusQueue.length ? FOCUS_SLOT_MS : FOCUS_IDLE_MS);
     };
