@@ -102,33 +102,8 @@ echo -e "${GREEN}OK${NC} config written"
 
 # 6. patch index.html - skip activation screen
 echo ""
-echo "Patching activation gate..."
-INDEX_FILE="$CONF_DIR/index.html"
-if [ -f "$INDEX_FILE" ]; then
-  # 用 sed 补丁，不依赖 python3
-  cp "$INDEX_FILE" "$INDEX_FILE.bak"
-
-  # 1) 强制隐藏激活界面：把 setShown 里第一行改成 root.hidden=true
-  sed -i '' 's/root\.hidden=!show;/root.hidden=true;/' "$INDEX_FILE" 2>/dev/null || \
-  sed -i 's/root\.hidden=!show;/root.hidden=true;/' "$INDEX_FILE"
-
-  # 2) 把结尾的 setShown(true) 改 false
-  sed -i '' 's/  setShown(true);/  setShown(false);/' "$INDEX_FILE" 2>/dev/null || \
-  sed -i 's/  setShown(true);/  setShown(false);/' "$INDEX_FILE"
-
-  # 3) 脚本开头插入跳过标志
-  sed -i '' "s/const root=document.getElementById('moss-activation');/window.__MOSS_SKIP_GATE=true; const root=document.getElementById('moss-activation');/" "$INDEX_FILE" 2>/dev/null || \
-  sed -i "s/const root=document.getElementById('moss-activation');/window.__MOSS_SKIP_GATE=true; const root=document.getElementById('moss-activation');/" "$INDEX_FILE"
-
-  # 验证
-  if grep -q 'root.hidden=true;' "$INDEX_FILE"; then
-    echo -e "${GREEN}OK${NC} activation gate patched (hidden)"
-  else
-    echo -e "${YELLOW}WARN: patch may not applied${NC}"
-  fi
-else
-  echo -e "${YELLOW}WARN: index.html not found${NC}"
-fi
+# 不再修改 index.html，激活界面保持原样
+echo -e "${GREEN}OK${NC} index.html kept original (activation enabled)"
 
 # 7. install deps
 echo ""
