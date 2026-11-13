@@ -105,40 +105,27 @@ echo ""
 echo "Patching activation gate..."
 INDEX_FILE="$CONF_DIR/index.html"
 if [ -f "$INDEX_FILE" ]; then
-  python3 - "$INDEX_FILE" << 'PYEOF'
-import sys
+  # 用 sed 补丁，不依赖 python3
+  cp "$INDEX_FILE" "$INDEX_FILE.bak"
 
-p = sys.argv[1]
-s = open(p, encoding='utf-8').read()
-orig = s
+  # 1) 强制隐藏激活界面：把 setShown 里第一行改成 root.hidden=true
+  sed -i '' 's/root\.hidden=!show;/root.hidden=true;/' "$INDEX_FILE" 2>/dev/null || \
+  sed -i 's/root\.hidden=!show;/root.hidden=true;/' "$INDEX_FILE"
 
-# 1. setShown 强制隐藏
-old1 = "function setShown(show, error, loading){\n    root.hidden=!show;"
-new1 = "function setShown(show, error, loading){\n    if(window.__MOSS_SKIP_GATE)show=false;\n    root.hidden=!show;"
-if old1 in s:
-    s = s.replace(old1, new1, 1)
+  # 2) 把结尾的 setShown(true) 改 false
+  sed -i '' 's/  setShown(true);/  setShown(false);/' "$INDEX_FILE" 2>/dev/null || \
+  sed -i 's/  setShown(true);/  setShown(false);/' "$INDEX_FILE"
 
-# 2. 最后一次调用改为 false（缩进两空格的版本）
-old2 = "  setShown(true);\n})();"
-new2 = "  setShown(false);\n})();"
-if old2 in s:
-    s = s.replace(old2, new2)
+  # 3) 脚本开头插入跳过标志
+  sed -i '' "s/const root=document.getElementById('moss-activation');/window.__MOSS_SKIP_GATE=true; const root=document.getElementById('moss-activation');/" "$INDEX_FILE" 2>/dev/null || \
+  sed -i "s/const root=document.getElementById('moss-activation');/window.__MOSS_SKIP_GATE=true; const root=document.getElementById('moss-activation');/" "$INDEX_FILE"
 
-# 3. 脚本开头设置跳过标志
-if "window.__MOSS_SKIP_GATE" not in s.split("const root=document.getElementById")[0][-500:]:
-    s = s.replace(
-        "const root=document.getElementById('moss-activation');",
-        "window.__MOSS_SKIP_GATE=true;\n  const root=document.getElementById('moss-activation');",
-        1
-    )
-
-if s != orig:
-    open(p, 'w', encoding='utf-8').write(s)
-    print('INDEX_PATCHED')
-else:
-    print('INDEX_UNCHANGED')
-PYEOF
-  echo -e "${GREEN}OK${NC} activation gate patched"
+  # 验证
+  if grep -q 'root.hidden=true;' "$INDEX_FILE"; then
+    echo -e "${GREEN}OK${NC} activation gate patched (hidden)"
+  else
+    echo -e "${YELLOW}WARN: patch may not applied${NC}"
+  fi
 else
   echo -e "${YELLOW}WARN: index.html not found${NC}"
 fi
