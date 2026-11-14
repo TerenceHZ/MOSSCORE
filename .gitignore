@@ -53,3 +53,5 @@ _work/panel-err.log
 .publish2/
 _backup/
 _design/
+mac-electron/node_modules/
+mac-electron/dist/

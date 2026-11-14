@@ -238,6 +238,7 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = true;
             _web.CoreWebView2.Settings.IsZoomControlEnabled = true;
             _web.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
+            _web.CoreWebView2.NavigationCompleted += async (_, _) => { await Task.Delay(600); await ApplyEntitlementToPageAsync(); };
             TradeConfig.Load();
             StartTransferTimer();
 
@@ -556,6 +557,62 @@ internal sealed class MainForm : Form
     private System.Windows.Forms.Timer? _entTimer;
 
     // 每 5 分钟向服务端确认一次功能授权（自动下单等），断了就降级
+        private async Task ApplyEntitlementToPageAsync()
+        {
+            try
+            {
+                if (_web.CoreWebView2 == null) return;
+                bool on = LicenseService.TradeEnabled;
+                string flag = on ? "true" : "false";
+                string script = @"
+(() => {
+  const deep = (id) => {
+    const walk = (root) => {
+      try {
+        if (root.getElementById) { const el = root.getElementById(id); if (el) return el; }
+        const el2 = root.querySelector ? root.querySelector('#' + id) : null;
+        if (el2) return el2;
+        const all = root.querySelectorAll ? root.querySelectorAll('*') : [];
+        for (const h of all) { if (h.shadowRoot) { const r = walk(h.shadowRoot); if (r) return r; } }
+      } catch (e) {}
+      return null;
+    };
+    return walk(document);
+  };
+  const setup = deep('nvBinanceSetup');
+  const key = deep('nvBsKey');
+  const sec = deep('nvBsSecret');
+  const test = deep('nvBsTest');
+  const save = deep('nvBsSave');
+  const lock = deep('nvBsLockPage');
+  const note = deep('nvBsNote') || (setup && setup.querySelector('.nv-bs-note'));
+  const on = FLAG;
+  [key, sec].forEach(el => { if (el) { el.disabled = !on; el.readOnly = !on; } });
+  [test, save].forEach(el => { if (el) el.disabled = !on; });
+  if (setup) setup.classList.toggle('locked', !on);
+  const rows = setup ? setup.querySelectorAll('.nv-bs-row, .nv-bs-status, .nv-bs-actions, .nv-bs-tip') : [];
+  rows.forEach(el => { el.style.display = on ? '' : 'none'; });
+  if (lock) lock.style.display = on ? 'none' : 'block';
+  if (note) {
+    note.textContent = on ? '密钥只保存在本机加密文件，不会上传云端。' : '';
+    note.style.display = on ? '' : 'none';
+  }
+  window.__MOSS_ENTITLED = on;
+})();";
+                script = script.Replace("FLAG", flag);
+                await _web.ExecuteScriptAsync(script);
+
+                PostToWeb(new
+                {
+                    type = "config",
+                    entitled = on,
+                    preview = false,
+                    configured = BinanceTradeService.Configured,
+                    autoTrade = TradeConfig.Current.AutoTrade
+                });
+            }
+            catch { }
+        }
     private void StartEntitlementRefresh()
     {
         if (_entTimer != null) return;
@@ -565,6 +622,7 @@ internal sealed class MainForm : Form
             try
             {
                 await LicenseService.ValidateAsync();
+                await ApplyEntitlementToPageAsync();
                 PostToWeb(new
                 {
                     type = "config",
@@ -577,7 +635,9 @@ internal sealed class MainForm : Form
             catch { }
         };
         _entTimer.Start();
-    }
+        _ = ApplyEntitlementToPageAsync();
+        _ = Task.Run(async () => { await Task.Delay(3000); await ApplyEntitlementToPageAsync(); });
+}
 
     private void StartLiveBridge()
     {
