@@ -55,3 +55,7 @@ _backup/
 _design/
 mac-electron/node_modules/
 mac-electron/dist/
+.publish3/
+.publish4/
+.publish5/
+mac-electron/pnpm-lock.yaml
