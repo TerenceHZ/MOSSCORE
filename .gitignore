@@ -52,3 +52,4 @@ _work/panel-err.log
 # 本地构建/调试产物
 .publish2/
 _backup/
+_design/
