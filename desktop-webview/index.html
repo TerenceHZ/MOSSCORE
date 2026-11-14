@@ -12639,6 +12639,7 @@ requestAnimationFrame(frame);
       card.classList.remove('nv-focus-idle');
       window.__MOSS_FOCUS_CURRENT = r.symbol;
       renderFocusCard(r);
+      try {         if (window.__MOSS_MK_BOTTOM) {           window.__NOVA_BOTTOM = window.__NOVA_BOTTOM || {};           window.__NOVA_BOTTOM.focus = window.__MOSS_MK_BOTTOM(r);           window.__NOVA_SELECTED = "focus";           if (typeof renderBottom === "function") renderBottom();         }       } catch (e) {}
       try {
         const oi15v = Number(r.oi15m || 0);
         const deltaV = Number(r.oiNotional || 0) * oi15v / (100 + oi15v);
@@ -12869,7 +12870,8 @@ requestAnimationFrame(frame);
       });
       window.__MOSS_EVENT_SEEN = eventSeen;
       const mk = (r) => r ? ({ v: [sign(r.change24h) + '%', sign(r.change5m) + '%', fmtQv(r.quoteVolume24h), fmtQv(r.oiNotional), Number(r.pullback || 0).toFixed(2) + '%', Number(r.score || 0).toFixed(1)], s: [`${r.baseAsset || r.symbol} · 24H`, `1m ${sign(r.change1m)}%`, `60s 成交`, `OI 5m ${sign(r.oi5m)}%`, `距高点 ${Number(r.pullback || 0).toFixed(2)}%`, r.stage === 'entry' ? 'ENTRY' : r.stage === 'watch' ? 'WATCH' : '观察'] }) : null;
-      window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
+      window.__MOSS_MK_BOTTOM = mk;
+window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       if (f) { data.focus.title = f.baseAsset || f.symbol; data.focus.stage = `${f.stage === 'entry' ? '开仓信号' : f.stage === 'watch' ? '重点候选' : '观察'} · ${Number(f.score || 0).toFixed(1)}`; data.focus.why = `${f.symbol} 现价 ${f.price}，24H ${sign(f.change24h)}%，5M ${sign(f.change5m)}%。`; }
       if (im) { data.imported.title = im.baseAsset || im.symbol; data.imported.stage = `${im.stage === 'entry' ? '开仓信号' : im.stage === 'watch' ? '重点候选' : '观察'} · ${Number(im.score || 0).toFixed(1)}`; data.imported.why = `${im.symbol} 现价 ${im.price}，24H ${sign(im.change24h)}%，5M ${sign(im.change5m)}%。`; }
 

@@ -1,6 +1,6 @@
 {
   "name": "moss-core-mac",
-  "version": "1.0.53",
+  "version": "1.0.54",
   "private": true,
   "description": "MOSS CORE macOS client",
   "author": "MOSS CORE",
@@ -8,8 +8,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "pack:arm64": "electron-packager . \"MOSS CORE\" --platform=darwin --arch=arm64 --out=dist --overwrite --no-asar --app-bundle-id=com.mosscore.app --app-version=1.0.53 --ignore=\"^/dist\" --ignore=\"^/node_modules/\\.cache\" --ignore=\"\\.tmp\" --ignore=\"\\.electron-cache\" --ignore=\"\\.npm-cache\"",
-    "pack:x64": "electron-packager . \"MOSS CORE\" --platform=darwin --arch=x64 --out=dist --overwrite --no-asar --app-bundle-id=com.mosscore.app --app-version=1.0.53 --ignore=\"^/dist\" --ignore=\"^/node_modules/\\.cache\" --ignore=\"\\.tmp\" --ignore=\"\\.electron-cache\" --ignore=\"\\.npm-cache\""
+    "pack:arm64": "electron-packager . \"MOSS CORE\" --platform=darwin --arch=arm64 --out=dist --overwrite --no-asar --app-bundle-id=com.mosscore.app --app-version=1.0.54 --ignore=\"^/dist\" --ignore=\"^/node_modules/\\.cache\" --ignore=\"\\.tmp\" --ignore=\"\\.electron-cache\" --ignore=\"\\.npm-cache\"",
+    "pack:x64": "electron-packager . \"MOSS CORE\" --platform=darwin --arch=x64 --out=dist --overwrite --no-asar --app-bundle-id=com.mosscore.app --app-version=1.0.54 --ignore=\"^/dist\" --ignore=\"^/node_modules/\\.cache\" --ignore=\"\\.tmp\" --ignore=\"\\.electron-cache\" --ignore=\"\\.npm-cache\""
   },
   "devDependencies": {
     "electron": "^33.0.0",
