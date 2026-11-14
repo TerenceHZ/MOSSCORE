@@ -189,6 +189,36 @@ async function activate(code) {
   }
 }
 
+// ---------- 授权（features） ----------
+const entitlement = { trade: false };
+
+async function pushEntitlement() {
+  if (!win || win.isDestroyed()) return;
+  const payload = { type: 'config', entitled: !!entitlement.trade, preview: false, configured: false, autoTrade: false };
+  try {
+    const json = JSON.stringify(JSON.stringify(payload));
+    const code = "(function(){try{var d=JSON.parse(" + json + ");window.dispatchEvent(new CustomEvent('moss:trade',{detail:d}));}catch(e){}})();";
+    await win.webContents.executeJavaScript(code, true);
+    await win.webContents.executeJavaScript(entitlementDomScript(), true);
+  } catch (e) { log('pushEntitlement error', e.message); }
+}
+
+function entitlementDomScript() {
+  const on = entitlement.trade ? 'true' : 'false';
+  return "(function(){var on=" + on + ";" +
+    "var deep=function(id){var walk=function(root){try{if(root.getElementById){var el=root.getElementById(id);if(el)return el;}" +
+    "var e2=root.querySelector?root.querySelector('#'+id):null;if(e2)return e2;" +
+    "var all=root.querySelectorAll?root.querySelectorAll('*'):[];" +
+    "for(var i=0;i<all.length;i++){var h=all[i];if(h.shadowRoot){var r=walk(h.shadowRoot);if(r)return r;}}}catch(e){}return null;};return walk(document);};" +
+    "var setup=deep('nvBinanceSetup');var key=deep('nvBsKey');var sec=deep('nvBsSecret');" +
+    "var test=deep('nvBsTest');var save=deep('nvBsSave');var lock=deep('nvBsLockPage');" +
+    "[key,sec].forEach(function(el){if(el){el.disabled=!on;el.readOnly=!on;}});" +
+    "[test,save].forEach(function(el){if(el)el.disabled=!on;});" +
+    "if(setup){setup.classList.toggle('locked',!on);var rows=setup.querySelectorAll('.nv-bs-row,.nv-bs-status,.nv-bs-actions,.nv-bs-tip');" +
+    "for(var i=0;i<rows.length;i++){rows[i].style.display=on?'':'none';}}" +
+    "if(lock)lock.style.display=on?'none':'block';" +
+    "window.__MOSS_ENTITLED=on;})();";
+}
 async function validateLicense() {
   const cfg = readConfig();
   if (!licenseKey) return false;
@@ -203,6 +233,9 @@ async function validateLicense() {
     log('validate status', resp.status, text.slice(0, 120));
     if (!resp.ok) return false;
     const data = JSON.parse(text);
+    if (data && data.features && typeof data.features === 'object') {
+      entitlement.trade = !!data.features.trade;
+    }
     return !!data.ok;
   } catch (e) {
     log('validate error', e.message, '- allowing offline');
@@ -328,6 +361,7 @@ async function handleMessage(payload) {
   if (type === 'gateCheck') {
     const ok = await validateLicense();
     await sendGate(ok ? 'ok' : 'need', '');
+      await pushEntitlement();
     if (ok) startDataFlow();
     return;
   }
@@ -365,6 +399,7 @@ function createWindow() {
   win.loadFile(path.join(ROOT, 'index.html'));
 
   win.webContents.on('did-finish-load', async () => {
+    setTimeout(() => { pushEntitlement().catch(() => {}); }, 1200);
     log('page loaded');
     const stored = loadLicense();
     if (stored) {
