@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8">
+<title>MOSS CORE · 软件界面预览</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#e8a020;--gold2:#ffc043;--green:#63C08E;--red:#C96358;--ink:#f2f0e8;
+--dim:#7b6d58;--line:rgba(232,160,32,.2);--mono:"JetBrains Mono",Consolas,monospace;
+--cjk:"Noto Sans SC","Microsoft YaHei",sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#030505;color:var(--ink);font-family:var(--cjk);min-height:100vh;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+
+/* 背景 */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(900px 600px at 50% 8%,rgba(232,160,32,.07),transparent 62%),
+    radial-gradient(700px 520px at 12% 88%,rgba(99,192,142,.05),transparent 60%);}
+.grid{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.14;
+  background-image:linear-gradient(rgba(232,160,32,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(232,160,32,.5) 1px,transparent 1px);
+  background-size:80px 80px;
+  mask-image:radial-gradient(ellipse at 50% 40%,#000,transparent 78%);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000,transparent 78%)}
+.scan{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:.28;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.03) 0 1px,transparent 1px 3px)}
+
+/* 顶部 */
+.top{position:relative;z-index:10;display:flex;align-items:center;gap:16px;
+  padding:18px 26px;border-bottom:1px solid rgba(232,160,32,.14);
+  background:linear-gradient(to bottom,rgba(4,6,6,.92),rgba(4,6,6,.55))}
+.logo{display:flex;align-items:center;gap:10px;font:800 13px/1 var(--mono);letter-spacing:.26em}
+.logo i{width:10px;height:10px;border:1px solid var(--gold);transform:rotate(45deg)}
+.logo b{color:var(--gold)}
+.top .sub{font:500 9px/1 var(--mono);letter-spacing:.3em;color:var(--dim)}
+.top .right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.badge{font:600 8.5px/1 var(--mono);letter-spacing:.2em;color:#a08c68;
+  border:1px solid rgba(232,160,32,.3);padding:5px 9px;background:rgba(232,160,32,.04)}
+.badge.live{color:var(--green);border-color:rgba(99,192,142,.4)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 10px rgba(99,192,142,.8);animation:blink 2.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+
+/* 主体三栏 */
+.main{position:relative;z-index:10;display:grid;grid-template-columns:290px 1fr 300px;
+  gap:18px;padding:18px 26px 96px;max-width:1560px;margin:0 auto;min-height:calc(100vh - 59px)}
+.panel{border:1px solid var(--line);background:linear-gradient(160deg,rgba(8,12,10,.7),rgba(3,5,4,.8));
+  backdrop-filter:blur(6px)}
+.panel-h{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(232,160,32,.12)}
+.panel-h .t{font:700 10px/1 var(--mono);letter-spacing:.24em;color:var(--gold)}
+.panel-h .s{font:500 8.5px/1 var(--cjk);letter-spacing:.16em;color:var(--dim)}
+.panel-h .n{margin-left:auto;font:600 8.5px/1 var(--mono);letter-spacing:.16em;color:#5d5343}
+
+/* 列表（空数据） */
+.rows{padding:8px 0}
+.row{display:grid;grid-template-columns:1fr 74px 62px;gap:10px;align-items:center;
+  padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.03)}
+.row .sym{font:600 12px/1 var(--mono);color:#8a7a5e;letter-spacing:.06em}
+.row .v{font:600 11px/1 var(--mono);color:#5f5342;text-align:right}
+.row .p{font:600 11px/1 var(--mono);color:#5f5342;text-align:right}
+.skel{height:7px;background:linear-gradient(90deg,rgba(232,160,32,.10),rgba(232,160,32,.03));border-radius:1px}
+.skel.w60{width:60%}.skel.w40{width:40%}.skel.w80{width:80%}
+.empty{padding:26px 14px;text-align:center;font:500 10px/1.9 var(--cjk);letter-spacing:.16em;color:#4e4638}
+
+/* 中央星环 */
+.center{position:relative;min-height:0;display:grid;place-items:center;
+  border:1px solid var(--line);background:linear-gradient(160deg,rgba(6,10,8,.55),rgba(3,5,4,.7));overflow:hidden}
+.center canvas{position:absolute;inset:0;width:100%;height:100%}
+.center .hud{position:absolute;left:16px;top:14px;z-index:3;font:500 8.5px/1.9 var(--mono);letter-spacing:.22em;color:#584e3e}
+.center .hud b{color:var(--gold)}
+.center .hud2{position:absolute;right:16px;top:14px;z-index:3;text-align:right;font:500 8.5px/1.9 var(--mono);letter-spacing:.22em;color:#584e3e}
+.center .hud2 b{color:var(--green)}
+.center .state{position:relative;z-index:3;text-align:center}
+.center .state .big{font:800 34px/1 var(--mono);letter-spacing:.1em;color:#3f382c}
+.center .state .sm{margin-top:14px;font:500 10px/1.8 var(--cjk);letter-spacing:.3em;color:#4e4638}
+.center .state .bar{margin:22px auto 0;width:220px;height:3px;background:rgba(232,160,32,.12);overflow:hidden}
+.center .state .bar i{display:block;width:34%;height:100%;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:scanbar 2.6s ease-in-out infinite}
+@keyframes scanbar{0%{transform:translateX(-110%)}100%{transform:translateX(330%)}}
+
+/* 底部数据条 */
+.bottom{position:fixed;left:0;right:0;bottom:0;z-index:11;display:grid;grid-template-columns:repeat(6,1fr);
+  gap:1px;background:rgba(232,160,32,.12);border-top:1px solid rgba(232,160,32,.18)}
+.bottom div{background:rgba(3,5,5,.94);padding:14px 18px}
+.bottom .k{font:500 8px/1 var(--mono);letter-spacing:.26em;color:#544a3c}
+.bottom .v{margin-top:8px;font:800 20px/1 var(--mono);color:#4e4638;letter-spacing:.02em}
+.bottom .v i{font-style:normal;color:#3a342a}
+
+/* 说明浮层 */
+.note{position:fixed;left:26px;bottom:104px;z-index:12;font:500 9px/1.7 var(--mono);
+  letter-spacing:.2em;color:#4e4638;border-left:2px solid rgba(232,160,32,.35);padding-left:12px}
+</style></head>
+<body>
+<div class="bg"></div><div class="grid"></div><div class="scan"></div>
+
+<header class="top">
+  <div class="logo"><i></i>MOSS <b>CORE</b></div>
+  <div class="sub">· 异动监测 · 界面预览</div>
+  <div class="right">
+    <span class="badge live"><span class="dot" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>UI PREVIEW</span>
+    <span class="badge">NO DATA</span>
+  </div>
+</header>
+
+<div class="main">
+  <!-- 左：榜单 -->
+  <div class="panel">
+    <div class="panel-h"><span class="t">▲ 24H</span><span class="s">涨幅榜</span><span class="n">—</span></div>
+    <div class="rows">
+      <div class="row"><span class="sym">— — —</span><span class="skel w60"></span><span class="skel w40"></span></div>
+      <div class="row"><span class="sym">— — —</span><span class="skel w80"></span><span class="skel w40"></span></div>
+      <div class="row"><span class="sym">— — —</span><span class="skel w40"></span><span class="skel w60"></span></div>
+      <div class="row"><span class="sym">— — —</span><span class="skel w60"></span><span class="skel w40"></span></div>
+      <div class="empty">等待数据接入</div>
+    </div>
+    <div class="panel-h" style="border-top:1px solid rgba(232,160,32,.12)"><span class="t">▼ 24H</span><span class="s">弱势榜</span><span class="n">—</span></div>
+    <div class="rows">
+      <div class="row"><span class="sym">— — —</span><span class="skel w40"></span><span class="skel w60"></span></div>
+      <div class="row"><span class="sym">— — —</span><span class="skel w60"></span><span class="skel w40"></span></div>
+      <div class="row"><span class="sym">— — —</span><span class="skel w80"></span><span class="skel w40"></span></div>
+      <div class="empty">等待数据接入</div>
+    </div>
+  </div>
+
+  <!-- 中：星环 -->
+  <div class="center">
+    <canvas id="ring"></canvas>
+    <div class="hud">GLOBAL L/S <b>—</b><br>TOP5 5M <b>—</b></div>
+    <div class="hud2">UPLINK <b>IDLE</b><br>AGENTS <b>13</b></div>
+    <div class="state">
+      <div class="big">NO SIGNAL</div>
+      <div class="sm">智能体待命中 · 尚未接入实时数据</div>
+      <div class="bar"><i></i></div>
+    </div>
+  </div>
+
+  <!-- 右：事件流 -->
+  <div class="panel">
+    <div class="panel-h"><span class="t">MOSS TRACE</span><span class="s">事件流</span><span class="n">0 open</span></div>
+    <div class="rows" id="trace">
+      <div class="row"><span class="sym">— — —</span><span class="skel w40"></span><span class="skel w60"></span></div>
+      <div class="row"><span class="sym">— — —</span><span class="skel w60"></span><span class="skel w40"></span></div>
+      <div class="row"><span class="sym">— — —</span><span class="skel w80"></span><span class="skel w40"></span></div>
+      <div class="empty">等待智能体派单</div>
+    </div>
+    <div class="panel-h" style="border-top:1px solid rgba(232,160,32,.12)"><span class="t">★ FOCUS</span><span class="s">自选主监控</span><span class="n">—</span></div>
+    <div class="rows">
+      <div class="row"><span class="sym">— — —</span><span class="skel w60"></span><span class="skel w40"></span></div>
+      <div class="empty">尚未添加自选</div>
+    </div>
+  </div>
+</div>
+
+<div class="note">示意图 · 界面元素与真实客户端一致<br>数据为空，仅用于展示布局与信息层级</div>
+
+<div class="bottom">
+  <div><div class="k">24H 涨跌</div><div class="v">—<i>—</i></div></div>
+  <div><div class="k">5M 动量</div><div class="v">—<i>—</i></div></div>
+  <div><div class="k">1M QV 成交</div><div class="v">—<i>—</i></div></div>
+  <div><div class="k">全网 OI 持仓</div><div class="v">—<i>—</i></div></div>
+  <div><div class="k">回撤 风险</div><div class="v">—<i>—</i></div></div>
+  <div><div class="k">策略分 强度</div><div class="v">—<i>—</i></div></div>
+</div>
+
+<script>
+(function(){
+  const cv=document.getElementById('ring'),ctx=cv.getContext('2d');
+  let W,H,DPR,t=0;
+  function resize(){
+    const r=cv.parentElement.getBoundingClientRect();
+    DPR=Math.min(devicePixelRatio||1,2);
+    W=cv.width=r.width*DPR;H=cv.height=r.height*DPR;
+    cv.style.width=r.width+'px';cv.style.height=r.height+'px';
+  }
+  resize();addEventListener('resize',resize);
+  const AG=13;
+  function frame(){
+    t+=0.004;
+    const cx=W/2, cy=H/2, R=Math.min(W,H)*0.42;
+    ctx.clearRect(0,0,W,H);
+    // 外圈刻度
+    ctx.save();ctx.translate(cx,cy);
+    for(let i=0;i<96;i++){
+      const a=i/96*Math.PI*2 + t*0.12;
+      const r1=R*1.02, r2=R*1.02+(i%4===0?9:5)*DPR;
+      ctx.beginPath();ctx.moveTo(Math.cos(a)*r1,Math.sin(a)*r1);
+      ctx.lineTo(Math.cos(a)*r2,Math.sin(a)*r2);
+      ctx.strokeStyle='rgba(232,160,32,.18)';ctx.lineWidth=DPR*0.8;ctx.stroke();
+    }
+    // 三条轨道
+    [[0.72,0.5,'rgba(232,160,32,.20)'],[0.52,0.35,'rgba(99,192,142,.16)'],[0.32,0.25,'rgba(232,160,32,.14)']].forEach(([rr,w,col],i)=>{
+      ctx.beginPath();ctx.arc(0,0,R*rr,0,Math.PI*2);
+      ctx.strokeStyle=col;ctx.lineWidth=w*DPR;ctx.stroke();
+    });
+    // 13 个智能体节点
+    for(let i=0;i<AG;i++){
+      const a=i/AG*Math.PI*2 + t*0.35*(i%2?1:-1)*0.6;
+      const rr=R*(0.62+0.06*Math.sin(i*1.7));
+      const x=Math.cos(a)*rr, y=Math.sin(a)*rr;
+      ctx.beginPath();ctx.arc(x,y,2.6*DPR,0,Math.PI*2);
+      ctx.fillStyle='rgba(232,160,32,.55)';ctx.fill();
+      ctx.beginPath();ctx.arc(x,y,6*DPR,0,Math.PI*2);
+      ctx.fillStyle='rgba(232,160,32,.07)';ctx.fill();
+    }
+    // 中心
+    const g=ctx.createRadialGradient(0,0,0,0,0,R*0.30);
+    g.addColorStop(0,'rgba(232,160,32,.10)');g.addColorStop(1,'rgba(232,160,32,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,R*0.30,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body></html>
