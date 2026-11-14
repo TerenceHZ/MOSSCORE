@@ -12183,6 +12183,7 @@ requestAnimationFrame(frame);
       try {
         const place = () => {
           const anchor = document.querySelector('#host-neural').shadowRoot.querySelector('#nvSignalCard');
+          if (!anchor || !anchor.offsetWidth) { setTimeout(place, 120); return; }
           if (!anchor) return;
           const ar = anchor.getBoundingClientRect();
           const gap = 14;
@@ -12207,10 +12208,11 @@ requestAnimationFrame(frame);
           pop.style.left = left + "px";
           pop.style.top = top + "px";
         };
+        window.addEventListener("resize", () => { const el = opEl("nvOrderPop"); if (el && !el.hidden) { try { place(); setTimeout(place, 120); } catch (e) {} } });
         place();
         requestAnimationFrame(place);
         // 内容异步填充后高度会变化 → 持续校正几次
-        [40, 120, 260, 500, 900].forEach(ms => setTimeout(place, ms));
+        [0, 60, 160, 320, 640, 1200, 2000].forEach(ms => setTimeout(place, ms));
         if (window.__MOSS_POPUP_RO) { try { window.__MOSS_POPUP_RO.disconnect(); } catch (e) {} }
         try {
           window.__MOSS_POPUP_RO = new ResizeObserver(() => place());
