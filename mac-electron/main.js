@@ -204,20 +204,24 @@ async function pushEntitlement() {
 }
 
 function entitlementDomScript() {
-  const on = entitlement.trade ? 'true' : 'false';
-  return "(function(){var on=" + on + ";" +
+  // macOS 版：API 面板统一提示“功能暂未开放”
+  return "(function(){" +
     "var deep=function(id){var walk=function(root){try{if(root.getElementById){var el=root.getElementById(id);if(el)return el;}" +
     "var e2=root.querySelector?root.querySelector('#'+id):null;if(e2)return e2;" +
     "var all=root.querySelectorAll?root.querySelectorAll('*'):[];" +
     "for(var i=0;i<all.length;i++){var h=all[i];if(h.shadowRoot){var r=walk(h.shadowRoot);if(r)return r;}}}catch(e){}return null;};return walk(document);};" +
     "var setup=deep('nvBinanceSetup');var key=deep('nvBsKey');var sec=deep('nvBsSecret');" +
     "var test=deep('nvBsTest');var save=deep('nvBsSave');var lock=deep('nvBsLockPage');" +
-    "[key,sec].forEach(function(el){if(el){el.disabled=!on;el.readOnly=!on;}});" +
-    "[test,save].forEach(function(el){if(el)el.disabled=!on;});" +
-    "if(setup){setup.classList.toggle('locked',!on);var rows=setup.querySelectorAll('.nv-bs-row,.nv-bs-status,.nv-bs-actions,.nv-bs-tip');" +
-    "for(var i=0;i<rows.length;i++){rows[i].style.display=on?'':'none';}}" +
-    "if(lock)lock.style.display=on?'none':'block';" +
-    "window.__MOSS_ENTITLED=on;})();";
+    "if(setup){setup.classList.add('locked');var rows=setup.querySelectorAll('.nv-bs-row,.nv-bs-status,.nv-bs-actions,.nv-bs-tip');" +
+    "for(var i=0;i<rows.length;i++){rows[i].style.display='none';}}" +
+    "if(lock){lock.style.display='block';" +
+    "var t=lock.querySelector('.nv-lp-title');var d=lock.querySelector('.nv-lp-desc');var h=lock.querySelector('.nv-lp-hint');" +
+    "if(t)t.textContent='功能暂未开放';if(d)d.textContent='macOS 版暂不支持 API 配置与下单';if(h)h.textContent='如需自动下单，请使用 Windows 版客户端';}" +
+    "[key,sec,test,save].forEach(function(el){if(el){el.disabled=true;if('readOnly' in el)el.readOnly=true;}});" +
+    "if(!window.__MOSS_MAC_LOCKED){window.__MOSS_MAC_LOCKED=true;" +
+    "var orig=window.__MOSS_OPEN_SETUP;window.__MOSS_OPEN_SETUP=function(){try{if(orig)orig();}catch(e){}" +
+    "setTimeout(function(){try{var st=deep('nvBinanceSetup');if(st)st.classList.add('locked');var lk=deep('nvBsLockPage');if(lk)lk.style.display='block';}catch(e){}},30);};}" +
+    "})();";
 }
 async function validateLicense() {
   const cfg = readConfig();
