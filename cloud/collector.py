@@ -94,6 +94,14 @@ button.ghost{background:#171b20;color:#c9bda6;border:1px solid #3b3324}
 #code{margin-top:16px;padding:12px 14px;border:1px dashed #8a6a2a;background:#12100a;color:#ffc043;font:700 20px Consolas,monospace;letter-spacing:.08em;display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 #code.visible{display:flex}
 #code .code-value{word-break:break-all}
+button.sw{position:relative;display:inline-flex;align-items:center;gap:6px;padding:4px 8px;background:transparent;border:1px solid #6b5225;border-radius:14px;cursor:pointer;vertical-align:middle}
+button.sw b{display:block;width:26px;height:13px;border-radius:7px;background:#2a2113;border:1px solid #6b5225;position:relative;transition:.2s}
+button.sw b::after{content:"";position:absolute;left:2px;top:1px;width:9px;height:9px;border-radius:50%;background:#8a7a5e;transition:.2s}
+button.sw em{font-style:normal;font-size:10px;font-weight:600;color:#8a7a5e}
+button.sw.on{border-color:#3f7a5c}
+button.sw.on b{background:#1f3d2e;border-color:#3f7a5c}
+button.sw.on b::after{transform:translateX(13px);background:#63C08E}
+button.sw.on em{color:#63C08E}
 button.copy{padding:7px 10px;font-size:11px;font-weight:500;background:#2a2113;color:#e8c27a;border:1px solid #6b5225;white-space:nowrap}
 button.copy:hover{background:#3a2c16;color:#ffe0a0}
 button.copy:disabled{opacity:.35;cursor:default}
@@ -219,12 +227,17 @@ async function loadList(){
     const btn=document.createElement('button');btn.className='copy';btn.textContent='复制';btn.disabled=!full;
     if(full)btn.addEventListener('click',()=>copyText(full,btn));
     op.appendChild(btn);
-const feat=document.createElement('button');
-const featOn=!!(c.features&&c.features.trade);
-feat.className='copy'+(featOn?' toggle':'');
-feat.textContent='自动下单:'+(featOn?'开':'关');
-feat.addEventListener('click',()=>setFeature(c.id,'trade',!featOn));
-op.appendChild(feat);
+        const featOn=!!(c.features&&c.features.trade);
+        const lab=document.createElement('span');
+        lab.textContent='API';
+        lab.style.cssText='font-size:10px;color:#8a7a5e;margin-right:4px';
+        op.appendChild(lab);
+        const feat=document.createElement('button');
+        feat.className='sw'+(featOn?' on':'');
+        feat.innerHTML='<b></b><em>'+(featOn?'已开通':'未开通')+'</em>';
+        feat.title=featOn?'点击关闭':'点击开通';
+        feat.addEventListener('click',()=>setFeature(c.id,'trade',!featOn));
+        op.appendChild(feat);
     const toggle=document.createElement('button');toggle.className='copy toggle';toggle.textContent=c.revoked?'启用':'停用';
     toggle.addEventListener('click',()=>toggleCode(c.id,!!c.revoked));
     op.appendChild(toggle);
