@@ -608,7 +608,13 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"ok": True, "code": code})
                 return
             if path == "/admin/api/list":
-                self.send_json({"ok": True, "codes": license_core.list_codes(), "stats": license_core.stats()})
+                codes = license_core.list_codes()
+                for _c in codes:
+                    try:
+                        _c["features"] = json.loads(_c.get("features") or "{}")
+                    except Exception:
+                        _c["features"] = {}
+                self.send_json({"ok": True, "codes": codes, "stats": license_core.stats()})
                 return
             if path == "/admin/api/reset":
                 ok = license_core.reset_code(str(data.get("code", "")))
