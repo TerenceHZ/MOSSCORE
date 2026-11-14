@@ -11094,6 +11094,8 @@ requestAnimationFrame(frame);
 })();
 </script>
 <script>
+  var MOSS_BOOT_TS = Date.now();
+  var MOSS_ALERT_QUIET_MS = 22000;
 (() => {
   const host = document.getElementById('host-neural');
   if (!host) return;
@@ -11799,7 +11801,7 @@ requestAnimationFrame(frame);
       setTimeout(() => card.classList.remove('flash'), 650);
       sigArmIdle();
       try {
-        queueOrderPreview(entry);
+        if (Date.now() - MOSS_BOOT_TS >= MOSS_ALERT_QUIET_MS) queueOrderPreview(entry);
         if (readOrderMode() === 'auto' && LIVE_ORDER_ENABLED()) {
           const hasSlot = (TRADE_INFO.positions || []).length < ORDER_MAX_POSITIONS;
           if (hasSlot) {
@@ -12309,7 +12311,6 @@ requestAnimationFrame(frame);
     const MOSS_TTS_LOCAL = 'http://127.0.0.1:8799/speak';
     const MOSS_TTS_PRESET = 'cold';
     const MOSS_TTS_SPEED = 0.72;
-    const MOSS_BOOT_TS = Date.now();   // 页面加载时刻：启动回放阶段不发声
     let mossTalk = null;
     const speakSignal = (sig) => {
       if (muted || !sig) return;
@@ -12338,6 +12339,8 @@ requestAnimationFrame(frame);
     };
     let signalTimerId = null;
     const showSignal = (sig, row, lane) => {
+      // 启动回放阶段不弹窗，避免每次开客户端都被旧信号刷屏
+      if (Date.now() - MOSS_BOOT_TS < MOSS_ALERT_QUIET_MS) { window.__MOSS_QUIET_SKIP = (window.__MOSS_QUIET_SKIP || 0) + 1; return; }
       const el = document.querySelector('#nvSignal');
       if (!el || !sig || window.__MOSS_LIVE_FRESH === false) return;
       el.className = 'nv-signal open ' + sig.side;
