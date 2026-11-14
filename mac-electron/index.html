@@ -434,6 +434,7 @@ body{background:var(--page);overflow:hidden}
 
 /* 系列水印：作战室左下角，和舞台里的小字同一套等宽字 */
 .wm{position:absolute;left:30px;bottom:9px;font:500 8.5px/1 var(--mono);letter-spacing:.2em;color:var(--dim);pointer-events:none;white-space:nowrap}
+
 </style>
 <div class="wrap">
  <div class="fit" id="fit">
@@ -1032,7 +1033,11 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card-signal #nvCardSigTp{color:#63C08E}
 .nv-card-signal #nvCardSigSl{color:#C96358}
 .nv-trade-info{position:absolute;left:13px;right:13px;bottom:14px;font:500 8px/1 var(--mono);color:#6f5f48;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
-.nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:none!important;width:330px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
+    .nv-bs-lock{display:none;margin:10px 0 6px;padding:9px 11px;border:1px solid rgba(232,160,32,.35);background:rgba(232,160,32,.06);color:#ffc043;font:600 10px/1.6 var(--mono);letter-spacing:.05em}
+    .nv-bs-lock.show{display:block}
+    .nv-binance-setup.locked .nv-bs-row input{opacity:.45;cursor:not-allowed}
+    .nv-binance-setup.locked .nv-bs-actions button{opacity:.35;cursor:not-allowed;pointer-events:none}
+.nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:calc(100vh - 32px)!important;overflow-y:auto;box-sizing:border-box;width:380px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
 .nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
 .nv-order-pop::after{content:none}
 .nv-order-pop.short{background:linear-gradient(150deg,rgba(26,8,7,.42),rgba(4,3,3,.34))}
@@ -1045,8 +1050,8 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-order-pop.short{border-color:rgba(201,99,88,.55);box-shadow:0 0 24px rgba(201,99,88,.25),inset 0 0 30px rgba(201,99,88,.06)}
 @keyframes nvOpIn{0%{opacity:0;transform:translateY(10px) scale(.97)}100%{opacity:1;transform:none}}
 .nv-op-h{display:flex;align-items:baseline;gap:8px}
-.nv-op-h b{font:700 17px/1 var(--mono);color:#f2f0e8}
-.nv-op-h span{font:700 10px/1 var(--cjk);color:#63C08E}
+.nv-op-h b{font:700 20px/1 var(--mono);color:#f2f0e8}
+.nv-op-h span{font:700 12px/1 var(--cjk);color:#63C08E}
 .nv-order-pop.short .nv-op-h span{color:#C96358}
 .nv-op-pos{margin-left:auto;padding:3px 7px;border:1px solid rgba(99,192,142,.4);background:rgba(99,192,142,.1);font:600 8.5px/1 var(--mono);color:#8fd8b4;cursor:pointer;white-space:nowrap}
 .nv-op-pos:hover{background:rgba(99,192,142,.22);border-color:rgba(99,192,142,.75)}
@@ -1054,10 +1059,10 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-op-x{margin-left:8px;font:400 15px/1 var(--mono);color:#7b6d58;cursor:pointer;font-style:normal}
 .nv-op-x:hover{color:#e8a020}
 .nv-op-stage{margin-top:6px;font:500 9px/1.4 var(--cjk);color:#8a7a5e}
-.nv-op-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:12px;align-items:start}
+.nv-op-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:13px;align-items:start}
 .nv-op-grid>div{display:flex;flex-direction:column;gap:4px;min-width:0}
-.nv-op-grid span{font:500 8.5px/1 var(--cjk);color:#6f5f48}
-.nv-op-grid b{font:600 12px/1 var(--mono);color:#f0e2bc;text-shadow:0 0 10px rgba(0,0,0,.85)}
+.nv-op-grid span{font:600 9.5px/1 var(--cjk);color:#8f7c58}
+.nv-op-grid b{font:600 14px/1 var(--mono);color:#f0e2bc;text-shadow:0 0 10px rgba(0,0,0,.85)}
 .nv-op-h b,.nv-op-h span,.nv-op-stage,.nv-op-mode,.nv-op-grid span{text-shadow:0 0 8px rgba(0,0,0,.9)}
 .nv-op-mode{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:9px;border-top:1px solid rgba(99,192,142,.16);font:500 9px/1 var(--cjk);color:#8a7a5e}
 .nv-op-switch{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-style:normal;user-select:none}
@@ -1068,7 +1073,7 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-op-switch em{font:600 9px/1 var(--cjk);color:#c9a35a;font-style:normal}
 .nv-op-switch.on em{color:#8fd8b4}
 .nv-op-act{display:flex;gap:8px;margin-top:12px}
-.nv-op-act button{flex:1;padding:8px 0;font:600 10px/1 var(--cjk);cursor:pointer;border-radius:0}
+.nv-op-act button{flex:1;padding:10px 0;font:600 11.5px/1 var(--cjk);cursor:pointer;border-radius:0}
 .nv-op-ok{background:rgba(99,192,142,.16);border:1px solid rgba(99,192,142,.5);color:#8fd8b4}
 .nv-op-ok:disabled{opacity:.55;cursor:default}
 .nv-op-no{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a}
@@ -1429,7 +1434,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
    <div class="nv-lsbar"><i id="nvLsBar"></i></div>
   </div>
 
-  <div class="tools pe">
+  <div class="tools pe"><button class="tb" type="button" data-act="api" onclick="try{window.__MOSS_OPEN_SETUP&amp;&amp;window.__MOSS_OPEN_SETUP()}catch(e){}">API</button>
    <button class="tb" type="button" data-act="mode">视角<b data-f="mode">环绕</b></button>
    <button class="tb nv-audio" id="nvAudio" type="button">声音<b>开</b></button>
   </div>
@@ -1554,7 +1559,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
  <div class="mini" id="mini">
   <div class="m-top">
    <div class="m-title">MOSS CORE<i>异动监测 · 合约数据</i></div>
-   <div class="m-btns pe">
+   <div class="m-btns pe"><button class="tb" type="button" data-act="api" onclick="try{window.__MOSS_OPEN_SETUP&amp;&amp;window.__MOSS_OPEN_SETUP()}catch(e){}">API</button>
     <button class="tb" type="button" data-act="mode">视角<b data-f="mode">环绕</b></button>
     <button class="tb" type="button" data-series-pick>主题</button>
    </div>
@@ -1934,7 +1939,7 @@ button.tb:focus-visible{outline:1px solid var(--cyan);outline-offset:2px}
    <div class="cap-l">LAST ACTION · 最近动作</div>
    <div class="cap-b"><span class="ck" id="capK">CHIEF</span><span class="cv" id="capV">派单</span><span class="ct" id="capT">—</span></div>
   </div>
-  <div class="tools pe">
+  <div class="tools pe"><button class="tb" type="button" data-act="api" onclick="try{window.__MOSS_OPEN_SETUP&amp;&amp;window.__MOSS_OPEN_SETUP()}catch(e){}">API</button>
    <button class="tb" type="button" data-act="mode">视角<b data-f="mode">俯瞰</b></button>
    <button class="tb" type="button" data-series-pick>主题</button>
    <button class="tb" type="button" data-act="full" data-f="full">全屏</button>
@@ -1993,7 +1998,7 @@ button.tb:focus-visible{outline:1px solid var(--cyan);outline-offset:2px}
  <div class="mini" id="mini">
   <div class="m-top">
    <div class="m-title">ROBOT FOUNDRY<i>机器人工厂 · 示例数据</i></div>
-   <div class="m-btns pe">
+   <div class="m-btns pe"><button class="tb" type="button" data-act="api" onclick="try{window.__MOSS_OPEN_SETUP&amp;&amp;window.__MOSS_OPEN_SETUP()}catch(e){}">API</button>
     <button class="tb" type="button" data-act="mode">视角<b data-f="mode">俯瞰</b></button>
     <button class="tb" type="button" data-series-pick>主题</button>
    </div>
@@ -2221,7 +2226,7 @@ button.tb:focus-visible{outline:1px solid var(--ice);outline-offset:2px}
    </div>
    <div class="tabs" id="tabs"></div>
   </div>
-  <div class="tools pe">
+  <div class="tools pe"><button class="tb" type="button" data-act="api" onclick="try{window.__MOSS_OPEN_SETUP&amp;&amp;window.__MOSS_OPEN_SETUP()}catch(e){}">API</button>
    <button class="tb" type="button" data-act="mode">视角<b data-f="mode">俯瞰</b></button>
    <button class="tb" type="button" data-series-pick>主题</button>
    <button class="tb" type="button" data-act="full" data-f="full">全屏</button>
@@ -2279,7 +2284,7 @@ button.tb:focus-visible{outline:1px solid var(--ice);outline-offset:2px}
  <div class="mini" id="mini">
   <div class="m-top">
    <div class="m-title">NEBULA CRAWLER<i>星核蜘蛛 · 示例数据</i></div>
-   <div class="m-btns pe">
+   <div class="m-btns pe"><button class="tb" type="button" data-act="api" onclick="try{window.__MOSS_OPEN_SETUP&amp;&amp;window.__MOSS_OPEN_SETUP()}catch(e){}">API</button>
     <button class="tb" type="button" data-act="mode">视角<b data-f="mode">俯瞰</b></button>
     <button class="tb" type="button" data-series-pick>主题</button>
    </div>
@@ -2567,7 +2572,7 @@ button.tb:focus-visible{outline:1px solid var(--ice);outline-offset:2px}
    <div class="sub">合约异动汇入黑洞 · 星核锻造成证据零件 · 逐件播报</div>
    <div class="sub2">非商业 · 本地模拟 · 合约数据 · <b id="clock">--:--:--</b></div>
   </header>
-  <div class="tools pe">
+  <div class="tools pe"><button class="tb" type="button" data-act="api" onclick="try{window.__MOSS_OPEN_SETUP&amp;&amp;window.__MOSS_OPEN_SETUP()}catch(e){}">API</button>
    <button class="tb" type="button" data-act="mode">视角<b data-f="mode">环绕</b></button>
    <button class="tb" type="button" data-series-pick>主题</button>
    <button class="tb" type="button" data-act="full" data-f="full">全屏</button>
@@ -2653,7 +2658,7 @@ button.tb:focus-visible{outline:1px solid var(--ice);outline-offset:2px}
  <div class="mini" id="mini">
   <div class="m-top">
    <div class="m-title">MOSS CORE<i>视界熔炉 · 合约异动</i></div>
-   <div class="m-btns pe">
+   <div class="m-btns pe"><button class="tb" type="button" data-act="api" onclick="try{window.__MOSS_OPEN_SETUP&amp;&amp;window.__MOSS_OPEN_SETUP()}catch(e){}">API</button>
     <button class="tb" type="button" data-act="mode">视角<b data-f="mode">环绕</b></button>
     <button class="tb" type="button" data-series-pick>主题</button>
    </div>
@@ -11834,7 +11839,82 @@ requestAnimationFrame(frame);
     const ORDER_TP_PCT = 15;
     const ORDER_SL_PCT = 15;
     const ORDER_MAX_POSITIONS = 5;
-    const TRADE_INFO = { configured: false, autoTrade: false, equity: 0, available: 0, spot: 0, baseline: 0, positions: [], mode: 'manual' };
+    const TRADE_INFO = { configured: false, autoTrade: false, equity: 0, available: 0, spot: 0, baseline: 0, positions: [], mode: 'manual', entitled: false, preview: false };
+
+    const applyEntitlement = () => {
+      const q = (sel) => (sr && sr.querySelector(sel)) || document.querySelector(sel);
+      const setup = q("#nvBinanceSetup");
+      const lockBox = q("#nvBsLock");
+      const info = q("#nvTradeInfo");
+      const keyIn = q("#nvBsKey");
+      const secIn = q("#nvBsSecret");
+      const testBtn = q("#nvBsTest");
+      const saveBtn = q("#nvBsSave");
+      const st = TRADE_INFO.entitled ? "ok" : (TRADE_INFO.preview ? "preview" : "locked");
+      window.__MOSS_TRADE_STATE = st;
+      if (badge) {
+      }
+      if (setup) setup.classList.toggle("locked", st !== "ok");
+      const note = q(".nv-bs-note");
+      if (note) {
+        note.textContent = st === "ok" ? "密钥只保存在本机加密文件，不会上传云端。" : "需人工审核申请加入";
+        note.style.color = st === "ok" ? "" : "#ffc043";
+      }
+      const disabled = st !== "ok";
+      [keyIn, secIn, testBtn, saveBtn].forEach(el => { if (el) el.disabled = disabled; });
+    };
+
+    try { applyEntitlement(); } catch (e) {}
+    // ===== 六行版下单弹窗样式（注入 shadow root，确保生效） =====
+    try {
+      const POP_CSS = [
+        '.nv-order-pop{width:404px!important;max-height:calc(100vh - 32px)!important;overflow-y:auto;box-sizing:border-box;padding:15px 17px 14px!important}',
+        '.nv-op-r1{display:flex;align-items:center;gap:9px}',
+        '.nv-op-r1>b{font:700 22px/1 Consolas,monospace;color:#f2f0e8;text-shadow:0 0 12px rgba(0,0,0,.9)}',
+        '.nv-op-side{padding:4px 9px;border:1px solid rgba(99,192,142,.55);background:rgba(99,192,142,.13);font:700 11.5px/1 "Microsoft YaHei",sans-serif;color:#8fd8b4;letter-spacing:.12em;text-shadow:0 0 8px rgba(0,0,0,.8)}',
+        '.nv-order-pop.short .nv-op-side{border-color:rgba(201,99,88,.6);background:rgba(201,99,88,.13);color:#e0a49a}',
+        '.nv-op-count{margin-left:auto;padding:4px 8px;border:1px solid rgba(232,160,32,.42);background:rgba(232,160,32,.09);font:600 10.5px/1 Consolas,monospace;color:#e8a020;letter-spacing:.1em;text-shadow:0 0 8px rgba(0,0,0,.8)}',
+        '.nv-op-r2{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:13px;border:1px solid rgba(232,160,32,.26);background:linear-gradient(120deg,rgba(232,160,32,.07),rgba(99,192,142,.05));box-shadow:inset 0 0 22px rgba(232,160,32,.06)}',
+        '.nv-op-cell{position:relative;padding:10px 12px;min-width:0}',
+        '.nv-op-r2 .nv-op-cell+.nv-op-cell{border-left:1px solid rgba(232,160,32,.2)}',
+        '.nv-op-cell span{display:block;font:600 9.5px/1 "Microsoft YaHei",sans-serif;color:#bda874;letter-spacing:.14em;text-shadow:0 0 8px rgba(0,0,0,.9)}',
+        '.nv-op-cell b{display:block;margin-top:6px;font:700 19px/1 Consolas,monospace;color:#f5e7c4;text-shadow:0 0 12px rgba(0,0,0,.85)}',
+        '.nv-op-cell em{display:block;margin-top:5px;font:500 9px/1 "Microsoft YaHei",sans-serif;color:#7b6d58;font-style:normal}',
+        '.nv-op-r2 .win b{color:#63C08E;text-shadow:0 0 14px rgba(99,192,142,.35)}',
+        '.nv-op-r2 .risk b{color:#e8a020;text-shadow:0 0 14px rgba(232,160,32,.3)}',
+        '.nv-op-r3,.nv-op-r4{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06)}',
+        '.nv-op-r3 .nv-op-cell,.nv-op-r4 .nv-op-cell{background:rgba(6,10,9,.72)}',
+        '.nv-op-r4 .tp b{color:#63C08E}',
+        '.nv-op-r4 .sl b{color:#C96358}',
+        '.nv-op-r4 .tp{box-shadow:inset 0 0 26px rgba(99,192,142,.10)}',
+        '.nv-op-r4 .sl{box-shadow:inset 0 0 26px rgba(201,99,88,.10)}',
+        '.nv-op-r3 .lev b{font-size:18px}',
+        '.nv-op-r5{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding:9px 2px 0;border-top:1px solid rgba(99,192,142,.18);font:600 10px/1 "Microsoft YaHei",sans-serif;color:#bda874;letter-spacing:.1em}',
+        '.nv-op-r6{display:flex;gap:8px;margin-top:11px}',
+        '.nv-op-r6 .nv-op-ok{flex:1;padding:11px 0;font:600 12px/1 "Microsoft YaHei",sans-serif;letter-spacing:.06em;background:rgba(99,192,142,.16);border:1px solid rgba(99,192,142,.5);color:#8fd8b4;cursor:pointer;text-shadow:0 0 8px rgba(0,0,0,.6)}',
+        '.nv-op-r6 .nv-op-ok:disabled{opacity:.6;cursor:default}',
+        '.nv-op-r6 .nv-op-pos{flex:0 0 auto;margin:0;padding:0 13px;font:600 10.5px/1 "Microsoft YaHei",sans-serif;border:1px solid rgba(99,192,142,.4);background:rgba(99,192,142,.1);color:#8fd8b4;cursor:pointer}'
+      ].join('\n');
+      const mountPopCss = () => {
+        try {
+          if (document.getElementById('__mossPopCss')) return;
+          const st = document.createElement('style');
+          st.id = '__mossPopCss';
+          st.textContent = POP_CSS;
+          (sr || document.head).appendChild(st);
+        } catch (e) {}
+      };
+      mountPopCss();
+      setTimeout(mountPopCss, 500);
+      setTimeout(mountPopCss, 1500);
+    } catch (e) {}
+
+    [0, 400, 1200].forEach(ms => setTimeout(() => { try { applyEntitlement(); } catch (e) {} }, ms));
+    try {
+      sr.addEventListener('click', (e) => {
+        try { if (e.target && e.target.closest && e.target.closest('#nvBinanceEntry')) setTimeout(applyEntitlement, 0); } catch (err) {}
+      }, true);
+    } catch (e) {}
     const ORDER_MODE_KEY = 'moss-order-mode';
     const readOrderMode = () => {
       if (TRADE_INFO.mode === 'auto' || TRADE_INFO.mode === 'manual') return TRADE_INFO.mode;
@@ -11876,26 +11956,26 @@ requestAnimationFrame(frame);
       const style = document.createElement('style');
       style.id = 'moss-order-style';
       style.textContent = `
-.nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:none!important;width:330px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate;font-family:"JetBrains Mono","Microsoft YaHei",ui-monospace,monospace}
+.nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:calc(100vh - 32px)!important;overflow-y:auto;box-sizing:border-box;width:380px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate;font-family:"JetBrains Mono","Microsoft YaHei",ui-monospace,monospace}
 .nv-order-pop[hidden]{display:none}
 .nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
 .nv-order-pop.short{border-color:rgba(201,99,88,.62);background:linear-gradient(150deg,rgba(26,8,7,.42),rgba(4,3,3,.34));box-shadow:0 0 30px rgba(201,99,88,.42),0 0 70px rgba(201,99,88,.16),inset 0 0 34px rgba(201,99,88,.1)}
 .nv-order-pop.short::before{background:radial-gradient(70% 120% at 16% 0%,rgba(201,99,88,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(201,99,88,.24) 38%,transparent 62%,rgba(255,255,255,.06) 80%,transparent 96%);background-size:180% 180%,220% 220%}
 @keyframes nvOpIn{0%{opacity:0;transform:translateY(10px) scale(.97)}100%{opacity:1;transform:none}}
-.nv-op-h{display:flex;align-items:baseline;gap:8px}
-.nv-op-h b{font:700 17px/1 inherit;color:#f2f0e8;text-shadow:0 0 8px rgba(0,0,0,.9)}
-.nv-op-h span{font:700 10px/1 "Microsoft YaHei",sans-serif;color:#63C08E;text-shadow:0 0 8px rgba(0,0,0,.9)}
+    .nv-op-h b{font:700 21px/1 "Microsoft YaHei",sans-serif;color:#f2f0e8;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-h b{font:700 21px/1 "Microsoft YaHei",sans-serif;color:#f2f0e8;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-h span{font:700 12px/1 "Microsoft YaHei",sans-serif;color:#63C08E;text-shadow:0 0 8px rgba(0,0,0,.9)}
 .nv-order-pop.short .nv-op-h span{color:#C96358}
-.nv-op-pos{margin-left:auto;padding:3px 7px;border:1px solid rgba(99,192,142,.4);background:rgba(99,192,142,.1);font:600 8.5px/1 inherit;color:#8fd8b4;cursor:pointer;white-space:nowrap}
+    .nv-op-h span{font:700 12px/1 "Microsoft YaHei",sans-serif;color:#63C08E;text-shadow:0 0 8px rgba(0,0,0,.9)}
 .nv-op-pos:hover{background:rgba(99,192,142,.22);border-color:rgba(99,192,142,.75)}
 .nv-order-pop.short .nv-op-pos{border-color:rgba(201,99,88,.4);background:rgba(201,99,88,.1);color:#e0a49a}
 .nv-op-x{margin-left:8px;font:400 15px/1 inherit;color:#7b6d58;cursor:pointer;font-style:normal}
-.nv-op-x:hover{color:#e8a020}
-.nv-op-stage{margin-top:6px;font:500 9px/1.4 "Microsoft YaHei",sans-serif;color:#8a7a5e;text-shadow:0 0 8px rgba(0,0,0,.9)}
-.nv-op-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:12px;align-items:start}
-.nv-op-grid>div{display:flex;flex-direction:column;gap:4px;min-width:0}
-.nv-op-grid span{font:500 8.5px/1 "Microsoft YaHei",sans-serif;color:#6f5f48;text-shadow:0 0 8px rgba(0,0,0,.9)}
-.nv-op-grid b{font:600 12px/1 inherit;color:#f0e2bc;text-shadow:0 0 10px rgba(0,0,0,.85)}
+    .nv-op-stage{margin-top:7px;font:500 10.5px/1.5 "Microsoft YaHei",sans-serif;color:#8a7a5e;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-stage{margin-top:7px;font:500 10.5px/1.5 "Microsoft YaHei",sans-serif;color:#8a7a5e;text-shadow:0 0 8px rgba(0,0,0,.9)}
+.nv-op-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:13px;align-items:start}
+    .nv-op-grid span{font:600 10px/1 "Microsoft YaHei",sans-serif;color:#9a8560;text-shadow:0 0 8px rgba(0,0,0,.9)}
+    .nv-op-grid b{font:600 14.5px/1 Consolas,monospace;color:#f5e7c4;text-shadow:0 0 10px rgba(0,0,0,.85)}
+.nv-op-grid b{font:600 14.5px/1 Consolas,monospace;color:#f5e7c4;text-shadow:0 0 10px rgba(0,0,0,.85)}
 .nv-op-mode{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:9px;border-top:1px solid rgba(99,192,142,.16);font:500 9px/1 "Microsoft YaHei",sans-serif;color:#8a7a5e;text-shadow:0 0 8px rgba(0,0,0,.9)}
 .nv-op-switch{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-style:normal;user-select:none}
 .nv-op-switch b{position:relative;display:block;width:30px;height:14px;border-radius:7px;background:rgba(255,255,255,.1);border:1px solid rgba(232,160,32,.3);transition:background .2s,border-color .2s}
@@ -11905,7 +11985,7 @@ requestAnimationFrame(frame);
 .nv-op-switch em{font:600 9px/1 "Microsoft YaHei",sans-serif;color:#c9a35a;font-style:normal}
 .nv-op-switch.on em{color:#8fd8b4}
 .nv-op-act{display:flex;gap:8px;margin-top:12px}
-.nv-op-act button{flex:1;padding:8px 0;font:600 10px/1 "Microsoft YaHei",sans-serif;cursor:pointer;border-radius:0}
+.nv-op-act button{flex:1;padding:10px 0;font:600 11.5px/1 "Microsoft YaHei",sans-serif;cursor:pointer;border-radius:0}
 .nv-op-ok{background:rgba(99,192,142,.16);border:1px solid rgba(99,192,142,.5);color:#8fd8b4}
 .nv-op-ok:disabled{opacity:.55;cursor:default}
 .nv-op-no{background:transparent;border:1px solid rgba(232,160,32,.3);color:#c9a35a}
@@ -11935,23 +12015,30 @@ requestAnimationFrame(frame);
 .nv-binance-entry:hover{border-color:rgba(232,160,32,.85);color:#e8a020;box-shadow:0 0 18px rgba(232,160,32,.25)}
 .nv-binance-setup{position:fixed;inset:0;z-index:2500;display:grid;place-items:center;background:rgba(0,0,0,.55)}
 .nv-binance-setup[hidden]{display:none}
-.nv-bs-card{width:380px;padding:16px;border:1px solid rgba(232,160,32,.5);background:linear-gradient(150deg,rgba(10,10,8,.97),rgba(3,4,4,.97));box-shadow:0 0 40px rgba(232,160,32,.18);font-family:"JetBrains Mono","Microsoft YaHei",monospace}
-.nv-bs-h{display:flex;align-items:center;justify-content:space-between;font:700 14px/1 "Microsoft YaHei",sans-serif;color:#f2f0e8}
-.nv-bs-h i{font:400 18px/1 inherit;color:#7b6d58;cursor:pointer;font-style:normal}
+    .nv-bs-lockpage{display:none;padding:34px 8px 40px;text-align:center}
+    .nv-binance-setup.locked .nv-bs-lockpage{display:block}
+    .nv-binance-setup.locked .nv-bs-note,.nv-binance-setup.locked .nv-bs-row,.nv-binance-setup.locked .nv-bs-status,.nv-binance-setup.locked .nv-bs-actions,.nv-binance-setup.locked .nv-bs-tip{display:none!important}
+    .nv-lp-k{font:600 9px/1 var(--mono);letter-spacing:.34em;color:#7b6d58}
+    .nv-lp-title{margin-top:16px;font:700 24px/1.2 "Microsoft YaHei",sans-serif;color:#f2f0e8;letter-spacing:.02em}
+    .nv-lp-desc{margin-top:14px;display:inline-block;padding:9px 18px;border:1px solid rgba(232,160,32,.45);background:rgba(232,160,32,.07);font:600 15px/1 "Microsoft YaHei",sans-serif;color:#ffc043;letter-spacing:.1em}
+    .nv-lp-hint{margin-top:16px;font:500 11.5px/1.7 "Microsoft YaHei",sans-serif;color:#7b6d58}
+    .nv-bs-card{width:520px;max-width:calc(100vw - 60px);padding:26px 28px 24px;border:1px solid rgba(232,160,32,.5);background:linear-gradient(150deg,rgba(10,10,8,.98),rgba(3,4,4,.98));box-shadow:0 0 60px rgba(232,160,32,.20);font-family:"JetBrains Mono","Microsoft YaHei",monospace;
+    .nv-bs-h{display:flex;align-items:center;justify-content:space-between;font:700 20px/1.2 "Microsoft YaHei",sans-serif;color:#f2f0e8;letter-spacing:.02em}
+    .nv-bs-h i{font:400 22px/1 inherit;color:#7b6d58;cursor:pointer;font-style:normal}
 .nv-bs-h i:hover{color:#e8a020}
-.nv-bs-note{margin-top:7px;font:500 9.5px/1.5 "Microsoft YaHei",sans-serif;color:#8a7a5e}
-.nv-bs-row{display:block;margin-top:12px}
-.nv-bs-row span{display:block;font:600 9px/1 "Microsoft YaHei",sans-serif;color:#c9a35a;margin-bottom:5px}
-.nv-bs-row input{width:100%;box-sizing:border-box;padding:8px 9px;background:rgba(0,0,0,.5);border:1px solid rgba(232,160,32,.28);color:#f2f0e8;font:500 11px/1.2 inherit;outline:none}
+    .nv-bs-note{margin-top:12px;padding:10px 12px;background:rgba(255,255,255,.03);border-left:2px solid rgba(255,255,255,.14);font:500 12.5px/1.7 "Microsoft YaHei",sans-serif;color:#8a7a5e;letter-spacing:.02em}
+    .nv-bs-row{display:block;margin-top:18px}
+    .nv-bs-row span{display:block;font:600 11px/1 "Microsoft YaHei",sans-serif;color:#c9a35a;margin-bottom:8px;letter-spacing:.08em}
+    .nv-bs-row input{width:100%;box-sizing:border-box;padding:12px 13px;background:rgba(0,0,0,.55);border:1px solid rgba(232,160,32,.28);color:#f2f0e8;font:500 13.5px/1.3 inherit;outline:none;letter-spacing:.02em}
 .nv-bs-row input:focus{border-color:rgba(232,160,32,.7)}
-.nv-bs-status{margin-top:11px;padding:7px 9px;background:rgba(255,255,255,.04);border-left:2px solid #8a7a5e;font:500 9.5px/1.4 "Microsoft YaHei",sans-serif;color:#9a8a70}
+    .nv-bs-status{margin-top:16px;padding:10px 12px;background:rgba(255,255,255,.04);border-left:2px solid #8a7a5e;font:500 11.5px/1.5 "Microsoft YaHei",sans-serif;color:#9a8a70}
 .nv-bs-status.ok{border-left-color:#63C08E;color:#8fd8b4}
 .nv-bs-status.err{border-left-color:#C96358;color:#e0a49a}
-.nv-bs-actions{display:flex;gap:8px;margin-top:13px}
-.nv-bs-actions button{flex:1;padding:9px 0;font:600 11px/1 "Microsoft YaHei",sans-serif;cursor:pointer}
+    .nv-bs-actions{display:flex;gap:10px;margin-top:18px}
+    .nv-bs-actions button{flex:1;padding:12px 0;font:600 12.5px/1 "Microsoft YaHei",sans-serif;cursor:pointer;letter-spacing:.06em}
 #nvBsTest{background:transparent;border:1px solid rgba(232,160,32,.4);color:#c9a35a}
 #nvBsSave{background:rgba(99,192,142,.15);border:1px solid rgba(99,192,142,.55);color:#8fd8b4}
-.nv-bs-tip{margin-top:11px;font:500 9px/1.5 "Microsoft YaHei",sans-serif;color:#6f5f48}
+    .nv-bs-tip{margin-top:14px;font:500 10.5px/1.7 "Microsoft YaHei",sans-serif;color:#6f5f48;letter-spacing:.02em}
 `;
       document.head.appendChild(st);
     })();
@@ -11990,6 +12077,21 @@ requestAnimationFrame(frame);
         }
       });
     })();
+    let orderCountdown = null;
+    const startOrderCountdown = () => {
+      const el = opEl("nvOpCount"); if (!el) return;
+      const end = Date.now() + ORDER_POP_MS;
+      if (orderCountdown) clearInterval(orderCountdown);
+      const tick = () => {
+        const left = Math.max(0, end - Date.now());
+        const m = Math.floor(left / 60000), s = Math.floor((left % 60000) / 1000);
+        el.textContent = String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+        if (left <= 0) { clearInterval(orderCountdown); orderCountdown = null; }
+      };
+      tick();
+      orderCountdown = setInterval(tick, 1000);
+    };
+
     const closeOrderPop = () => {
       const pop = opEl('nvOrderPop');
       if (pop) pop.hidden = true;
@@ -11998,6 +12100,7 @@ requestAnimationFrame(frame);
       orderPending = null;
       clearTimeout(orderPopAuto);
       orderPopAuto = null;
+      if (orderCountdown) { clearInterval(orderCountdown); orderCountdown = null; }
     };
     const renderPositions = () => {
       const posBtn = opEl('nvOpPos');
@@ -12043,7 +12146,7 @@ requestAnimationFrame(frame);
       if (!pop) return;
       pop.classList.toggle('short', sig.side === 'short');
       opEl('nvOpSym').textContent = pairName(sig.r.symbol);
-      opEl('nvOpSide').textContent = sig.side === 'long' ? '建议建多' : '建议建空';
+      opEl('nvOpSide').textContent = sig.side === 'long' ? '多单' : '空单';
       const stageLabel = LIVE_ORDER_ENABLED() ? '真实下单' : '预演 · 不会真实下单';
       opEl('nvOpStage').textContent = `${stageLabel} · 胜率 ${sig.win}% · ${Math.round(ORDER_POP_MS / 60000)} 分钟后自动关闭`;
       opEl('nvOpStage').dataset.base = stageLabel + ' · 胜率 ' + sig.win + '%';
@@ -12058,6 +12161,7 @@ requestAnimationFrame(frame);
       opEl('nvOpSl').textContent = `${fmtPrice(slPx)} (-${ORDER_SL_PCT}%)`;
       const risk = margin > 0 ? Math.abs(price - slPx) / price * notional : 0;
       opEl('nvOpRisk').textContent = risk > 0 ? `最大亏 ${risk.toFixed(2)} USDT` : '—';
+      try { opEl("nvOpWin").textContent = (sig.win || 0) + "%"; } catch (e) {}       try { const _rp = equity > 0 && risk > 0 ? (risk / equity * 100) : 0; opEl("nvOpRiskRate").textContent = _rp > 0 ? _rp.toFixed(1) + "%" : "—"; } catch (e) {}       try { opEl("nvOpPrice").textContent = "当前 " + fmtPrice(price); } catch (e) {}
       const mode = readOrderMode();
       const sw = opEl('nvOpSwitch');
       if (sw) sw.classList.toggle('on', mode === 'auto');
@@ -12083,16 +12187,25 @@ requestAnimationFrame(frame);
           const ar = anchor.getBoundingClientRect();
           const gap = 14;
           const pw = pop.offsetWidth, ph = pop.offsetHeight;
-          let left = Math.round(ar.right + gap);
-          let top = Math.round(ar.bottom - ph);
-          if (left + pw > window.innerWidth - 16) {
-            left = Math.round(ar.left);
+          // 用同一个 offsetParent 的坐标来摆，避免 fixed 在变换容器里失效
+          let left, top;
+          if (pop.offsetParent && pop.offsetParent === anchor.offsetParent) {
+            left = anchor.offsetLeft;
+            top = anchor.offsetTop - ph - 10;
+            if (top < 8) top = anchor.offsetTop + anchor.offsetHeight + 10;
+          } else {
+            const vv = window.visualViewport;
+            const vw = vv ? vv.width : window.innerWidth;
+            const vh = vv ? vv.height : window.innerHeight;
+            left = Math.round(ar.right + gap);
             top = Math.round(ar.bottom - ph);
+            if (left + pw > vw - 16) left = Math.round(ar.left);
+            if (top + ph > vh - 16) top = Math.round(ar.top - ph - 10);
+            if (top < 16) top = 16;
+            left = Math.max(8, Math.min(left, vw - pw - 8));
           }
-          top = Math.max(16, Math.min(top, window.innerHeight - ph - 16));
-          left = Math.max(16, left);
-          pop.style.left = left + 'px';
-          pop.style.top = top + 'px';
+          pop.style.left = left + "px";
+          pop.style.top = top + "px";
         };
         place();
         requestAnimationFrame(place);
@@ -12106,6 +12219,7 @@ requestAnimationFrame(frame);
       } catch (e) {}
       clearTimeout(orderPopTimer);
       clearTimeout(orderPopAuto);
+      startOrderCountdown();
       orderPopAuto = setTimeout(() => { closeOrderPop(); }, ORDER_POP_MS);
     };
     // 左侧：队列空时先补一轮，补不到才进入空闲
@@ -12188,9 +12302,9 @@ requestAnimationFrame(frame);
         });
       } catch (e) {}
     };
-    // ── 语音播报：直接播云服务器上的音频包（和 Windows 同一份文件，声音完全一致）──
+    // ── 语音播报：优先播云端音频包（所有设备同一份文件），缺文件时退回本机语音 ──
     const MOSS_TTS_CLOUD = 'https://43-160-232-254.sslip.io/voice';
-    const MOSS_TTS_LOCAL = '';   // Mac 上没有本地语音服务，缺文件时静默
+    const MOSS_TTS_LOCAL = '';
     const MOSS_TTS_PRESET = 'cold';
     const MOSS_TTS_SPEED = 0.72;
     const MOSS_BOOT_TS = Date.now();   // 页面加载时刻：启动回放阶段不发声
@@ -12853,6 +12967,59 @@ requestAnimationFrame(frame);
       try {
         const d = (ev && ev.detail) || {};
         if (d.type === 'account' || d.type === 'config') {
+            if (typeof d.entitled === "boolean") TRADE_INFO.entitled = d.entitled;
+            if (typeof d.preview === "boolean") TRADE_INFO.preview = d.preview;
+            try { applyEntitlement(); } catch (e) {}
+    // ===== 六行版下单弹窗样式（注入 shadow root，确保生效） =====
+    try {
+      const POP_CSS = [
+        '.nv-order-pop{width:404px!important;max-height:calc(100vh - 32px)!important;overflow-y:auto;box-sizing:border-box;padding:15px 17px 14px!important}',
+        '.nv-op-r1{display:flex;align-items:center;gap:9px}',
+        '.nv-op-r1>b{font:700 22px/1 Consolas,monospace;color:#f2f0e8;text-shadow:0 0 12px rgba(0,0,0,.9)}',
+        '.nv-op-side{padding:4px 9px;border:1px solid rgba(99,192,142,.55);background:rgba(99,192,142,.13);font:700 11.5px/1 "Microsoft YaHei",sans-serif;color:#8fd8b4;letter-spacing:.12em;text-shadow:0 0 8px rgba(0,0,0,.8)}',
+        '.nv-order-pop.short .nv-op-side{border-color:rgba(201,99,88,.6);background:rgba(201,99,88,.13);color:#e0a49a}',
+        '.nv-op-count{margin-left:auto;padding:4px 8px;border:1px solid rgba(232,160,32,.42);background:rgba(232,160,32,.09);font:600 10.5px/1 Consolas,monospace;color:#e8a020;letter-spacing:.1em;text-shadow:0 0 8px rgba(0,0,0,.8)}',
+        '.nv-op-r2{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:13px;border:1px solid rgba(232,160,32,.26);background:linear-gradient(120deg,rgba(232,160,32,.07),rgba(99,192,142,.05));box-shadow:inset 0 0 22px rgba(232,160,32,.06)}',
+        '.nv-op-cell{position:relative;padding:10px 12px;min-width:0}',
+        '.nv-op-r2 .nv-op-cell+.nv-op-cell{border-left:1px solid rgba(232,160,32,.2)}',
+        '.nv-op-cell span{display:block;font:600 9.5px/1 "Microsoft YaHei",sans-serif;color:#bda874;letter-spacing:.14em;text-shadow:0 0 8px rgba(0,0,0,.9)}',
+        '.nv-op-cell b{display:block;margin-top:6px;font:700 19px/1 Consolas,monospace;color:#f5e7c4;text-shadow:0 0 12px rgba(0,0,0,.85)}',
+        '.nv-op-cell em{display:block;margin-top:5px;font:500 9px/1 "Microsoft YaHei",sans-serif;color:#7b6d58;font-style:normal}',
+        '.nv-op-r2 .win b{color:#63C08E;text-shadow:0 0 14px rgba(99,192,142,.35)}',
+        '.nv-op-r2 .risk b{color:#e8a020;text-shadow:0 0 14px rgba(232,160,32,.3)}',
+        '.nv-op-r3,.nv-op-r4{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06)}',
+        '.nv-op-r3 .nv-op-cell,.nv-op-r4 .nv-op-cell{background:rgba(6,10,9,.72)}',
+        '.nv-op-r4 .tp b{color:#63C08E}',
+        '.nv-op-r4 .sl b{color:#C96358}',
+        '.nv-op-r4 .tp{box-shadow:inset 0 0 26px rgba(99,192,142,.10)}',
+        '.nv-op-r4 .sl{box-shadow:inset 0 0 26px rgba(201,99,88,.10)}',
+        '.nv-op-r3 .lev b{font-size:18px}',
+        '.nv-op-r5{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding:9px 2px 0;border-top:1px solid rgba(99,192,142,.18);font:600 10px/1 "Microsoft YaHei",sans-serif;color:#bda874;letter-spacing:.1em}',
+        '.nv-op-r6{display:flex;gap:8px;margin-top:11px}',
+        '.nv-op-r6 .nv-op-ok{flex:1;padding:11px 0;font:600 12px/1 "Microsoft YaHei",sans-serif;letter-spacing:.06em;background:rgba(99,192,142,.16);border:1px solid rgba(99,192,142,.5);color:#8fd8b4;cursor:pointer;text-shadow:0 0 8px rgba(0,0,0,.6)}',
+        '.nv-op-r6 .nv-op-ok:disabled{opacity:.6;cursor:default}',
+        '.nv-op-r6 .nv-op-pos{flex:0 0 auto;margin:0;padding:0 13px;font:600 10.5px/1 "Microsoft YaHei",sans-serif;border:1px solid rgba(99,192,142,.4);background:rgba(99,192,142,.1);color:#8fd8b4;cursor:pointer}'
+      ].join('\n');
+      const mountPopCss = () => {
+        try {
+          if (document.getElementById('__mossPopCss')) return;
+          const st = document.createElement('style');
+          st.id = '__mossPopCss';
+          st.textContent = POP_CSS;
+          (sr || document.head).appendChild(st);
+        } catch (e) {}
+      };
+      mountPopCss();
+      setTimeout(mountPopCss, 500);
+      setTimeout(mountPopCss, 1500);
+    } catch (e) {}
+
+    [0, 400, 1200].forEach(ms => setTimeout(() => { try { applyEntitlement(); } catch (e) {} }, ms));
+    try {
+      sr.addEventListener('click', (e) => {
+        try { if (e.target && e.target.closest && e.target.closest('#nvBinanceEntry')) setTimeout(applyEntitlement, 0); } catch (err) {}
+      }, true);
+    } catch (e) {}
           if (typeof d.configured === 'boolean') TRADE_INFO.configured = d.configured;
           if (typeof d.autoTrade === 'boolean') TRADE_INFO.autoTrade = d.autoTrade;
           if (typeof d.equity === 'number') TRADE_INFO.equity = d.equity;
@@ -13609,6 +13776,48 @@ requestAnimationFrame(frame);
 .moss-auth-exit{margin-top:10px;background:none;border:0;padding:0;color:#6b5e4a;font:500 9px/1 "Microsoft YaHei UI",sans-serif;text-decoration:underline;cursor:pointer}
 @keyframes mossAuthScan{0%{top:-4%;opacity:0}12%{opacity:.5}88%{opacity:.5}100%{top:104%;opacity:0}}
 @keyframes mossAuthLine{0%,100%{opacity:.55}50%{opacity:1}}
+
+    /* ===== 建仓卡片（六行 + 玻璃模糊 + 流光） ===== */
+    .nv-order-pop{
+      width:432px!important;padding:16px 18px 15px!important;
+      background:rgba(4,12,9,.42)!important;
+      -webkit-backdrop-filter:blur(14px) saturate(130%)!important;
+      backdrop-filter:blur(14px) saturate(130%)!important;
+      border:1px solid rgba(99,192,142,.55)!important;
+      box-shadow:0 16px 48px rgba(0,0,0,.45),inset 0 0 30px rgba(99,192,142,.06)!important;
+      overflow:hidden;
+    }
+    .nv-order-pop.short{border-color:rgba(201,99,88,.55)!important;box-shadow:0 16px 48px rgba(0,0,0,.45),inset 0 0 30px rgba(201,99,88,.06)!important}
+    .nv-order-pop::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+      background:linear-gradient(115deg,transparent 34%,rgba(160,255,215,.07) 46%,rgba(160,255,215,.13) 50%,rgba(160,255,215,.07) 54%,transparent 66%);
+      transform:translateX(-120%);animation:nvSweep 5.6s ease-in-out infinite}
+    @keyframes nvSweep{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
+    .nv-op-count{display:inline-flex;align-items:center;gap:8px;margin-left:auto;padding:5px 10px;border:1px solid rgba(232,160,32,.45);background:rgba(232,160,32,.06)}
+    .nv-op-count>em{font:600 8.5px/1 var(--cjk);letter-spacing:.2em;color:#8a7a5e;font-style:normal}
+    .nv-op-count>b{font:700 15px/1 var(--mono);color:#e8a020;letter-spacing:.06em}
+    .nv-op-r1{display:flex;align-items:center;gap:7px;position:relative;z-index:1}
+    .nv-op-r1>b{font:700 21px/1 var(--mono);color:#f2f0e8}
+    .nv-op-side{padding:2px 7px;border:1px solid rgba(99,192,142,.5);background:rgba(99,192,142,.08);font:700 11.5px/1.35 var(--cjk);color:#8fd8b4;letter-spacing:.12em}
+    .nv-order-pop.short .nv-op-side{border-color:rgba(201,99,88,.5);background:rgba(201,99,88,.08);color:#e0a49a}
+    .nv-op-count{margin-left:auto;font:600 12px/1 var(--mono);color:#e8a020;letter-spacing:.1em}
+    .nv-op-r2,.nv-op-r3,.nv-op-r4{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;position:relative;z-index:1}
+    .nv-op-cell{min-width:0}
+    .nv-op-cell>span{display:block;font:600 11px/1 var(--cjk);color:#a08c68;letter-spacing:.12em}
+    .nv-op-cell>b{display:block;margin-top:7px;font:600 17px/1 var(--mono);color:#f0e2bf}
+    .nv-op-cell>em{display:block;margin-top:5px;font:500 10px/1 var(--cjk);color:#8a7a5e;font-style:normal;letter-spacing:.04em}
+    .nv-op-r2 .win>b{color:#63C08E;text-shadow:0 0 12px rgba(99,192,142,.35)}
+    .nv-op-r2 .risk>b{color:#e8a020}
+    .nv-op-r4 .tp>b{color:#63C08E}
+    .nv-op-r4 .sl>b{color:#C96358}
+    .nv-op-r5{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
+    .nv-op-r5>span{font:600 11px/1 var(--cjk);color:#a08c68;letter-spacing:.12em}
+    .nv-op-r6{display:flex;gap:7px;margin-top:10px;position:relative;z-index:1}
+    .nv-op-r6>.nv-op-ok{flex:1;padding:11px 0;border:1px solid rgba(99,192,142,.6)!important;background:linear-gradient(180deg,rgba(99,192,142,.26),rgba(99,192,142,.10))!important;color:#b6f2d5!important;font:600 12.5px/1 var(--cjk)!important;letter-spacing:.1em;cursor:pointer;position:relative;overflow:hidden;text-shadow:0 0 10px rgba(99,192,142,.45)}
+    .nv-op-r6>.nv-op-ok:disabled{border-color:rgba(99,192,142,.32)!important;background:linear-gradient(180deg,rgba(99,192,142,.10),rgba(99,192,142,.04))!important;color:#6f8f80!important;text-shadow:none;cursor:default}
+    .nv-op-r6>.nv-op-pos{flex:0 0 auto;margin:0!important;padding:0 12px;border:1px solid rgba(99,192,142,.32);background:transparent;color:#8fd8b4;font:600 11px/1 var(--cjk);letter-spacing:.06em;cursor:pointer}
+    .nv-op-r1,.nv-op-r2,.nv-op-r3,.nv-op-r4,.nv-op-r5,.nv-op-r6{margin-top:11px;padding-top:11px;border-top:1px solid rgba(99,192,142,.16)}
+    .nv-op-r1{margin-top:0;padding-top:0;border-top:none}
+    .nv-op-legacy{display:none!important}
 </style>
 <script>
 (function(){
@@ -13641,32 +13850,53 @@ requestAnimationFrame(frame);
 })();
 </script>
 
-   <div class="nv-order-pop" id="nvOrderPop" hidden>
-    <div class="nv-op-h"><b id="nvOpSym">—</b><span id="nvOpSide">—</span><button class="nv-op-pos" type="button" id="nvOpPos">持仓 0/5</button><i class="nv-op-x" data-nv-op-close>×</i></div>
-    <div class="nv-op-stage" id="nvOpStage">预演 · 不会真实下单</div>
-    <div class="nv-op-grid">
-     <div><span>杠杆</span><b id="nvOpLev">5×</b></div>
-     <div><span>保证金（账户权益 20%）</span><b id="nvOpMargin">—</b></div>
-     <div><span>名义价值</span><b id="nvOpNotional">—</b></div>
-     <div><span>下单数量</span><b id="nvOpQty">—</b></div>
-     <div><span>入场价</span><b id="nvOpEntry">—</b></div>
-     <div><span>止盈</span><b id="nvOpTp">—</b></div>
-     <div><span>止损</span><b id="nvOpSl">—</b></div>
-     <div><span>风控</span><b id="nvOpRisk">—</b></div>
-    </div>
-    <div class="nv-op-mode"><span>下单模式</span><i class="nv-op-switch" id="nvOpSwitch" role="switch" aria-checked="false"><b></b><em id="nvOpModeText">手动</em></i></div>
-    <div class="nv-op-act"><button type="button" class="nv-op-ok" id="nvOpOk" disabled>预演模式 · 下单未开启</button><button type="button" class="nv-op-no" data-nv-op-close>关闭</button></div>
-    <div class="nv-op-positions" id="nvOpPositions" hidden>
-     <div class="nv-op-pos-h"><span>持仓明细</span><i class="nv-op-pos-x" id="nvOpPosBack">返回</i></div>
-     <div class="nv-op-pos-list" id="nvOpPosList"><div class="nv-op-pos-empty">暂无持仓</div></div>
+    <div class="nv-order-pop" id="nvOrderPop" hidden>
+      <div class="nv-op-r1">
+        <b id="nvOpSym">—</b>
+        <span class="nv-op-side" id="nvOpSide">—</span>
+        <span class="nv-op-count"><em>AUTO CLOSE</em><b id="nvOpCount">--:--</b></span>
+        <i class="nv-op-x" data-nv-op-close>×</i>
+      </div>
+      <div class="nv-op-r2">
+        <div class="nv-op-cell win"><span>胜率</span><b id="nvOpWin">—</b></div>
+        <div class="nv-op-cell risk"><span>账户风险率</span><b id="nvOpRiskRate">—</b></div>
+      </div>
+      <div class="nv-op-r3">
+        <div class="nv-op-cell"><span>入场价</span><b id="nvOpEntry">—</b><em id="nvOpPrice">当前 —</em></div>
+        <div class="nv-op-cell lev"><span>杠杆</span><b id="nvOpLev">5×</b></div>
+      </div>
+      <div class="nv-op-r4">
+        <div class="nv-op-cell tp"><span>止盈</span><b id="nvOpTp">—</b></div>
+        <div class="nv-op-cell sl"><span>止损</span><b id="nvOpSl">—</b></div>
+      </div>
+      <div class="nv-op-r5">
+        <span>下单模式</span>
+        <i class="nv-op-switch" id="nvOpSwitch" role="switch" aria-checked="false"><b></b><em id="nvOpModeText">手动</em></i>
+      </div>
+      <div class="nv-op-r6">
+        <button type="button" class="nv-op-ok" id="nvOpOk" disabled>预演模式 · 下单未开启</button>
+        <button class="nv-op-pos" type="button" id="nvOpPos">持仓 0/5</button>
+      </div>
+      <div class="nv-op-legacy" hidden>
+        <span id="nvOpStage"></span><b id="nvOpMargin"></b><b id="nvOpNotional"></b><b id="nvOpQty"></b><b id="nvOpRisk"></b>
+      </div>
+      <div class="nv-op-positions" id="nvOpPositions" hidden>
+        <div class="nv-op-pos-h"><span>持仓明细</span><i class="nv-op-pos-x" id="nvOpPosBack">返回</i></div>
+        <div class="nv-op-pos-list" id="nvOpPosList"><div class="nv-op-pos-empty">暂无持仓</div></div>
+      </div>
     </div>
    </div>
 
 
- <button class="nv-binance-entry" id="nvBinanceEntry" type="button">⚙ 币安 API</button>
  <div class="nv-binance-setup" id="nvBinanceSetup" hidden>
   <div class="nv-bs-card">
-   <div class="nv-bs-h"><b>币安 API 配置</b><i id="nvBsClose">×</i></div>
+   <div class="nv-bs-h"><b>API 配置</b><i id="nvBsClose">×</i></div>
+      <div class="nv-bs-lockpage" id="nvBsLockPage">
+        <div class="nv-lp-k">API ACCESS</div>
+        <div class="nv-lp-title">API 权限未开通</div>
+        <div class="nv-lp-desc">需人工审核申请加入</div>
+        <div class="nv-lp-hint">开通后可填写 API Key 并启用自动下单</div>
+      </div>
    <div class="nv-bs-note">密钥只保存在本机加密文件，不会上传云端。</div>
    <label class="nv-bs-row"><span>API Key</span><input id="nvBsKey" type="text" autocomplete="off" spellcheck="false" placeholder="粘贴 API Key"></label>
    <label class="nv-bs-row"><span>Secret</span><input id="nvBsSecret" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴 Secret Key"></label>
