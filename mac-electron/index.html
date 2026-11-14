@@ -11635,7 +11635,7 @@ requestAnimationFrame(frame);
       const cands = [
         { w: oi15 / 5, text: 'OI 增长', color: '#63C08E' },
         { w: score / 90, text: '策略分高', color: '#E8A020' },
-        { w: chg / 50, text: '涨幅强', color: '#FF6B4A' },
+        { w: chg / 50, text: Number(a.chg || 0) >= 0 ? '涨幅强' : '跌幅大', color: Number(a.chg || 0) >= 0 ? '#63C08E' : '#FF6B4A' },
         { w: oi5 / 2, text: '短线动量', color: '#8AB4C9' }
       ];
       cands.sort((x, y) => y.w - x.w);
@@ -13303,7 +13303,11 @@ requestAnimationFrame(frame);
       if (r.includes('放量')) return { text: '放量', color: '#E8A020' };
       if (r.includes('大单')) return { text: '大单', color: '#FF6B4A' };
       if (r.includes('OI')) return { text: 'OI 增长', color: '#63C08E' };
-      if (r.includes('24H')) return { text: '涨幅强', color: '#8AB4C9' };
+      if (r.includes('24H')) {
+    const m = r.match(/24H\s*([+-]?\d+(?:\.\d+)?)/);
+    const v = m ? Number(m[1]) : 0;
+    return v >= 0 ? { text: '涨幅强', color: '#63C08E' } : { text: '跌幅大', color: '#FF6B4A' };
+  }
       return { text: '达标', color: '#8AB4C9' };
     };
     // 云端历史缓存（优先展示，保证多设备一致）
