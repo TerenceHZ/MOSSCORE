@@ -113,9 +113,9 @@ section::after{content:"";position:absolute;left:6vw;top:34px;width:12px;height:
 .c.br{right:16px;bottom:14px;border-left:0;border-top:0}
 
 /* ============ 首屏 ============ */
-.hero{position:relative;z-index:10;height:56vh;min-height:500px;display:grid;place-items:center;text-align:center;padding:0 4vw}
+.hero{position:relative;z-index:10;height:47vh;min-height:430px;display:grid;place-items:center;text-align:center;padding:0 4vw}
 .k{font:600 10px/1 var(--mono);letter-spacing:.6em;color:#a08c68;opacity:0;animation:fade .9s .2s forwards}
-h1{margin-top:16px;font:800 clamp(48px,8.4vw,132px)/.9 var(--mono);letter-spacing:-.035em}
+h1{margin-top:16px;font:800 clamp(44px,7.4vw,116px)/.9 var(--mono);letter-spacing:-.035em}
 h1 .l{display:inline-block;opacity:0;transform:translateY(40px);animation:up 1s cubic-bezier(.19,1,.22,1) forwards}
 h1 .l:nth-child(1){animation-delay:.3s}
 h1 .l:nth-child(2){animation-delay:.37s}
@@ -141,9 +141,11 @@ h1 .gold::after{color:#ff4d3d;mix-blend-mode:screen;opacity:.35;animation:split 
 /* ===== 首页内嵌：软件整体界面 ===== */
 .screen-sec{position:relative;z-index:10;padding:6px 4vw 90px}
 .screen-sec::before,.screen-sec::after{display:none!important}
-.screen-frame{position:relative;max-width:1180px;margin:0 auto;
-  border:1px solid rgba(232,160,32,.28);background:rgba(5,10,8,.78);
-  backdrop-filter:blur(10px);box-shadow:0 40px 120px rgba(0,0,0,.7),0 0 70px rgba(232,160,32,.10)}
+.screen-frame{position:relative;max-width:1320px;margin:0 auto;
+  border:1px solid rgba(232,160,32,.28);background:rgba(5,10,8,.82);
+  backdrop-filter:blur(12px);box-shadow:0 60px 140px rgba(0,0,0,.8),0 0 90px rgba(232,160,32,.12);
+  transform:perspective(2000px) rotateX(var(--tilt,10deg)) scale(.985);
+  transform-origin:50% 100%;will-change:transform;transition:transform .15s linear}
 .screen-frame::before,.screen-frame::after{content:"";position:absolute;width:26px;height:26px;border:1px solid rgba(232,160,32,.6)}
 .screen-frame::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
 .screen-frame::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
@@ -152,7 +154,7 @@ h1 .gold::after{color:#ff4d3d;mix-blend-mode:screen;opacity:.35;animation:split 
 .screen-bar b{color:var(--gold)}
 .screen-bar .r{margin-left:auto;color:#5d5343}
 .screen-body{display:grid;grid-template-columns:210px 1fr 220px;gap:1px;background:rgba(232,160,32,.10)}
-.sc-col{background:rgba(4,8,6,.86);padding:9px 11px;min-height:280px}
+.sc-col{background:rgba(4,8,6,.86);padding:9px 11px;min-height:240px}
 .sc-h{font:700 8px/1 var(--mono);letter-spacing:.24em;color:var(--gold);padding-bottom:8px;border-bottom:1px solid rgba(232,160,32,.12);margin-bottom:8px;display:flex;justify-content:space-between}
 .sc-h i{font-style:normal;color:#4e4638;font-weight:500}
 .sc-row{display:grid;grid-template-columns:1fr 46px 40px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.025)}
@@ -161,15 +163,15 @@ h1 .gold::after{color:#ff4d3d;mix-blend-mode:screen;opacity:.35;animation:split 
 .sc-empty{padding:16px 0;text-align:center;font:500 8px/1.8 var(--mono);letter-spacing:.18em;color:#7b6d58}
 .sc-mid{background:radial-gradient(circle at 50% 50%,rgba(232,160,32,.07),transparent 62%),rgba(3,6,5,.55);
   position:relative;display:grid;place-items:center;overflow:hidden}
-.sc-ring{position:relative;width:250px;height:250px}
+.sc-ring{position:relative;width:214px;height:214px}
 .sc-ring i{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;
   border:1px solid rgba(232,160,32,.3)}
-.sc-ring i.r1{width:240px;height:240px;border-style:dashed;border-color:rgba(232,160,32,.22);animation:spin 120s linear infinite}
-.sc-ring i.r2{width:180px;height:180px;border-color:rgba(99,192,142,.18);animation:spin 80s linear infinite reverse}
-.sc-ring i.r3{width:122px;height:122px;border-color:rgba(232,160,32,.14);animation:spin 60s linear infinite}
+.sc-ring i.r1{width:206px;height:206px;border-style:dashed;border-color:rgba(232,160,32,.22);animation:spin 120s linear infinite}
+.sc-ring i.r2{width:154px;height:154px;border-color:rgba(99,192,142,.18);animation:spin 80s linear infinite reverse}
+.sc-ring i.r3{width:104px;height:104px;border-color:rgba(232,160,32,.14);animation:spin 60s linear infinite}
 .sc-ring .node{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;
   background:rgba(232,160,32,.75);box-shadow:0 0 10px rgba(232,160,32,.5);
-  transform:rotate(var(--a)) translateX(92px) rotate(calc(-1 * var(--a)))}
+  transform:rotate(var(--a)) translateX(78px) rotate(calc(-1 * var(--a)))}
 .sc-mid .state{position:relative;z-index:2;text-align:center}
 .sc-mid .state b{display:block;font:800 18px/1 var(--mono);letter-spacing:.18em;color:#7b6d58}
 .sc-mid .state span{display:block;margin-top:10px;font:500 8px/1.7 var(--cjk);letter-spacing:.24em;color:#7b6d58}
@@ -178,6 +180,10 @@ h1 .gold::after{color:#ff4d3d;mix-blend-mode:screen;opacity:.35;animation:split 
 .sc-bottom div{background:rgba(3,6,5,.8);padding:9px 12px}
 .sc-bottom .k{font:500 7px/1 var(--mono);letter-spacing:.22em;color:#6a5e4a}
 .sc-bottom .v{margin-top:6px;font:800 13px/1 var(--mono);color:#7b6d58}
+.screen-reflect{max-width:1320px;margin:-6px auto 0;height:110px;
+  background:linear-gradient(to bottom,rgba(232,160,32,.10),transparent 72%);
+  mask-image:linear-gradient(to bottom,#000,transparent);-webkit-mask-image:linear-gradient(to bottom,#000,transparent);
+  filter:blur(6px);opacity:.55}
 .screen-cap{margin:16px auto 0;max-width:1180px;text-align:center;font:500 9px/1.9 var(--mono);
   letter-spacing:.24em;color:#4e4638}
 @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
@@ -368,6 +374,7 @@ footer b{color:var(--gold)}
       <div><div class="k">策略分</div><div class="v">——</div></div>
     </div>
   </div>
+  <div class="screen-reflect"></div>
   <div class="screen-cap">软件主界面 · 数据为空，仅展示布局</div>
 </section>
 <div class="rule"></div>
@@ -594,8 +601,8 @@ footer b{color:var(--gold)}
   const tag=document.getElementById('reticleTag');
   const targets=[...document.querySelectorAll('h1,h2,.card,.trace,.dl-card,.stat,.btn,.sec-head')];
   targets.forEach(el=>el.classList.add('lockable'));
-  let px=innerWidth/2, py=innerHeight/2, cx=px, cy=py, w=0, h=0, tw=0, th=0, locked=null;
-  addEventListener('pointermove',e=>{px=e.clientX;py=e.clientY;},{passive:true});
+  let px=innerWidth/2, py=innerHeight/2, cx=px, cy=py, w=0, h=0, tw=0, th=0, locked=null, moved=false;
+  addEventListener('pointermove',e=>{px=e.clientX;py=e.clientY;moved=true;},{passive:true});
   function pick(x,y){
     let best=null,bestD=1e9;
     for(const el of targets){
@@ -618,6 +625,7 @@ footer b{color:var(--gold)}
     return 'MODULE';
   }
   function loop(){
+    if(!moved){ ret.style.opacity='0'; requestAnimationFrame(loop); return; }
     const tg=pick(px,py);
     if(tg){
       const r=tg.getBoundingClientRect();
@@ -706,6 +714,22 @@ footer b{color:var(--gold)}
   })();
 })();
 
+/* 内嵌屏幕：滚动时从倾斜扶正 */
+(function(){
+  const el=document.querySelector('.screen-frame'); if(!el) return;
+  let cur=10;
+  function tick(){
+    const r=el.getBoundingClientRect();
+    const vh=innerHeight;
+    // 进入视口下沿 → 9deg，移到中间 → 0deg
+    const p=Math.max(0,Math.min(1,(vh - r.top)/(vh*0.9)));
+    const target=12 - p*12;
+    cur += (target-cur)*0.12;
+    el.style.setProperty('--tilt', cur.toFixed(2)+'deg');
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
 /* 时钟 */
 (function(){const el=document.getElementById('clock');const p=n=>String(n).padStart(2,'0');
   const tick=()=>{const d=new Date();el.textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} CST`;};
