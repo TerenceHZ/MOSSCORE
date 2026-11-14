@@ -1033,10 +1033,6 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-card-signal #nvCardSigTp{color:#63C08E}
 .nv-card-signal #nvCardSigSl{color:#C96358}
 .nv-trade-info{position:absolute;left:13px;right:13px;bottom:14px;font:500 8px/1 var(--mono);color:#6f5f48;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
-    .nv-lock-badge{position:absolute;right:12px;top:10px;font:600 8px/1 var(--mono);letter-spacing:.12em;padding:4px 7px;border:1px solid rgba(232,160,32,.45);color:#e8a020;background:rgba(232,160,32,.07);display:none}
-    .nv-lock-badge.show{display:block}
-    .nv-lock-badge.preview{border-color:rgba(255,192,67,.6);color:#ffc043}
-    .nv-lock-badge.ok{display:none}
     .nv-bs-lock{display:none;margin:10px 0 6px;padding:9px 11px;border:1px solid rgba(232,160,32,.35);background:rgba(232,160,32,.06);color:#ffc043;font:600 10px/1.6 var(--mono);letter-spacing:.05em}
     .nv-bs-lock.show{display:block}
     .nv-binance-setup.locked .nv-bs-row input{opacity:.45;cursor:not-allowed}
@@ -1531,7 +1527,6 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
      <span>止损建议：<i id="nvCardSigSl">—</i></span>
     </span>
     <span class="nv-trade-info" id="nvTradeInfo" title="点击配置币安 API">币安未连接 · 点击配置</span>
-      <span class="nv-lock-badge" id="nvTradeBadge">鏈紑閫?/span>
     <i class="nv-sigcard-progress" aria-hidden="true"></i>
     <i class="nv-hotbg" aria-hidden="true"></i><i class="nv-flow" aria-hidden="true"></i><i class="nv-flash" aria-hidden="true"></i>
    </button>
@@ -11848,7 +11843,6 @@ requestAnimationFrame(frame);
 
     const applyEntitlement = () => {
       const q = (sel) => (sr && sr.querySelector(sel)) || document.querySelector(sel);
-      const badge = q("#nvTradeBadge");
       const setup = q("#nvBinanceSetup");
       const lockBox = q("#nvBsLock");
       const info = q("#nvTradeInfo");
@@ -11859,9 +11853,6 @@ requestAnimationFrame(frame);
       const st = TRADE_INFO.entitled ? "ok" : (TRADE_INFO.preview ? "preview" : "locked");
       window.__MOSS_TRADE_STATE = st;
       if (badge) {
-        badge.classList.toggle("show", st !== "ok");
-        badge.classList.toggle("preview", st === "preview");
-        badge.textContent = st === "preview" ? "演示" : "未开通";
       }
       if (setup) setup.classList.toggle("locked", st !== "ok");
       const note = q(".nv-bs-note");
@@ -11871,7 +11862,6 @@ requestAnimationFrame(frame);
       }
       const disabled = st !== "ok";
       [keyIn, secIn, testBtn, saveBtn].forEach(el => { if (el) el.disabled = disabled; });
-      if (info && st !== "ok") info.textContent = st === "preview" ? "演示模式 · 未开通" : "未开通 · 点击查看";
     };
 
     try { applyEntitlement(); } catch (e) {}
@@ -12197,16 +12187,25 @@ requestAnimationFrame(frame);
           const ar = anchor.getBoundingClientRect();
           const gap = 14;
           const pw = pop.offsetWidth, ph = pop.offsetHeight;
-          let left = Math.round(ar.right + gap);
-          let top = Math.round(ar.bottom - ph);
-          if (left + pw > window.innerWidth - 16) {
-            left = Math.round(ar.left);
+          // 用同一个 offsetParent 的坐标来摆，避免 fixed 在变换容器里失效
+          let left, top;
+          if (pop.offsetParent && pop.offsetParent === anchor.offsetParent) {
+            left = anchor.offsetLeft;
+            top = anchor.offsetTop - ph - 10;
+            if (top < 8) top = anchor.offsetTop + anchor.offsetHeight + 10;
+          } else {
+            const vv = window.visualViewport;
+            const vw = vv ? vv.width : window.innerWidth;
+            const vh = vv ? vv.height : window.innerHeight;
+            left = Math.round(ar.right + gap);
             top = Math.round(ar.bottom - ph);
+            if (left + pw > vw - 16) left = Math.round(ar.left);
+            if (top + ph > vh - 16) top = Math.round(ar.top - ph - 10);
+            if (top < 16) top = 16;
+            left = Math.max(8, Math.min(left, vw - pw - 8));
           }
-          top = Math.max(16, Math.min(top, window.innerHeight - ph - 16));
-          left = Math.max(16, left);
-          pop.style.left = left + 'px';
-          pop.style.top = top + 'px';
+          pop.style.left = left + "px";
+          pop.style.top = top + "px";
         };
         place();
         requestAnimationFrame(place);
@@ -13789,41 +13788,33 @@ requestAnimationFrame(frame);
       overflow:hidden;
     }
     .nv-order-pop.short{border-color:rgba(201,99,88,.55)!important;box-shadow:0 16px 48px rgba(0,0,0,.45),inset 0 0 30px rgba(201,99,88,.06)!important}
-    .nv-op-glow{position:absolute;pointer-events:none;z-index:0}
-    .nv-op-glow.t,.nv-op-glow.b{left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(160,255,215,.95),transparent);background-size:36% 100%;background-repeat:no-repeat}
-    .nv-op-glow.t{top:0;animation:nvRunT 4s linear infinite}
-    .nv-op-glow.b{bottom:0;animation:nvRunB 4s linear infinite}
-    .nv-op-glow.l,.nv-op-glow.r{top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,rgba(160,255,215,.95),transparent);background-size:100% 36%;background-repeat:no-repeat}
-    .nv-op-glow.l{left:0;animation:nvRunL 4s linear infinite}
-    .nv-op-glow.r{right:0;animation:nvRunR 4s linear infinite}
-    @keyframes nvRunT{0%{background-position:-40% 0}100%{background-position:140% 0}}
-    @keyframes nvRunB{0%{background-position:140% 0}100%{background-position:-40% 0}}
-    @keyframes nvRunL{0%{background-position:0 140%}100%{background-position:0 -40%}}
-    @keyframes nvRunR{0%{background-position:0 -40%}100%{background-position:0 140%}}
     .nv-order-pop::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
       background:linear-gradient(115deg,transparent 34%,rgba(160,255,215,.07) 46%,rgba(160,255,215,.13) 50%,rgba(160,255,215,.07) 54%,transparent 66%);
       transform:translateX(-120%);animation:nvSweep 5.6s ease-in-out infinite}
     @keyframes nvSweep{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
+    .nv-op-count{display:inline-flex;align-items:center;gap:8px;margin-left:auto;padding:5px 10px;border:1px solid rgba(232,160,32,.45);background:rgba(232,160,32,.06)}
+    .nv-op-count>em{font:600 8.5px/1 var(--cjk);letter-spacing:.2em;color:#8a7a5e;font-style:normal}
+    .nv-op-count>b{font:700 15px/1 var(--mono);color:#e8a020;letter-spacing:.06em}
     .nv-op-r1{display:flex;align-items:center;gap:7px;position:relative;z-index:1}
-    .nv-op-r1>b{font:700 21px/1 Consolas,monospace;color:#f2f0e8}
-    .nv-op-side{padding:2px 7px;border:1px solid rgba(99,192,142,.5);background:rgba(99,192,142,.08);font:700 11.5px/1.35 "Microsoft YaHei",sans-serif;color:#8fd8b4;letter-spacing:.12em}
+    .nv-op-r1>b{font:700 21px/1 var(--mono);color:#f2f0e8}
+    .nv-op-side{padding:2px 7px;border:1px solid rgba(99,192,142,.5);background:rgba(99,192,142,.08);font:700 11.5px/1.35 var(--cjk);color:#8fd8b4;letter-spacing:.12em}
     .nv-order-pop.short .nv-op-side{border-color:rgba(201,99,88,.5);background:rgba(201,99,88,.08);color:#e0a49a}
-    .nv-op-count{margin-left:auto;font:600 12px/1 Consolas,monospace;color:#e8a020;letter-spacing:.1em}
+    .nv-op-count{margin-left:auto;font:600 12px/1 var(--mono);color:#e8a020;letter-spacing:.1em}
     .nv-op-r2,.nv-op-r3,.nv-op-r4{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;position:relative;z-index:1}
     .nv-op-cell{min-width:0}
-    .nv-op-cell>span{display:block;font:600 11px/1 "Microsoft YaHei",sans-serif;color:#a08c68;letter-spacing:.12em}
-    .nv-op-cell>b{display:block;margin-top:7px;font:600 17px/1 Consolas,monospace;color:#f0e2bf}
-    .nv-op-cell>em{display:block;margin-top:5px;font:500 10px/1 "Microsoft YaHei",sans-serif;color:#8a7a5e;font-style:normal;letter-spacing:.04em}
+    .nv-op-cell>span{display:block;font:600 11px/1 var(--cjk);color:#a08c68;letter-spacing:.12em}
+    .nv-op-cell>b{display:block;margin-top:7px;font:600 17px/1 var(--mono);color:#f0e2bf}
+    .nv-op-cell>em{display:block;margin-top:5px;font:500 10px/1 var(--cjk);color:#8a7a5e;font-style:normal;letter-spacing:.04em}
     .nv-op-r2 .win>b{color:#63C08E;text-shadow:0 0 12px rgba(99,192,142,.35)}
     .nv-op-r2 .risk>b{color:#e8a020}
     .nv-op-r4 .tp>b{color:#63C08E}
     .nv-op-r4 .sl>b{color:#C96358}
     .nv-op-r5{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
-    .nv-op-r5>span{font:600 11px/1 "Microsoft YaHei",sans-serif;color:#a08c68;letter-spacing:.12em}
+    .nv-op-r5>span{font:600 11px/1 var(--cjk);color:#a08c68;letter-spacing:.12em}
     .nv-op-r6{display:flex;gap:7px;margin-top:10px;position:relative;z-index:1}
-    .nv-op-r6>.nv-op-ok{flex:1;padding:11px 0;border:1px solid rgba(99,192,142,.6)!important;background:linear-gradient(180deg,rgba(99,192,142,.26),rgba(99,192,142,.10))!important;color:#b6f2d5!important;font:600 12.5px/1 "Microsoft YaHei",sans-serif!important;letter-spacing:.1em;cursor:pointer;position:relative;overflow:hidden;text-shadow:0 0 10px rgba(99,192,142,.45)}
+    .nv-op-r6>.nv-op-ok{flex:1;padding:11px 0;border:1px solid rgba(99,192,142,.6)!important;background:linear-gradient(180deg,rgba(99,192,142,.26),rgba(99,192,142,.10))!important;color:#b6f2d5!important;font:600 12.5px/1 var(--cjk)!important;letter-spacing:.1em;cursor:pointer;position:relative;overflow:hidden;text-shadow:0 0 10px rgba(99,192,142,.45)}
     .nv-op-r6>.nv-op-ok:disabled{border-color:rgba(99,192,142,.32)!important;background:linear-gradient(180deg,rgba(99,192,142,.10),rgba(99,192,142,.04))!important;color:#6f8f80!important;text-shadow:none;cursor:default}
-    .nv-op-r6>.nv-op-pos{flex:0 0 auto;margin:0!important;padding:0 12px;border:1px solid rgba(99,192,142,.32);background:transparent;color:#8fd8b4;font:600 11px/1 "Microsoft YaHei",sans-serif;letter-spacing:.06em;cursor:pointer}
+    .nv-op-r6>.nv-op-pos{flex:0 0 auto;margin:0!important;padding:0 12px;border:1px solid rgba(99,192,142,.32);background:transparent;color:#8fd8b4;font:600 11px/1 var(--cjk);letter-spacing:.06em;cursor:pointer}
     .nv-op-r1,.nv-op-r2,.nv-op-r3,.nv-op-r4,.nv-op-r5,.nv-op-r6{margin-top:11px;padding-top:11px;border-top:1px solid rgba(99,192,142,.16)}
     .nv-op-r1{margin-top:0;padding-top:0;border-top:none}
     .nv-op-legacy{display:none!important}
@@ -13860,11 +13851,10 @@ requestAnimationFrame(frame);
 </script>
 
     <div class="nv-order-pop" id="nvOrderPop" hidden>
-      <span class="nv-op-glow t"></span><span class="nv-op-glow b"></span><span class="nv-op-glow l"></span><span class="nv-op-glow r"></span>
       <div class="nv-op-r1">
         <b id="nvOpSym">—</b>
         <span class="nv-op-side" id="nvOpSide">—</span>
-        <span class="nv-op-count" id="nvOpCount">--:--</span>
+        <span class="nv-op-count"><em>AUTO CLOSE</em><b id="nvOpCount">--:--</b></span>
         <i class="nv-op-x" data-nv-op-close>×</i>
       </div>
       <div class="nv-op-r2">
@@ -13898,7 +13888,6 @@ requestAnimationFrame(frame);
    </div>
 
 
- <button class="nv-binance-entry" id="nvBinanceEntry" type="button">⚙ 币安 API</button>
  <div class="nv-binance-setup" id="nvBinanceSetup" hidden>
   <div class="nv-bs-card">
    <div class="nv-bs-h"><b>API 配置</b><i id="nvBsClose">×</i></div>
