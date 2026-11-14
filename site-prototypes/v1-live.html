@@ -499,10 +499,7 @@ footer b{color:var(--gold)}
 (function(){
   const ring = document.getElementById('ringWrap');
   let tx = 0, ty = 0, cx = 0, cy = 0;
-  addEventListener('pointermove', e => {
-    tx = (e.clientX / innerWidth - .5) * 26;
-    ty = (e.clientY / innerHeight - .5) * 26;
-  });
+  // 不跟随鼠标：保持固定
   (function loop(){
     cx += (tx - cx) * .05; cy += (ty - cy) * .05;
     ring.style.transform = `translate(calc(-50% + ${cx}px), calc(-50% + ${cy}px))`;
