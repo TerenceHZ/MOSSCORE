@@ -59,3 +59,4 @@ mac-electron/dist/
 .publish4/
 .publish5/
 mac-electron/pnpm-lock.yaml
+_web/

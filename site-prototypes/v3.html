@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>MOSS CORE · V3 数据风暴</title>
+<style>
+:root{--gold:#e8a020;--gold2:#ffc043;--green:#63C08E;--ink:#eef0e8;--dim:#6b5f4a;
+--mono:"JetBrains Mono",Consolas,monospace;--cjk:"Noto Sans SC","Microsoft YaHei",sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#020404;color:var(--ink);font-family:var(--cjk);height:100vh;overflow:hidden}
+#rain{position:fixed;inset:0;z-index:0;opacity:.85}
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,rgba(2,4,4,.15),rgba(2,4,4,.92) 72%)}
+.scan{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.55;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.04) 0 1px,transparent 1px 3px)}
+.sweep{position:fixed;left:0;right:0;height:220px;z-index:61;pointer-events:none;
+  background:linear-gradient(to bottom,transparent,rgba(232,160,32,.1) 48%,rgba(255,220,150,.16) 50%,rgba(232,160,32,.1) 52%,transparent);
+  animation:sweep 6.5s linear infinite}
+@keyframes sweep{0%{top:-240px}100%{top:100%}}
+.stage{position:relative;z-index:10;height:100vh;display:flex;flex-direction:column;justify-content:center;padding:0 7vw}
+.kicker{display:flex;align-items:center;gap:16px;font:600 10px/1 var(--mono);letter-spacing:.55em;color:var(--gold)}
+.kicker::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(232,160,32,.6),transparent)}
+h1{position:relative;margin:26px 0 0;font:800 clamp(70px,13.5vw,230px)/.84 var(--mono);letter-spacing:-.04em}
+h1 .row{display:block;overflow:hidden}
+h1 .row span{display:inline-block;transform:translateY(110%);animation:rise 1s cubic-bezier(.19,1,.22,1) forwards}
+h1 .row:nth-child(1) span{animation-delay:.15s}
+h1 .row:nth-child(2) span{animation-delay:.33s}
+@keyframes rise{to{transform:none}}
+h1 .out{color:transparent;-webkit-text-stroke:1px rgba(232,160,32,.65)}
+h1 .gold{color:var(--gold);text-shadow:0 0 80px rgba(232,160,32,.45)}
+h1 .cursor{display:inline-block;width:.09em;height:.78em;background:var(--gold);margin-left:.06em;
+  animation:blink 1.05s steps(1) infinite;vertical-align:-.02em}
+@keyframes blink{50%{opacity:0}}
+.lede{margin-top:30px;max-width:640px;font:400 13.5px/2 var(--cjk);letter-spacing:.22em;color:#b6a888}
+.lede b{color:var(--gold2)}
+.cta{margin-top:40px;display:flex;gap:14px;flex-wrap:wrap}
+.btn{padding:15px 30px;border:1px solid rgba(232,160,32,.55);background:rgba(232,160,32,.05);
+  font:600 11px/1 var(--mono);letter-spacing:.26em;color:var(--gold2);cursor:pointer;transition:.25s;position:relative;overflow:hidden}
+.btn:hover{background:rgba(232,160,32,.16);box-shadow:0 0 34px rgba(232,160,32,.3)}
+.btn.g{border-color:rgba(99,192,142,.5);color:#a9eccb;background:rgba(99,192,142,.05)}
+.btn.g:hover{background:rgba(99,192,142,.14);box-shadow:0 0 34px rgba(99,192,142,.28)}
+.side{position:fixed;right:3vw;top:50%;transform:translateY(-50%);z-index:20;text-align:right;
+  font:500 9.5px/2.2 var(--mono);letter-spacing:.2em;color:#5e5342}
+.side b{color:var(--gold);display:block;font-size:15px;letter-spacing:.1em}
+.side .bar{height:1px;background:linear-gradient(90deg,transparent,rgba(232,160,32,.6));margin:8px 0 14px}
+.hud{position:fixed;left:3vw;bottom:3vh;z-index:20;font:500 9.5px/1.9 var(--mono);letter-spacing:.24em;color:#5e5342}
+.hud b{color:var(--green)}
+</style><style id="noanimcss">
+.noanim *{animation:none!important}
+.noanim h1 .row span,.noanim h1 .w,.noanim .k,.noanim .sub,.noanim .meta,.noanim .cta,.noanim .lede,.noanim .tag{opacity:1!important;transform:none!important}
+</style></head>
+<body>
+<canvas id="rain"></canvas>
+<div class="veil"></div>
+<div class="sweep"></div>
+<div class="scan"></div>
+
+<div class="stage">
+  <div class="kicker">CONTRACT ANOMALY TERMINAL</div>
+  <h1>
+    <span class="row"><span>MOSS</span></span>
+    <span class="row"><span class="gold">CORE</span><span class="cursor"></span></span>
+  </h1>
+  <p class="lede">13 个智能体在星环上接力研判 · 8 条监控单元同时扫描<br>从数据噪声里，替你锁定<b>那一次值得下手的异动</b></p>
+  <div class="cta">
+    <a class="btn" href="downloads/MOSS-CORE-Desktop-v1.0.49-20261114.zip" download>DOWNLOAD WINDOWS</a>
+    <a class="btn g" href="downloads/MOSS-CORE-mac-arm64-v1.0.49.zip" download>macOS</a>
+  </div>
+</div>
+
+<div class="side">
+  <b>517</b>SYMBOLS
+  <div class="bar"></div>
+  <b>13</b>AGENTS
+  <div class="bar"></div>
+  <b>60s</b>POLL
+  <div class="bar"></div>
+  <b>&lt;200ms</b>LATENCY
+</div>
+<div class="hud">UPLINK <b>STABLE</b> · UNITS 08/08 · BUILD 1.0.49</div>
+
+<script>
+(function(){
+  const cv=document.getElementById('rain'),ctx=cv.getContext('2d');
+  let W,H,DPR,cols=[],font=16;
+  const CH="01ABCDEF◇◆▚▞│─╱╲◢◣SIGNALPROOFOIRISKVOLUMEFUNDLIQCASTMOSSLSR".split("");
+  function resize(){
+    DPR=Math.min(devicePixelRatio||1,2);
+    W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;
+    cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';
+    font=16*DPR;
+    const n=Math.floor(W/font);
+    cols=Array.from({length:n},(_,i)=>({y:Math.random()*H,sp:(Math.random()*1.4+.4)*DPR*font*0.06,a:Math.random()*.6+.2}));
+  }
+  resize();addEventListener('resize',resize);
+  function frame(){
+    ctx.fillStyle='rgba(2,4,4,.16)';ctx.fillRect(0,0,W,H);
+    ctx.font=`600 ${font}px "JetBrains Mono",monospace`;
+    for(let i=0;i<cols.length;i++){
+      const c=cols[i];
+      const ch=CH[(Math.random()*CH.length)|0];
+      const x=i*font, y=c.y;
+      const gold=(i%7===0);
+      ctx.fillStyle=gold?`rgba(232,160,32,${c.a})`:`rgba(99,192,142,${c.a*0.55})`;
+      ctx.fillText(ch,x,y);
+      if(y>H+font && Math.random()>0.975) c.y=0;
+      c.y+=c.sp*font*1.1;
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+<script>if(location.search.includes('static'))document.documentElement.classList.add('noanim');</script></body></html>
