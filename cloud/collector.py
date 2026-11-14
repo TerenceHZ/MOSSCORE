@@ -166,6 +166,10 @@ async function toggleCode(id, revoked){
   const r=await api('/admin/api/toggle',{id,enabled});
   alert(r.ok?(enabled?'已启用':'已停用'):'操作失败');loadList();
 }
+async function setFeature(id,feature,enabled){
+  const r=await api('/admin/api/feature',{id,feature,enabled});
+  if(!r.ok)alert('操作失败');loadList();
+}
 async function deleteCode(id){
   if(!confirm('确定永久删除这个邀请码？\\n绑定设备会立即失效，且无法恢复。'))return;
   const r=await api('/admin/api/delete',{id});
@@ -215,6 +219,12 @@ async function loadList(){
     const btn=document.createElement('button');btn.className='copy';btn.textContent='复制';btn.disabled=!full;
     if(full)btn.addEventListener('click',()=>copyText(full,btn));
     op.appendChild(btn);
+const feat=document.createElement('button');
+const featOn=!!(c.features&&c.features.trade);
+feat.className='copy'+(featOn?' toggle':'');
+feat.textContent='自动下单:'+(featOn?'开':'关');
+feat.addEventListener('click',()=>setFeature(c.id,'trade',!featOn));
+op.appendChild(feat);
     const toggle=document.createElement('button');toggle.className='copy toggle';toggle.textContent=c.revoked?'启用':'停用';
     toggle.addEventListener('click',()=>toggleCode(c.id,!!c.revoked));
     op.appendChild(toggle);
@@ -613,6 +623,16 @@ class Handler(BaseHTTPRequestHandler):
                 ok = license_core.set_code_status(code_id, bool(data.get("enabled")))
                 self.send_json({"ok": ok})
                 return
+            if path == "/admin/api/feature":
+                try:
+                    code_id = int(data.get("id"))
+                except (TypeError, ValueError):
+                    self.send_json({"ok": False, "error": "invalid_id"}, 400)
+                    return
+                feature = str(data.get("feature") or "trade")
+                ok = license_core.set_code_feature(code_id, feature, bool(data.get("enabled")))
+                self.send_json({"ok": ok})
+                return
             if path == "/admin/api/delete":
                 try:
                     code_id = int(data.get("id"))
@@ -660,7 +680,9 @@ class Handler(BaseHTTPRequestHandler):
             if row is None:
                 self.send_json({"ok": False, "error": "invalid_license"}, 401)
             else:
-                self.send_json({"ok": True, "expires_at": row["code_expires_at"], "device_id": row["device_id"]})
+                self.send_json({"ok": True, "expires_at": row["code_expires_at"],
+                                "device_id": row["device_id"],
+                                "features": license_core.feature_of(row)})
             return
         if path == "/license/release":
             key = str(data.get("license", "")).strip()

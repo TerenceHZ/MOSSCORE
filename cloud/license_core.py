@@ -5,6 +5,7 @@ The public client only receives opaque device license keys. Invite codes and
 license keys are stored as SHA-256 hashes in SQLite.
 """
 import hashlib
+import json
 import secrets
 import shutil
 import sqlite3
@@ -84,6 +85,8 @@ def init():
         cols = {row["name"] for row in db.execute("PRAGMA table_info(codes)").fetchall()}
         if "code_plain" not in cols:
             db.execute("ALTER TABLE codes ADD COLUMN code_plain TEXT")
+        if "features" not in cols:
+            db.execute("ALTER TABLE codes ADD COLUMN features TEXT DEFAULT '{}'")
 
 
 def create_code(max_devices=1, days=365):
@@ -153,7 +156,7 @@ def validate_license(license_key):
     init()
     with connect() as db:
         row = db.execute(
-            "SELECT d.*, c.revoked code_revoked, c.expires_at code_expires_at "
+            "SELECT d.*, c.revoked code_revoked, c.expires_at code_expires_at, c.features code_features "
             "FROM devices d JOIN codes c ON c.id=d.code_id WHERE d.license_hash=?",
             (digest(license_key),),
         ).fetchone()
@@ -163,6 +166,37 @@ def validate_license(license_key):
             return None
         db.execute("UPDATE devices SET last_seen=? WHERE id=?", (iso(now()), row["id"]))
         return row
+
+
+def set_code_feature(code_id, feature, enabled):
+    """给某个邀请码开关一个功能（feature 如 'trade'）。"""
+    init()
+    backup()
+    with connect() as db:
+        row = db.execute("SELECT features FROM codes WHERE id=?", (int(code_id),)).fetchone()
+        if not row:
+            return False
+        try:
+            feats = json.loads(row["features"] or "{}")
+        except Exception:
+            feats = {}
+        if not isinstance(feats, dict):
+            feats = {}
+        if enabled:
+            feats[feature] = True
+        else:
+            feats.pop(feature, None)
+        db.execute("UPDATE codes SET features=? WHERE id=?", (json.dumps(feats), int(code_id)))
+        return True
+
+
+def feature_of(row):
+    """从 validate_license 返回的行里取出功能字典。"""
+    try:
+        feats = json.loads(row["code_features"] or "{}") if "code_features" in row.keys() else {}
+    except Exception:
+        feats = {}
+    return feats if isinstance(feats, dict) else {}
 
 
 def release(license_key):
@@ -269,7 +303,7 @@ def list_codes():
     init()
     with connect() as db:
         return [dict(r) for r in db.execute(
-            "SELECT c.id,c.code_hint,c.code_plain,c.max_devices,c.expires_at,c.revoked,c.created_at,"
+            "SELECT c.id,c.code_hint,c.code_plain,c.max_devices,c.expires_at,c.revoked,c.created_at,c.features,"
             "(SELECT COUNT(*) FROM devices d WHERE d.code_id=c.id AND d.revoked=0) active_devices "
             "FROM codes c ORDER BY c.id DESC"
         ).fetchall()]

@@ -49,3 +49,6 @@ _work/panel.log
 _work/panel-out.log
 _work/panel-err.log
 
+# 本地构建/调试产物
+.publish2/
+_backup/

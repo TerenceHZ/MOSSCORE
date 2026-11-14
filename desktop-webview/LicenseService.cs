@@ -19,7 +19,22 @@ internal static class LicenseService
         "MossCore", "license.dat");
 
     public static string? LicenseKey { get; private set; }
+    public static bool TradeEnabled { get; private set; }
     public static string DeviceId { get; } = BuildDeviceId();
+
+    private static void ApplyFeatures(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("features", out var feats) && feats.ValueKind == JsonValueKind.Object)
+            {
+                var on = feats.TryGetProperty("trade", out var t) && t.ValueKind == JsonValueKind.True;
+                TradeEnabled = on;
+            }
+        }
+        catch { }
+    }
 
     private sealed class StoredLicense
     {
@@ -142,10 +157,15 @@ internal static class LicenseService
         {
             var url = BaseUrl() + "/license/validate";
             using var resp = await Http.PostAsJsonAsync(url, new { license = LicenseKey, device_id = DeviceId });
-            if (resp.IsSuccessStatusCode) return (true, "");
+            if (resp.IsSuccessStatusCode)
+            {
+                ApplyFeatures(await resp.Content.ReadAsStringAsync());
+                return (true, "");
+            }
             if (resp.StatusCode == HttpStatusCode.Unauthorized)
             {
                 Clear();
+                TradeEnabled = false;
                 return (false, "许可证已失效，需要重新激活。");
             }
             return (false, $"许可证验证失败：HTTP {(int)resp.StatusCode}");

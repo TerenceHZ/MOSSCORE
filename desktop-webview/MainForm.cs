@@ -304,6 +304,7 @@ internal sealed class MainForm : Form
             {
                 await SendActivationState(false, "");
                 StartLiveBridge();
+                StartEntitlementRefresh();
             }
             else
             {
@@ -370,6 +371,11 @@ internal sealed class MainForm : Form
 
     private async Task HandleTradeConfigAsync(JsonElement root)
     {
+        if (!LicenseService.TradeEnabled)
+        {
+            PostToWeb(new { type = "config", ok = false, message = "未授权：自动下单功能未开通", entitled = false, preview = false });
+            return;
+        }
         try
         {
             var action = root.TryGetProperty("action", out var a) ? a.GetString() : "";
@@ -379,7 +385,7 @@ internal sealed class MainForm : Form
                 var auto = mode == "auto";
                 TradeConfig.Current.AutoTrade = auto;
                 TradeConfig.Save();
-                PostToWeb(new { type = "config", ok = true, message = auto ? "已切换为自动下单" : "已切换为手动下单", autoTrade = auto, configured = BinanceTradeService.Configured });
+                PostToWeb(new { type = "config", ok = true, message = auto ? "已切换为自动下单" : "已切换为手动下单", autoTrade = auto, entitled = LicenseService.TradeEnabled, preview = false, configured = BinanceTradeService.Configured });
                 return;
             }
             if (action == "test")
@@ -406,7 +412,7 @@ internal sealed class MainForm : Form
                 TradeConfig.Save();
                 var bal2 = await BinanceTradeService.GetBalancesAsync();
                 if (bal2.Ok) TradeConfig.EnsureBaseline(bal2.FuturesEquity);
-                PostToWeb(new { type = "config", ok = true, message = "密钥已加密保存到本机", configured = BinanceTradeService.Configured, equity = bal2.FuturesEquity });
+                PostToWeb(new { type = "config", ok = true, message = "密钥已加密保存到本机", entitled = LicenseService.TradeEnabled, preview = false, configured = BinanceTradeService.Configured, equity = bal2.FuturesEquity });
                 return;
             }
             if (action == "status")
@@ -417,6 +423,8 @@ internal sealed class MainForm : Form
                 PostToWeb(new
                 {
                     type = "account",
+                    entitled = LicenseService.TradeEnabled,
+                    preview = false,
                     ok = bal.Ok,
                     message = bal.Message,
                     equity = bal.FuturesEquity,
@@ -445,6 +453,11 @@ internal sealed class MainForm : Form
 
     private async Task HandleTradeAsync(JsonElement root)
     {
+        if (!LicenseService.TradeEnabled)
+        {
+            PostToWeb(new { type = "order", ok = false, message = "未授权：自动下单功能未开通" });
+            return;
+        }
         try
         {
             var action = root.TryGetProperty("action", out var a) ? a.GetString() : "";
@@ -538,6 +551,32 @@ internal sealed class MainForm : Form
         {
             _gateBusy = false;
         }
+    }
+
+    private System.Windows.Forms.Timer? _entTimer;
+
+    // 每 5 分钟向服务端确认一次功能授权（自动下单等），断了就降级
+    private void StartEntitlementRefresh()
+    {
+        if (_entTimer != null) return;
+        _entTimer = new System.Windows.Forms.Timer { Interval = 5 * 60 * 1000 };
+        _entTimer.Tick += async (_, _) =>
+        {
+            try
+            {
+                await LicenseService.ValidateAsync();
+                PostToWeb(new
+                {
+                    type = "config",
+                    entitled = LicenseService.TradeEnabled,
+                    preview = false,
+                    configured = BinanceTradeService.Configured,
+                    autoTrade = TradeConfig.Current.AutoTrade
+                });
+            }
+            catch { }
+        };
+        _entTimer.Start();
     }
 
     private void StartLiveBridge()
