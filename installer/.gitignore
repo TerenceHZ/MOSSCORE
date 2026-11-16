@@ -1,0 +1,4 @@
+﻿MOSS-CORE-Setup-*.exe
+dist/
+*.log
+ui.png
