@@ -7,9 +7,15 @@
   python check_architecture.py
 """
 
+import io
 import re
 import sys
 from pathlib import Path
+
+try:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 ROOT = Path(__file__).resolve().parent.parent
 INDEX = ROOT / "desktop-webview" / "index.html"
@@ -126,11 +132,11 @@ def main():
         for line in errors:
             print(line)
         print()
-        print(f"❌ 失败 {len(errors)} 项，通过 {len(passed)} 项")
+        print(f"[FAIL] 失败 {len(errors)} 项，通过 {len(passed)} 项")
         return 1
     else:
         print()
-        print(f"✅ 全部通过（{len(passed)} 项）")
+        print(f"[PASS] all {len(passed)} checks passed")
         return 0
 
 
