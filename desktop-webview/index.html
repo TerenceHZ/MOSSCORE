@@ -11426,14 +11426,19 @@ requestAnimationFrame(frame);
         try { if (typeof renderAlertFeed === 'function') renderAlertFeed(true); } catch (e) {}
         try { if (typeof renderAlertHistory === 'function') renderAlertHistory(); } catch (e) {}
 
-        // 有新异动：飞流星 + 声音 + 标记新
+        // 有新异动：飞流星 + 声音 + 标记新（高亮保持 5 分钟）
         if (announce) {
           try {
             const feed = sr.querySelector('#nvAlertFeed') || document.querySelector('#nvAlertFeed');
             const first = feed && feed.firstElementChild;
             if (first && typeof meteorTo === 'function') {
               meteorTo(first, 'focus', 950, () => {
-                try { first.classList.add('fresh'); } catch (e) {}
+                // 用 markAlertFresh：加类 + 记录 5 分钟记忆
+                try {
+                  const markFn = window.__MOSS_MARK_ALERT;
+                  if (typeof markFn === 'function') markFn(first);
+                  else first.classList.add('fresh');
+                } catch (e) {}
                 try { if (typeof ping === 'function') ping('focus'); } catch (e) {}
               });
             }
