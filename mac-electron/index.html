@@ -11854,8 +11854,6 @@ requestAnimationFrame(frame);
       const saveBtn = q("#nvBsSave");
       const st = TRADE_INFO.entitled ? "ok" : (TRADE_INFO.preview ? "preview" : "locked");
       window.__MOSS_TRADE_STATE = st;
-      if (badge) {
-      }
       if (setup) setup.classList.toggle("locked", st !== "ok");
       const note = q(".nv-bs-note");
       if (note) {
@@ -12308,7 +12306,7 @@ requestAnimationFrame(frame);
     };
     // ── 语音播报：优先播云端音频包（所有设备同一份文件），缺文件时退回本机语音 ──
     const MOSS_TTS_CLOUD = 'https://43-160-232-254.sslip.io/voice';
-    const MOSS_TTS_LOCAL = '';
+    const MOSS_TTS_LOCAL = 'http://127.0.0.1:8799/speak';
     const MOSS_TTS_PRESET = 'cold';
     const MOSS_TTS_SPEED = 0.72;
     let mossTalk = null;

@@ -11854,8 +11854,6 @@ requestAnimationFrame(frame);
       const saveBtn = q("#nvBsSave");
       const st = TRADE_INFO.entitled ? "ok" : (TRADE_INFO.preview ? "preview" : "locked");
       window.__MOSS_TRADE_STATE = st;
-      if (badge) {
-      }
       if (setup) setup.classList.toggle("locked", st !== "ok");
       const note = q(".nv-bs-note");
       if (note) {
