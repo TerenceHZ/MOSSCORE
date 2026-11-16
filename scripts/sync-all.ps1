@@ -25,6 +25,7 @@ $report = [ordered]@{
     pull         = 'pending'
     changedFiles = @()
     htmlSynced   = 'skip'
+    archCheck    = 'skip'
     exeBuilt     = 'skip'
     cloudDeployed = 'skip'
     clientRun    = 'skip'
@@ -103,6 +104,27 @@ try {
     else {
         Fail 'desktop-webview/index.html 不存在'
         $report.htmlSynced = 'failed'
+    }
+
+    # ---------- 2.5 架构合规检查 ----------
+    Step '2.5' '架构合规检查'
+    $pyExe = 'C:\Users\ROG\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\python\python.exe'
+    $checkScript = Join-Path $ROOT 'scripts\check_architecture.py'
+    if ((Test-Path $pyExe) -and (Test-Path $checkScript)) {
+        $env:PYTHONIOENCODING = 'utf-8'
+        $out = & $pyExe $checkScript 2>&1
+        $last = ($out | Select-Object -Last 1)
+        if ($last -match '全部通过') {
+            OK $last
+        }
+        else {
+            Fail "架构检查未通过：$last"
+            $out | Select-Object -Last 15 | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkYellow }
+            $report.errors += "架构检查失败"
+        }
+    }
+    else {
+        Warn '跳过架构检查（缺少 python 或脚本）'
     }
 
     # ---------- 3. 判断是否需要编译 exe ----------
