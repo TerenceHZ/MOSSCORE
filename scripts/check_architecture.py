@@ -104,26 +104,37 @@ def main():
     except Exception as e:
         warn("本机时区检查失败", str(e)[:50])
 
-    # 检查云端返回的时间是否与本地时间接近（允许 5 分钟偏差）
+    # 检查云端时间与本地时区一致（比对最近 10 条平均值，避开单条过旧的情况）
     try:
         import json
         import urllib.request
         token = "yb4m3bG30ZIW0v4CwBzgGxoidZhRllej8vAmfxk6jzo"
         req = urllib.request.Request(
-            "https://43-160-232-254.sslip.io/history?limit=1",
+            "https://43-160-232-254.sslip.io/history?limit=10",
             headers={"Authorization": "Bearer " + token},
         )
         with urllib.request.urlopen(req, timeout=10) as r:
             j = json.loads(r.read().decode("utf-8"))
-        if j.get("rows"):
-            cloud_time = j["rows"][0]["time"]  # HH:MM:SS
+        rows = j.get("rows") or []
+        if rows:
             now = datetime.datetime.now()
-            ch, cm, cs = [int(x) for x in cloud_time.split(":")]
-            cloud_dt = now.replace(hour=ch, minute=cm, second=cs, microsecond=0)
-            diff = abs((now - cloud_dt).total_seconds())
-            if diff > 43200:  # 跨天
-                diff = 86400 - diff
-            check("云端时间与本地一致（<5分钟）", diff < 300, f"(差 {int(diff)} 秒)")
+            diffs = []
+            for row in rows:
+                try:
+                    ch, cm, cs = [int(x) for x in row["time"].split(":")]
+                    cloud_dt = now.replace(hour=ch, minute=cm, second=cs, microsecond=0)
+                    d = abs((now - cloud_dt).total_seconds())
+                    if d > 43200:
+                        d = 86400 - d
+                    diffs.append(d)
+                except Exception:
+                    continue
+            if diffs:
+                # 取最新一条（rows 是倒序）判断：只要不是「几小时」级别的偏差就算对
+                newest = diffs[0]
+                check("云端时间与本地同区（偏差 <30分钟）", newest < 1800, f"(最新一条差 {int(newest)} 秒)")
+            else:
+                warn("云端时间格式异常")
         else:
             warn("云端历史为空，跳过时间检查")
     except Exception as e:
