@@ -93,6 +93,41 @@ def main():
     check("使用云端 time 字段", bool(re.search(r"time:\s*x\.time", s)))
     check("高亮保持 5 分钟", "FRESH_ALERT_MS = 5 * 60 * 1000" in s)
     check("高亮可跨重绘恢复", "restoreFreshAlert" in s and "__MOSS_RESTORE_FRESH" in s)
+
+    # 时区检查：服务器时间戳必须是 UTC+8（北京时间/新加坡时间）
+    import subprocess
+    import datetime
+    try:
+        local_offset = datetime.datetime.now().astimezone().utcoffset()
+        local_hours = local_offset.total_seconds() / 3600 if local_offset else None
+        check("本机时区 UTC+8", local_hours == 8, f"(实际 UTC+{local_hours})")
+    except Exception as e:
+        warn("本机时区检查失败", str(e)[:50])
+
+    # 检查云端返回的时间是否与本地时间接近（允许 5 分钟偏差）
+    try:
+        import json
+        import urllib.request
+        token = "yb4m3bG30ZIW0v4CwBzgGxoidZhRllej8vAmfxk6jzo"
+        req = urllib.request.Request(
+            "https://43-160-232-254.sslip.io/history?limit=1",
+            headers={"Authorization": "Bearer " + token},
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            j = json.loads(r.read().decode("utf-8"))
+        if j.get("rows"):
+            cloud_time = j["rows"][0]["time"]  # HH:MM:SS
+            now = datetime.datetime.now()
+            ch, cm, cs = [int(x) for x in cloud_time.split(":")]
+            cloud_dt = now.replace(hour=ch, minute=cm, second=cs, microsecond=0)
+            diff = abs((now - cloud_dt).total_seconds())
+            if diff > 43200:  # 跨天
+                diff = 86400 - diff
+            check("云端时间与本地一致（<5分钟）", diff < 300, f"(差 {int(diff)} 秒)")
+        else:
+            warn("云端历史为空，跳过时间检查")
+    except Exception as e:
+        warn("云端时间检查失败", str(e)[:60])
     print()
 
     # ---------- 5. 代码完整性 ----------
