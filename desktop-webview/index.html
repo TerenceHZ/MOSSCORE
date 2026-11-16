@@ -606,10 +606,10 @@ body{background:var(--page);overflow:hidden}
 .pnl::before{left:-1px;top:-1px;border-width:1px 0 0 1px}
 .pnl::after{right:-1px;bottom:-1px;border-width:0 1px 1px 0}
 .p-heat{flex:none;height:420px}
-.nv-alertfeed{height:calc(100% - 34px);overflow:hidden;padding:0;scrollbar-width:none;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:6px}
+.nv-alertfeed{height:calc(100% - 34px);max-height:calc(100% - 34px);overflow:hidden;padding:0;scrollbar-width:none;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:6px;contain:strict}
 .nv-alertfeed::-webkit-scrollbar{display:none}
 
-.nv-alertitem{position:relative;min-height:0;height:100%;box-sizing:border-box;overflow:hidden;padding:10px 11px;margin:0;border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(8,7,4,.72),rgba(18,14,6,.56));animation:nvalertin .4s ease-out;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
+.nv-alertitem{position:relative;min-height:0;max-height:100%;height:100%;box-sizing:border-box;overflow:hidden;padding:10px 11px;margin:0;border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(8,7,4,.72),rgba(18,14,6,.56));animation:nvalertin .4s ease-out;display:flex;flex-direction:column;justify-content:space-between}
 .nv-alertitem::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(105deg,transparent 22%,rgba(232,160,32,.1) 44%,rgba(255,192,67,.2) 52%,rgba(232,160,32,.1) 60%,transparent 82%);transform:translateX(-120%);animation:nvalertsweep 5.2s ease-in-out infinite}
 @keyframes nvalertsweep{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
 .nv-alertitem>div{position:relative;z-index:1}
@@ -11453,18 +11453,30 @@ requestAnimationFrame(frame);
       if (animate) alertFeed.querySelectorAll('.nv-alertitem').forEach(el => oldTop.set(el.dataset.key, el.getBoundingClientRect().top));
       const picked = [];
       const seenTypes = new Set();
+      const seenKeys = new Set();   // 按 type+symbol 去重，避免同币重复出现
+      const keyOf = (a) => (a.type || 'oi') + '|' + String(a.symbol || '');
+      // 第一轮：每种类型各取最新一条
       for (const a of alertLog) {
         const type = a.type || 'oi';
-        if (!seenTypes.has(type)) { picked.push(a); seenTypes.add(type); }
+        if (!seenTypes.has(type)) {
+          picked.push(a); seenTypes.add(type); seenKeys.add(keyOf(a));
+        }
         if (picked.length === 3) break;
       }
+      // 第二轮：不足 3 条时补齐，但同 type+symbol 不重复
       if (picked.length < 3) {
         for (const a of alertLog) {
           if (picked.length >= 3) break;
-          if (!picked.includes(a)) picked.push(a);
+          const k = keyOf(a);
+          if (seenKeys.has(k)) continue;
+          seenKeys.add(k);
+          picked.push(a);
         }
       }
-      alertFeed.innerHTML = picked.map(alertItemHtml).join('');
+      // 用片段构建，避免 innerHTML 清空-插入的中间态抖动
+      const frag = document.createElement('template');
+      frag.innerHTML = picked.map(alertItemHtml).join('');
+      alertFeed.replaceChildren(...Array.from(frag.content.childNodes));
       try { if (typeof window.__MOSS_RESTORE_FRESH === 'function') window.__MOSS_RESTORE_FRESH(); } catch (e) {}
       if (!animate) return;
       requestAnimationFrame(() => {
