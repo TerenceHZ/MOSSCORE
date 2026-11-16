@@ -12823,6 +12823,8 @@ requestAnimationFrame(frame);
       const f = focusPick, im = lossRows[0];
       const alertPrev = window.__MOSS_ALERT_PREV || {};
       const maybeAlert = (r, announce = true) => {
+        // 云端驱动接管时，本地异动逻辑停用（避免重复触发流星）
+        if (window.__MOSS_CLOUD_ACTIVE) return;
         if (!r) return;
         const pct = Math.abs(Number(r.oi15m || r.oi5m || 0));
         const p = alertPrev[r.symbol];
@@ -12841,6 +12843,11 @@ requestAnimationFrame(frame);
       const eventSeen = window.__MOSS_EVENT_SEEN || {};
       const eventNow = Date.now();
       const eventCool = 15 * 60 * 1000;
+      if (window.__MOSS_CLOUD_ACTIVE) {
+        // 云端接管：跳过本地事件检测
+        window.__MOSS_ALERT_PREV = alertPrev;
+        return;
+      }
       if (!window.__MOSS_EVENT_SEEDED) {
         const volSeed = rows.filter(r => Number(r.volRatio3m || 0) >= 1.5 && Math.abs(Number(r.change3m || 0)) >= .3)
           .sort((a, b) => Number(b.volRatio3m) - Number(a.volRatio3m))[0];
