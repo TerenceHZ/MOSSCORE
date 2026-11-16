@@ -11871,6 +11871,8 @@ requestAnimationFrame(frame);
     };
     window.__MOSS_SIG_SHOW = sigShow;
     const pushSignalSlot = (entry, delay = 1100) => {
+      // 云驱动接管时，本地不再自行入队（避免双流星/双弹窗）
+      if (window.__MOSS_CLOUD_ACTIVE) return;
       if (!entry) return;
       const sym = entry.symbol || (entry.sig && entry.sig.r && entry.sig.r.symbol);
       if (!sym) return;
@@ -12785,6 +12787,8 @@ requestAnimationFrame(frame);
     };
     window.__MOSS_RESTART_LOCAL = () => { try { focusNext(); } catch (e) {} };
     const rotateFocusCard = (rows, live) => {
+      // 云驱动接管时，本地轮播逻辑完全停用（避免双流星）
+      if (window.__MOSS_CLOUD_ACTIVE) return;
       focusCleanSeen();
       const cur = window.__MOSS_FOCUS_CURRENT;
       const hit = (rows || []).filter(r => r.focus && focusHit(r) && !focusSeen[r.symbol] && r.symbol !== cur);
