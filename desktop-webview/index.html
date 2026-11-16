@@ -609,7 +609,7 @@ body{background:var(--page);overflow:hidden}
 .nv-alertfeed{height:calc(100% - 34px);overflow:hidden;padding:0;scrollbar-width:none;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:6px}
 .nv-alertfeed::-webkit-scrollbar{display:none}
 
-.nv-alertitem{position:relative;min-height:0;height:100%;box-sizing:border-box;padding:10px 11px;margin:0;border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(8,7,4,.72),rgba(18,14,6,.56));animation:nvalertin .4s ease-out;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
+.nv-alertitem{position:relative;min-height:0;height:100%;box-sizing:border-box;overflow:hidden;padding:10px 11px;margin:0;border:1px solid rgba(232,160,32,.18);background:linear-gradient(115deg,rgba(8,7,4,.72),rgba(18,14,6,.56));animation:nvalertin .4s ease-out;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
 .nv-alertitem::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(105deg,transparent 22%,rgba(232,160,32,.1) 44%,rgba(255,192,67,.2) 52%,rgba(232,160,32,.1) 60%,transparent 82%);transform:translateX(-120%);animation:nvalertsweep 5.2s ease-in-out infinite}
 @keyframes nvalertsweep{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
 .nv-alertitem>div{position:relative;z-index:1}
@@ -11162,7 +11162,17 @@ requestAnimationFrame(frame);
       const b = audioBtn.querySelector('b'); if (b) b.textContent = muted ? '静音' : '开';
     };
     const ac = () => {
-      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!actx) {
+        try {
+          actx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+          return { state: 'closed', createGain: () => ({ connect: () => {}, gain: {} }) };
+        }
+      }
+      // 每次调用都尝试恢复（Electron/WebView2 通常允许自动播放）
+      try {
+        if (actx.state === 'suspended' && actx.resume) actx.resume().catch(() => {});
+      } catch (e) {}
       return actx;
     };
     const unlockAudio = () => {
@@ -11386,7 +11396,7 @@ requestAnimationFrame(frame);
 <div class="nv-alert-time">${a.time}</div></div>`;
     };
     // 云端异动 → 本地 alertLog 结构（供现有渲染复用）
-    window.__MOSS_APPLY_CLOUD_ALERTS = (rows) => {
+    window.__MOSS_APPLY_CLOUD_ALERTS = (rows, announce) => {
       try {
         if (!Array.isArray(rows) || !rows.length) return;
         const mapped = rows.map((x) => {
@@ -11412,9 +11422,23 @@ requestAnimationFrame(frame);
           };
         });
         alertLog = mapped;
-        // 立即重绘右上角异动板块
-        try { if (typeof renderAlertFeed === 'function') renderAlertFeed(false); } catch (e) {}
+        // 重绘右上角
+        try { if (typeof renderAlertFeed === 'function') renderAlertFeed(true); } catch (e) {}
         try { if (typeof renderAlertHistory === 'function') renderAlertHistory(); } catch (e) {}
+
+        // 有新异动：飞流星 + 声音 + 标记新
+        if (announce) {
+          try {
+            const feed = sr.querySelector('#nvAlertFeed') || document.querySelector('#nvAlertFeed');
+            const first = feed && feed.firstElementChild;
+            if (first && typeof meteorTo === 'function') {
+              meteorTo(first, 'focus', 950, () => {
+                try { first.classList.add('fresh'); } catch (e) {}
+                try { if (typeof ping === 'function') ping('focus'); } catch (e) {}
+              });
+            }
+          } catch (e) {}
+        }
       } catch (e) {}
     };
 
@@ -11436,6 +11460,7 @@ requestAnimationFrame(frame);
         }
       }
       alertFeed.innerHTML = picked.map(alertItemHtml).join('');
+      try { if (typeof window.__MOSS_RESTORE_FRESH === 'function') window.__MOSS_RESTORE_FRESH(); } catch (e) {}
       if (!animate) return;
       requestAnimationFrame(() => {
         alertFeed.querySelectorAll('.nv-alertitem').forEach((el, i) => {
@@ -11449,15 +11474,44 @@ requestAnimationFrame(frame);
         });
       });
     };
+    // 记录「哪个异动是新的」以及到期时间（重绘后仍能恢复高亮）
+    window.__MOSS_FRESH_ALERT = window.__MOSS_FRESH_ALERT || { key: null, until: 0 };
+    const FRESH_ALERT_MS = 5 * 60 * 1000;   // 高亮保持 5 分钟
+
     const markAlertFresh = (el) => {
       if (!el) return;
       sr.querySelectorAll('.nv-alertitem.fresh').forEach(x => x.classList.remove('fresh'));
       el.classList.remove('flash'); void el.offsetWidth;
       el.classList.add('flash', 'fresh');
+      // 记录 key 与到期时间
+      try {
+        const sym = el.querySelector('.nv-alert-top b')?.textContent || '';
+        const tm = el.querySelector('.nv-alert-time')?.textContent || '';
+        window.__MOSS_FRESH_ALERT = { key: sym + '@' + tm, until: Date.now() + FRESH_ALERT_MS };
+      } catch (e) {}
       clearTimeout(el._freshT);
-      el._freshT = setTimeout(() => el.classList.remove('fresh'), 900000);
+      el._freshT = setTimeout(() => el.classList.remove('fresh'), FRESH_ALERT_MS);
       setTimeout(() => el.classList.remove('flash'), 650);
     };
+
+    // 重绘后恢复高亮
+    const restoreFreshAlert = () => {
+      try {
+        const f = window.__MOSS_FRESH_ALERT || {};
+        if (!f.key || Date.now() > f.until) return;
+        const items = sr.querySelectorAll('.nv-alertitem');
+        for (const el of items) {
+          const sym = el.querySelector('.nv-alert-top b')?.textContent || '';
+          const tm = el.querySelector('.nv-alert-time')?.textContent || '';
+          if (sym + '@' + tm === f.key) {
+            el.classList.add('fresh');
+            break;
+          }
+        }
+      } catch (e) {}
+    };
+    window.__MOSS_RESTORE_FRESH = restoreFreshAlert;
+    window.__MOSS_MARK_ALERT = markAlertFresh;
     let alertCategory = 'oi';
     const renderAlertHistory = () => {
       if (!alertHistory) return;
@@ -12655,6 +12709,13 @@ requestAnimationFrame(frame);
           vol24: r.quoteVolume24h
         });
       } catch (e) {}
+      // 防重复：同一币 3 秒内不重复飞流星
+      const nowTs = Date.now();
+      const lastKey = window.__MOSS_FOCUS_LAST_FLY || {};
+      const symKey = String(r.symbol || '');
+      if (lastKey.sym === symKey && nowTs - lastKey.at < 3000) return;
+      window.__MOSS_FOCUS_LAST_FLY = { sym: symKey, at: nowTs };
+
       meteorTo(card, 'focus', 900, () => {
         card.classList.add('hot', 'flash');
         clearTimeout(card._hotTimer);
@@ -12666,6 +12727,8 @@ requestAnimationFrame(frame);
         card.classList.add('meteor-arrive');
         clearTimeout(card._arriveT);
         card._arriveT = setTimeout(() => card.classList.remove('meteor-arrive'), 950);
+        // 提示音：落地时叮一声
+        try { if (typeof ping === 'function') ping('focus'); } catch (e) {}
       });
     };
     window.__MOSS_FOCUS_SHOW = focusShow;
@@ -13211,17 +13274,24 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
         }
       };
 
+      let lastAlertTopKey = null;
       const refreshAlerts = async () => {
         const rows = await fetchAlerts();
         if (!rows) return;
         window.__MOSS_CLOUD_ALERTS = rows;
-        // 同步到本地的 alertLog 结构，供现有渲染使用
+        // 判断是否有「新的异动」：对比最新一条的 key
+        const top = rows[0];
+        const topKey = top ? (top.type + '|' + top.symbol + '|' + top.ts) : null;
+        const isNew = topKey && lastAlertTopKey && topKey !== lastAlertTopKey;
+        const isFirst = topKey && !lastAlertTopKey;
+        lastAlertTopKey = topKey;
+
         try {
           if (typeof window.__MOSS_APPLY_CLOUD_ALERTS === 'function') {
-            window.__MOSS_APPLY_CLOUD_ALERTS(rows);
+            window.__MOSS_APPLY_CLOUD_ALERTS(rows, isNew === true);
           }
         } catch (e) {}
-        console.log('[CLOUD-A] rows=', rows.length);
+        console.log('[CLOUD-A] rows=', rows.length, 'isNew=', isNew);
       };
 
       // 按云端 endsAt 定时切换：所有设备在同一毫秒切到下一个币
