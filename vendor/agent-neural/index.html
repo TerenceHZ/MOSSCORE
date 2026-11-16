@@ -12772,10 +12772,13 @@ requestAnimationFrame(frame);
         const card = sr.querySelector(`[data-nv-card="${lane}"]`);
         if (!card || !r) return;
         if (lane === 'focus') renderFocusCard(r);
-        card.dataset.liveSymbol = r.symbol;
-        const changed = card.dataset.liveTime && card.dataset.liveTime !== live.updatedAt;
+        // 只有「币种真的变了」才飞流星，时间戳更新不算
+        const prevSym = card.dataset.liveSymbol;
+        const newSym = r.symbol;
+        const symbolChanged = prevSym && newSym && String(prevSym) !== String(newSym);
+        card.dataset.liveSymbol = newSym;
         card.dataset.liveTime = live.updatedAt;
-        if (lane === 'focus' && window.__MOSS_CARD_READY && changed && !window.__MOSS_FOCUS_EFFECT_ONLY) {
+        if (lane === 'focus' && window.__MOSS_CARD_READY && symbolChanged && !window.__MOSS_FOCUS_EFFECT_ONLY) {
           meteorTo(card, 'focus', 900, () => {
             card.classList.add('hot', 'flash');
             clearTimeout(card._hotTimer);
