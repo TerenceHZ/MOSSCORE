@@ -13438,10 +13438,17 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       const isRightView = logView === 'right';
       const cf2 = window.__MOSS_CLOUD_HIST_FN;
       const cloudRecs = (typeof cf2 === 'function') ? cf2(isRightView ? 'right' : 'left') : null;
-      const recs = cloudRecs && cloudRecs.length ? cloudRecs : readLog(viewKey());
+      let recs = cloudRecs && cloudRecs.length ? cloudRecs : readLog(viewKey());
+      // 代币详情模式：只显示「当前币种」的记录
+      const onlySym = window.__MOSS_ROW_DETAIL_SYMBOL;
+      if (onlySym) {
+        const target = rawSymbol(String(onlySym));
+        recs = recs.filter(a => rawSymbol(String(a.symbol || '')) === target);
+      }
       const isRight = logView === 'right';
       if (!recs.length) {
-        hl.innerHTML = '<div><span>24 小时内暂无播报记录</span><b>—</b></div>';
+        const emptyMsg = onlySym ? `${onlySym} · 24 小时内暂无播报记录` : '24 小时内暂无播报记录';
+        hl.innerHTML = `<div><span>${emptyMsg}</span><b>—</b></div>`;
         const pg = sr.querySelector('#nvDHistPage'); if (pg) pg.textContent = '1 / 1';
         const pv = sr.querySelector('#nvDHistPrev'), nx = sr.querySelector('#nvDHistNext');
         if (pv) pv.disabled = true; if (nx) nx.disabled = true;
@@ -13566,6 +13573,8 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
     };
     const openSymbol = (snap, lane) => {
       if (!snap) return;
+      // 卡片入口：查看整条链，不做币种过滤
+      window.__MOSS_ROW_DETAIL_SYMBOL = null;
       openRow(rowFromSnapshot(snap), lane);
     };
     const openRow = (row, lane) => {
@@ -13685,9 +13694,11 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
     }
     cards.forEach(card => card.addEventListener('click', () => {
       window.__NOVA_SELECTED = card.dataset.nvCard;
-      if (card.dataset.nvCard === 'signal') { card.classList.remove('sig-idle', 'nv-focus-idle'); logView = 'left'; capPage = 0; openSignalHistory(); return; }
+      if (card.dataset.nvCard === 'signal') { card.classList.remove('sig-idle', 'nv-focus-idle'); logView = 'left'; capPage = 0; window.__MOSS_ROW_DETAIL_SYMBOL = null; openSignalHistory(); return; }
       logView = card.dataset.nvCard === 'focus' ? 'right' : 'left';
       capPage = 0;
+      // 点卡片 = 查看整条链，不做币种过滤
+      window.__MOSS_ROW_DETAIL_SYMBOL = null;
       if (card.dataset.nvCard === 'signals') return;
       const lane = card.dataset.nvCard === 'focus' ? 'focus' : 'imported';
       const shown = card.querySelector('.nv-c-sym')?.textContent || sr.querySelector('#nvFocusSym')?.textContent || '';
@@ -13708,6 +13719,8 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       const lane = mod && mod.classList.contains('focus') ? 'focus' : 'imported';
       logView = lane === 'focus' ? 'right' : 'left';
       capPage = 0;
+      // 标记：这是「代币详情」，记录只显示该币
+      window.__MOSS_ROW_DETAIL_SYMBOL = row.querySelector('.nv-sym')?.textContent?.replace(/^[★○]\s*/, '') || null;
       openRow(row, lane);
     }));
     const msPanel = sr.querySelector('.p-heat');
