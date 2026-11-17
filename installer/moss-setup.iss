@@ -16,7 +16,7 @@ AppName={#MyAppNameZh}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppNameZh} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={sd}\MOSS CORE
+DefaultDirName={autopf}\MOSS CORE
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 DisableDirPage=no
@@ -61,7 +61,8 @@ Source: "{#SourceDir}\watchlist.json"; DestDir: "{app}"; Flags: onlyifdoesntexis
 [Icons]
 Name: "{group}\{#MyAppNameZh}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{group}\卸载 {#MyAppName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppNameZh}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\icon.ico"; Tasks: desktopicon
+Name: "{commondesktop}\{#MyAppNameZh}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\icon.ico"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppNameZh}}"; Flags: nowait postinstall skipifsilent
