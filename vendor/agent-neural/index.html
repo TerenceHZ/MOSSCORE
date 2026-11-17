@@ -1597,7 +1597,7 @@ linear-gradient(#e8a020,#e8a020) right bottom/1px 18px no-repeat;opacity:.45;fil
   <div><div class="nv-d-k" id="nvDKind">★ FOCUS · 自选主监控</div><div class="nv-d-title" id="nvDTitle">BLESS/USDT</div><div class="nv-d-stage" id="nvDStage">开仓信号 · 97.0</div></div>
   <button class="nv-d-x" type="button" data-nv-close>×</button>
  </div>
- <div class="nv-tabs"><button type="button" data-nv-tab="current" hidden>当前</button><button type="button" data-nv-tab="history">历史监控</button><button type="button" data-nv-tab="alerts">异动历史</button><button type="button" data-nv-tab="signals">建仓信号</button></div>
+ <div class="nv-tabs"><button type="button" data-nv-tab="current">当前</button><button type="button" data-nv-tab="history">历史监控</button><button type="button" data-nv-tab="alerts">异动历史</button><button type="button" data-nv-tab="signals">建仓信号</button></div>
  <div class="nv-d-body nv-scroll">
   <div class="nv-pane" data-pane="current">
   <div class="nv-now">
@@ -13580,6 +13580,13 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
     const openRow = (row, lane) => {
       setDrawerMode('detail');
       open(lane, true);
+      // 点代币 → 一定显示「当前详情」（直接操作 DOM，确保不被后续覆盖）
+      try {
+        const allTabs = [...sr.querySelectorAll('[data-nv-tab]')];
+        const allPanes = [...sr.querySelectorAll('[data-pane]')];
+        allTabs.forEach(t => t.classList.toggle('on', t.dataset.nvTab === 'current'));
+        allPanes.forEach(pn => { pn.hidden = pn.dataset.pane !== 'current'; });
+      } catch (e) {}
       const sym = rawSymbol((row.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, ''));
       const changeText = row.querySelector('.nv-change')?.textContent || '0%';
       const oiText = row.querySelectorAll('.nv-row-oi span')[0]?.textContent || '';
@@ -13651,7 +13658,8 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       const winSignal = sr.querySelector('#nvWinSignal'); winSignal.textContent = sigLabel;
       sr.querySelector('#nvEntryScore').textContent = score;
       sr.querySelector('#nvEntrySide').textContent = lane === 'focus' ? '顺势' : '回避';
-      showTab('history');
+      // 点代币 → 显示「当前详情」（含价格/OI/成交额），记录区在下方
+      showTab('current');
       try { renderCaptureLog(); } catch (e) {}
     };
     const openAlerts = () => {
