@@ -12862,14 +12862,8 @@ requestAnimationFrame(frame);
         const symbolChanged = prevSym && newSym && String(prevSym) !== String(newSym);
         card.dataset.liveSymbol = newSym;
         card.dataset.liveTime = live.updatedAt;
-        if (lane === 'focus' && window.__MOSS_CARD_READY && symbolChanged && !window.__MOSS_FOCUS_EFFECT_ONLY) {
-          meteorTo(card, 'focus', 900, () => {
-            card.classList.add('hot', 'flash');
-            clearTimeout(card._hotTimer);
-            card._hotTimer = setTimeout(() => card.classList.remove('hot'), 15 * 60 * 1000);
-            setTimeout(() => card.classList.remove('flash'), 650);
-          });
-        }
+        // 流星统一由 focusShow 负责（云端切换时触发），这里只更新数据
+        // 避免 focusShow + updCard 各飞一次造成双流星
         if (lane === 'focus') window.__MOSS_CARD_READY = true;
       };
       const focusRows = rows.filter(r => r.focus);
