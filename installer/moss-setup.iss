@@ -1,4 +1,4 @@
-﻿; ============================================================
+; ============================================================
 ; MOSS CORE 安装包脚本
 ; 编译：ISCC.exe moss-setup.iss
 ; ============================================================
@@ -8,7 +8,7 @@
 #define MyAppVersion "1.0.55"
 #define MyAppPublisher "550C"
 #define MyAppExeName "MOSS CORE.exe"
-#define SourceDir "D:\MOSS\installer\payload"
+#define SourceDir "D:\数据库\installer\payload"
 
 [Setup]
 AppId={{8F3C1B42-5A7D-4E19-9C2B-77E1A5D0C934}
