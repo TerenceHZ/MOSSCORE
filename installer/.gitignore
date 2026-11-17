@@ -1,4 +1,5 @@
-﻿MOSS-CORE-Setup-*.exe
+MOSS-CORE-Setup-*.exe
 dist/
 *.log
 ui.png
+payload/
