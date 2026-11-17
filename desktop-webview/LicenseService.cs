@@ -13,7 +13,28 @@ namespace MossCore;
 
 internal static class LicenseService
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
+    // 关键：不走系统代理。
+    // 很多用户装了 Clash / V2Ray 并开启「系统代理」(默认 127.0.0.1:7897)，
+    // 但代理没运行时会立刻 connection refused，导致激活失败（报 127.0.0.1:7897）。
+    // 我们的授权服务器在国内直连可达，固定直连最稳。
+    private static readonly HttpClient Http = CreateHttp();
+
+    private static HttpClient CreateHttp()
+    {
+        try
+        {
+            var handler = new HttpClientHandler
+            {
+                UseProxy = false,
+                AllowAutoRedirect = true
+            };
+            return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
+        }
+        catch
+        {
+            return new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+        }
+    }
     private static readonly string LicensePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "MossCore", "license.dat");

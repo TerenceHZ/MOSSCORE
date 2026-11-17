@@ -230,7 +230,10 @@ internal sealed class MainForm : Form
             var env = await CoreWebView2Environment.CreateAsync(
                 null,
                 userData,
-                new CoreWebView2EnvironmentOptions("--autoplay-policy=no-user-gesture-required"));
+                // 页面内 fetch 也会继承系统代理；Clash 未运行时会连接失败，因此对自家服务器强制直连。
+                new CoreWebView2EnvironmentOptions(
+                    "--autoplay-policy=no-user-gesture-required " +
+                    "--proxy-bypass-list=43.160.232.254;*.sslip.io;*.moss-core.com;localhost;127.0.0.1"));
             await _web.EnsureCoreWebView2Async(env);
             _web.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
             _web.CoreWebView2.Settings.AreDevToolsEnabled = false;
