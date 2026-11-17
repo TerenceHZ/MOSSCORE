@@ -5,10 +5,10 @@
 
 #define MyAppName "MOSS CORE"
 #define MyAppNameZh "MOSS CORE 异动监测"
-#define MyAppVersion "1.0.54"
+#define MyAppVersion "1.0.55"
 #define MyAppPublisher "550C"
 #define MyAppExeName "MOSS CORE.exe"
-#define SourceDir "C:\Users\ROG\MOSS CORE"
+#define SourceDir "D:\MOSS\installer\payload"
 
 [Setup]
 AppId={{8F3C1B42-5A7D-4E19-9C2B-77E1A5D0C934}
