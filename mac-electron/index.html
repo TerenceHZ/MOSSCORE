@@ -12114,6 +12114,8 @@ requestAnimationFrame(frame);
 .nv-bs-switch em{font:500 10px/1.4 var(--cjk);color:#80735e;font-style:normal;margin-left:6px}
 #nvBsTest{background:transparent;border:1px solid rgba(232,160,32,.4);color:#c9a35a}
     #nvBsSelfTest{background:transparent;border:1px solid rgba(94,231,210,.45);color:#8fe3d4}
+    #nvBsSmoke{background:rgba(232,160,32,.12);border:1px solid rgba(232,160,32,.5);color:#ffc043}
+    #nvBsSim{background:rgba(94,231,210,.1);border:1px solid rgba(94,231,210,.45);color:#8fe3d4}
 #nvBsSave{background:rgba(99,192,142,.15);border:1px solid rgba(99,192,142,.55);color:#8fd8b4}
     .nv-bs-tip{margin-top:14px;font:500 10.5px/1.7 "Microsoft YaHei",sans-serif;color:#6f5f48;letter-spacing:.02em}
 `;
@@ -12136,7 +12138,19 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       document.getElementById('nvTradeInfo')?.addEventListener('click', (e) => { e.stopPropagation(); openSetup(); });
       document.getElementById('nvBsClose')?.addEventListener('click', closeSetup);
       setup.addEventListener('click', (e) => { if (e.target === setup) closeSetup(); });
-      document.getElementById('nvBsSelfTest')?.addEventListener('click', () => {
+      document.getElementById('nvBsSmoke')?.addEventListener('click', () => {
+        setStatus('冒烟测试中（开仓 → 止盈止损 → 平仓）…', '');
+        postTrade({ type: 'tradeConfig', action: 'smoke', useTestnet: testnetOn() });
+    });
+    document.getElementById('nvBsSim')?.addEventListener('click', () => {
+        const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+        const cur = rows.find(r => (r.symbol || '') === 'BTCUSDT') || rows[0];
+        if (!cur) { setStatus('没有可用行数据', 'err'); return; }
+        const sig = calcSignal(cur);
+        queueOrderPreview({ sig, key: `${cur.symbol}-${sig.side}` });
+        setStatus('已伪造一条 ' + cur.symbol + ' 信号，弹出建仓卡', 'ok');
+    });
+    document.getElementById('nvBsSelfTest')?.addEventListener('click', () => {
         setStatus('正在自检…', '');
         postTrade({ type: 'tradeConfig', action: 'selftest', apiKey: (keyEl.value || '').trim(), apiSecret: (secEl.value || '').trim(), useTestnet: testnetOn() });
     });
@@ -12157,6 +12171,12 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       window.addEventListener('moss:binance', (ev) => {
         const sd0 = (ev && ev.detail) || {};
         if (sd0.type === 'symbols' && Array.isArray(sd0.list)) {
+        if (sd0.type === 'smoke') {
+            try {
+                const lines = (sd0.steps || []).map(x => (x.ok ? '✓ ' : '✗ ') + x.name + '：' + (x.msg || ''));
+                setStatus(lines.join(' · '), (sd0.steps || []).every(x => x.ok) ? 'ok' : 'err');
+            } catch (e) {}
+        }
             window.__MOSS_SYMBOLS = { testnet: !!sd0.testnet, set: new Set(sd0.list) };
             try { console.log('[moss] symbols loaded', sd0.list.length, sd0.testnet ? 'testnet' : 'live'); } catch (e) {}
         }
@@ -14070,6 +14090,8 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
         <div class="nv-bs-self" id="nvBsSelfBox"></div>
    <div class="nv-bs-actions">
     <button type="button" id="nvBsSelfTest">自检</button>
+        <button type="button" id="nvBsSmoke">冒烟测试</button>
+        <button type="button" id="nvBsSim">模拟信号</button>
         <button type="button" id="nvBsTest">测试连接</button>
     <button type="button" id="nvBsSave">保存并启用</button>
    </div>

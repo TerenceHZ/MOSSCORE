@@ -556,6 +556,42 @@ internal sealed class MainForm : Form
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payload)}}}));");
                 return;
             }
+            if (action == "smoke")
+            {
+                var steps = new System.Collections.Generic.List<object>();
+                var sym = "BTCUSDT";
+                try
+                {
+                    var bal0 = await BinanceTradeService.GetBalancesAsync();
+                    steps.Add(new { name = "读取账户", ok = bal0.Ok, msg = bal0.Ok ? $"权益 {bal0.FuturesEquity:F2} USDT" : bal0.Message });
+                    if (!bal0.Ok) throw new InvalidOperationException("账户不可用，先修账户问题");
+
+                    var price0 = await BinanceTradeService.GetPriceAsync(sym);
+                    steps.Add(new { name = "读取价格", ok = price0 > 0, msg = $"{sym} = {price0}" });
+
+                    var res = await BinanceTradeService.PlaceMarketOrderAsync(
+                        sym, "long", bal0.FuturesEquity, 0.02, 5, 2, 2, 0);
+                    steps.Add(new { name = "开仓 + 止盈止损", ok = res.Ok, msg = res.Message + (res.Ok ? $" 数量 {res.Qty}" : "") });
+
+                    var pos = await BinanceTradeService.GetPositionsAsync();
+                    steps.Add(new { name = "查询持仓", ok = pos.Count > 0, msg = $"当前 {pos.Count} 个持仓" });
+
+                    var closed = await BinanceTradeService.ClosePositionAsync(sym, "long");
+                    steps.Add(new { name = "平仓回滚", ok = closed.Ok, msg = closed.Message });
+
+                    var pos2 = await BinanceTradeService.GetPositionsAsync();
+                    steps.Add(new { name = "确认已平", ok = pos2.Count == 0, msg = $"剩余 {pos2.Count} 个持仓" });
+                }
+                catch (Exception ex)
+                {
+                    steps.Add(new { name = "中断", ok = false, msg = ex.Message });
+                }
+                BinanceTradeService.WriteLog("smoke", new { testnet = BinanceTradeService.UseTestnet, steps = steps.Count });
+                var payloadSmoke = new { type = "smoke", ok = true, symbol = sym, steps };
+                await _web.CoreWebView2.ExecuteScriptAsync(
+                    $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payloadSmoke)}}}));");
+                return;
+            }
             if (action == "symbols")
             {
                 var list = await BinanceTradeService.ListSymbolsAsync();
