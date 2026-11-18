@@ -12113,6 +12113,7 @@ requestAnimationFrame(frame);
 .nv-bs-switch{align-items:center!important;gap:8px}
 .nv-bs-switch em{font:500 10px/1.4 var(--cjk);color:#80735e;font-style:normal;margin-left:6px}
 #nvBsTest{background:transparent;border:1px solid rgba(232,160,32,.4);color:#c9a35a}
+    #nvBsSelfTest{background:transparent;border:1px solid rgba(94,231,210,.45);color:#8fe3d4}
 #nvBsSave{background:rgba(99,192,142,.15);border:1px solid rgba(99,192,142,.55);color:#8fd8b4}
     .nv-bs-tip{margin-top:14px;font:500 10.5px/1.7 "Microsoft YaHei",sans-serif;color:#6f5f48;letter-spacing:.02em}
 `;
@@ -13077,6 +13078,8 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       if (sCard) sCard.classList.remove('sig-idle', 'nv-focus-idle', 'hot', 'flash');
     } catch (e) {}
     window.addEventListener('moss:trade', (ev) => {
+  try { if (ev && ev.detail && ev.detail.type === 'selftest') { const box = document.getElementById('nvBsStatus'); if (box) box.textContent = (ev.detail.ok ? '自检完成' : '自检有异常'); } } catch (e) {} // selftest fallback
+
       try {
         const d = (ev && ev.detail) || {};
         if (d.type === 'account' || d.type === 'config') {

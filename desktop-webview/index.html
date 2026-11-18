@@ -13078,6 +13078,8 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       if (sCard) sCard.classList.remove('sig-idle', 'nv-focus-idle', 'hot', 'flash');
     } catch (e) {}
     window.addEventListener('moss:trade', (ev) => {
+  try { if (ev && ev.detail && ev.detail.type === 'selftest') { const box = document.getElementById('nvBsStatus'); if (box) box.textContent = (ev.detail.ok ? '自检完成' : '自检有异常'); } } catch (e) {} // selftest fallback
+
       try {
         const d = (ev && ev.detail) || {};
         if (d.type === 'account' || d.type === 'config') {

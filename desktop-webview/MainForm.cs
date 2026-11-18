@@ -494,7 +494,9 @@ internal sealed class MainForm : Form
                 checks.Add(new { name = "授权状态", ok = LicenseService.TradeEnabled, msg = LicenseService.TradeEnabled ? "已开通自动下单" : "未开通" });
 
                 BinanceTradeService.WriteLog("selftest", new { testnet = BinanceTradeService.UseTestnet, ok = bal.Ok });
-                PostToWeb(new { type = "selftest", ok = pingOk && bal.Ok, checks });
+                var payload = new { type = "selftest", ok = pingOk && bal.Ok, checks };
+                await _web.CoreWebView2.ExecuteScriptAsync(
+                    $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payload)}}}));");
                 return;
             }
             if (action == "transfer")
