@@ -76,7 +76,7 @@ internal static class BinanceTradeService
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    private static async Task<JsonDocument> SignedAsync(string baseUrl, string path, IEnumerable<KeyValuePair<string, string>>? args = null)
+    private static async Task<JsonDocument> SignedAsync(string baseUrl, string path, IEnumerable<KeyValuePair<string, string>>? args = null, bool post = false)
     {
         if (!Configured) throw new InvalidOperationException("未配置币安 API 密钥");
         var list = new List<KeyValuePair<string, string>>(args ?? Array.Empty<KeyValuePair<string, string>>());
@@ -84,7 +84,8 @@ internal static class BinanceTradeService
         list.Add(new("recvWindow", "10000"));
         var query = string.Join("&", list.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
         var url = $"{baseUrl}{path}?{query}&signature={Sign(query)}";
-        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+        using var req = new HttpRequestMessage(post ? HttpMethod.Post : HttpMethod.Get, url);
+        if (post) req.Content = new StringContent("", Encoding.UTF8, "application/x-www-form-urlencoded");
         req.Headers.Add("X-MBX-APIKEY", ApiKey);
         using var res = await Http.SendAsync(req);
         var body = await res.Content.ReadAsStringAsync();
@@ -277,7 +278,7 @@ internal static class BinanceTradeService
                 new KeyValuePair<string, string>("side", closeSide),
                 new KeyValuePair<string, string>("type", "MARKET"),
                 new KeyValuePair<string, string>("closePosition", "true")
-            });
+            }, post: true);
             WriteLog("close", new { symbol, side, ok = true });
             return (true, "已市价平仓");
         }
@@ -332,7 +333,7 @@ internal static class BinanceTradeService
                 {
                     new KeyValuePair<string, string>("symbol", symbol),
                     new KeyValuePair<string, string>("leverage", leverage.ToString(CultureInfo.InvariantCulture))
-                });
+                }, post: true);
             }
             catch (Exception ex)
             {
@@ -351,7 +352,7 @@ internal static class BinanceTradeService
                 new KeyValuePair<string, string>("side", orderSide),
                 new KeyValuePair<string, string>("type", "MARKET"),
                 new KeyValuePair<string, string>("quantity", qtyText)
-            }))
+            }, post: true))
             {
                 orderId = od.RootElement.TryGetProperty("orderId", out var oid) ? oid.GetRawText() : "0";
             }
@@ -376,7 +377,7 @@ internal static class BinanceTradeService
                     new KeyValuePair<string, string>("stopPrice", tpText),
                     new KeyValuePair<string, string>("closePosition", "true"),
                     new KeyValuePair<string, string>("workingType", "MARK_PRICE")
-                });
+                }, post: true);
             }
             catch (Exception ex)
             {
@@ -395,7 +396,7 @@ internal static class BinanceTradeService
                         new KeyValuePair<string, string>("stopPrice", slText),
                         new KeyValuePair<string, string>("closePosition", "true"),
                         new KeyValuePair<string, string>("workingType", "MARK_PRICE")
-                    });
+                    }, post: true);
                 }
                 catch (Exception ex)
                 {
@@ -447,7 +448,7 @@ internal static class BinanceTradeService
                 new KeyValuePair<string,string>("asset", "USDT"),
                 new KeyValuePair<string,string>("amount", amount.ToString("0.########", CultureInfo.InvariantCulture)),
                 new KeyValuePair<string,string>("type", "2")
-            });
+            }, post: true);
             return (true, $"已划转 {amount:F2} USDT 到现货");
         }
         catch (Exception ex)
