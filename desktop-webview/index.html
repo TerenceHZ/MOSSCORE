@@ -12151,9 +12151,16 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
         if (!k || !v) { setStatus('请先填写 API Key 和 Secret', 'err'); return; }
         postTrade({ type: 'tradeConfig', action: 'save', apiKey: k, apiSecret: v, autoTrade: true, autoMode: readOrderMode() === 'auto', useTestnet: testnetOn() });
         setStatus('已保存到本机加密文件', 'ok');
+      postTrade({ type: 'tradeConfig', action: 'symbols' });
         setTimeout(closeSetup, 700);
       });
       window.addEventListener('moss:binance', (ev) => {
+        const sd0 = (ev && ev.detail) || {};
+        if (sd0.type === 'symbols' && Array.isArray(sd0.list)) {
+            window.__MOSS_SYMBOLS = { testnet: !!sd0.testnet, set: new Set(sd0.list) };
+            try { console.log('[moss] symbols loaded', sd0.list.length, sd0.testnet ? 'testnet' : 'live'); } catch (e) {}
+        }
+
         const sd = (ev && ev.detail) || {};
         if (sd.type === 'selftest') {
             try {
@@ -12218,6 +12225,14 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       }).join('');
     };
     const queueOrderPreview = (entry) => {
+  // TESTNET_FILTER: 测试网没有的交易对不弹卡
+  try {
+    if (window.__MOSS_SYMBOLS && TRADE_INFO.useTestnet && entry && entry.sig) {
+      const sym = (entry.sig.r && entry.sig.r.symbol) || "";
+      if (sym && !window.__MOSS_SYMBOLS.set.has(sym)) return;
+    }
+  } catch (e) {}
+
       if (!entry || !entry.sig) return;
       const sig = entry.sig;
       const price = Number(sig.r.price || 0);

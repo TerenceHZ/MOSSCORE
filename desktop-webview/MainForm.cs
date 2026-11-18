@@ -556,6 +556,15 @@ internal sealed class MainForm : Form
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payload)}}}));");
                 return;
             }
+            if (action == "symbols")
+            {
+                var list = await BinanceTradeService.ListSymbolsAsync();
+                BinanceTradeService.WriteLog("symbols", new { testnet = BinanceTradeService.UseTestnet, count = list.Count });
+                var p2 = new { type = "symbols", testnet = BinanceTradeService.UseTestnet, list };
+                await _web.CoreWebView2.ExecuteScriptAsync(
+                    $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(p2)}}}));");
+                return;
+            }
             if (action == "transfer")
             {
                 var bal = await BinanceTradeService.GetBalancesAsync();

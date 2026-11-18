@@ -227,7 +227,38 @@ internal static class BinanceTradeService
         using var res = await Http.GetAsync($"{FuturesBase}/fapi/v1/ticker/price?symbol={symbol}");
         var body = await res.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(body);
-        return double.Parse(doc.RootElement.GetProperty("price").GetString() ?? "0", CultureInfo.InvariantCulture);
+        if (!doc.RootElement.TryGetProperty("price", out var priceEl))
+        {
+            // 测试网没有这个交易对时，接口返回 {}（空对象）
+            throw new InvalidOperationException(
+                UseTestnet
+                    ? $"该交易对不在币安测试网（测试网只有 700 多个交易对），请换一个币测试"
+                    : $"读取价格失败：{body.Substring(0, Math.Min(120, body.Length))}");
+        }
+        return double.Parse(priceEl.GetString() ?? "0", CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>当前环境下可交易的交易对（测试网与主网币种不同）</summary>
+    public static async Task<List<string>> ListSymbolsAsync()
+    {
+        var list = new List<string>();
+        try
+        {
+            using var res = await Http.GetAsync($"{FuturesBase}/fapi/v1/exchangeInfo");
+            var body = await res.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("symbols", out var arr))
+            {
+                foreach (var s in arr.EnumerateArray())
+                {
+                    if (s.TryGetProperty("symbol", out var sym) &&
+                        s.TryGetProperty("status", out var st) && st.GetString() == "TRADING")
+                        list.Add(sym.GetString() ?? "");
+                }
+            }
+        }
+        catch { }
+        return list;
     }
 
     public static decimal RoundDown(decimal value, decimal step)
