@@ -629,7 +629,20 @@ internal sealed class MainForm : Form
             var flag = Path.Combine(dir, "autotest.flag");
             if (!File.Exists(flag)) return;
             File.Delete(flag);
-            _ = RunAcceptanceSuiteAsync();
+            // 走客户端真实 UI 路径（页面里点按钮/走自动分支）
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(4000);
+                    if (_web.CoreWebView2 == null) return;
+                    await _web.CoreWebView2.ExecuteScriptAsync("window.__MOSS_UITEST && window.__MOSS_UITEST(); true");
+                }
+                catch (Exception ex)
+                {
+                    try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "msg.log"), "[uitest] " + ex.Message + Environment.NewLine); } catch { }
+                }
+            });
         }
         catch { }
     }
