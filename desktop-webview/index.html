@@ -12153,7 +12153,21 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
         if (!cur) { setStatus('没有可用行数据', 'err'); return; }
         const sig = calcSignal(cur);
         queueOrderPreview({ sig, key: `${cur.symbol}-${sig.side}` });
-        setStatus('已伪造一条 ' + cur.symbol + ' 信号，弹出建仓卡', 'ok');
+        const autoMode = readOrderMode() === 'auto' && LIVE_ORDER_ENABLED();
+        const hasSlot = (TRADE_INFO.positions || []).length < ORDER_MAX_POSITIONS;
+        if (autoMode && hasSlot) {
+          setStatus('自动模式： ' + cur.symbol + ' 信号已触发，正在自动下单…', 'ok');
+          setTimeout(() => {
+            const p = orderPending;
+            if (!p) return;
+            const stage = opEl('nvOpStage');
+            if (stage) stage.textContent = '自动下单中…';
+            sendOrder(p);
+          }, 1200);
+        } else {
+          setStatus('已伪造一条 ' + cur.symbol + ' 信号，弹出建仓卡'
+            + (autoMode ? '（但已满 5 仓，不自动下单）' : '（手动模式）'), 'ok');
+        }
     });
     document.getElementById('nvBsSelfTest')?.addEventListener('click', () => {
         setStatus('正在自检…', '');
