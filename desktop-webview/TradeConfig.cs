@@ -58,6 +58,10 @@ internal static class TradeConfig
             BinanceTradeService.UseTestnet = Current.UseTestnet;
             // 每次启动都从手动开始，自动模式必须由用户本次主动开启
             Current.AutoMode = false;
+#if MOSS_RELEASE
+            // 正式版强制主网，避免误连模拟盘
+            Current.UseTestnet = false;
+#endif
         }
         catch
         {
@@ -76,6 +80,10 @@ internal static class TradeConfig
             BinanceTradeService.UseTestnet = Current.UseTestnet;
             // 每次启动都从手动开始，自动模式必须由用户本次主动开启
             Current.AutoMode = false;
+#if MOSS_RELEASE
+            // 正式版强制主网，避免误连模拟盘
+            Current.UseTestnet = false;
+#endif
         }
         catch { }
     }

@@ -18,6 +18,15 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- 渠道：dev = 测试版（含测试工具）；release = 正式版（只留 API 配置/测试连接/自检） -->
+    <Channel Condition="'$(Channel)' == ''">dev</Channel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Channel)' == 'release'">
+    <DefineConstants>$(DefineConstants);MOSS_RELEASE</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
     <None Update="index.html" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

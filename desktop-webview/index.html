@@ -14174,6 +14174,35 @@ window.__MOSS_UITEST = async function () {
   }
 };
 
+
+/* ================= 渠道守卫：正式版移除所有测试入口 ================= */
+(function () {
+  try {
+    const ch = new URLSearchParams(location.search).get('ch') || 'dev';
+    window.__MOSS_CHANNEL = ch;
+    if (ch !== 'release') return;
+    const kill = () => {
+      ['nvBsSmoke', 'nvBsTp', 'nvBsSim', 'nvBsFull', 'nvBsClean', 'nvBsTestnet']
+        .forEach(function (id) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (id === 'nvBsTestnet') {
+            const row = el.closest('.nv-bs-row');
+            if (row) row.remove(); else el.remove();
+          } else {
+            el.remove();
+          }
+        });
+      // 测试网标记全部抹掉
+      try { TRADE_INFO.useTestnet = false; } catch (e) {}
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', kill);
+    else kill();
+    setTimeout(kill, 1200);
+  } catch (e) {}
+})();
+// __MOSS_CHANNEL_GUARD
+
 </script>
 
     <div class="nv-order-pop" id="nvOrderPop" hidden>

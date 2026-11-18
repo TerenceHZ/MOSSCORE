@@ -242,8 +242,8 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.Settings.IsZoomControlEnabled = true;
             _web.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
             _web.CoreWebView2.NavigationCompleted += async (_, _) => {
-            try { MaybeRunAcceptance(); } catch { }
-            try { MaybeRunStress(); } catch { } await Task.Delay(600); await ApplyEntitlementToPageAsync(); };
+            try { if (!ChannelInfo.IsRelease) MaybeRunAcceptance(); } catch { }
+            try { if (!ChannelInfo.IsRelease) MaybeRunStress(); } catch { } await Task.Delay(600); await ApplyEntitlementToPageAsync(); };
             TradeConfig.Load();
             StartTransferTimer();
 
@@ -277,7 +277,10 @@ internal sealed class MainForm : Form
                 || (Environment.ProcessPath ?? string.Empty).IndexOf("DEMO", StringComparison.OrdinalIgnoreCase) >= 0;
             var shortDemo = Environment.GetCommandLineArgs().Any(a => string.Equals(a, "--demo-short", StringComparison.OrdinalIgnoreCase))
                 || (Environment.ProcessPath ?? string.Empty).IndexOf("SHORT", StringComparison.OrdinalIgnoreCase) >= 0;
-            var uri = new Uri(page).AbsoluteUri + (demo ? (shortDemo ? "?v=20261104-focus&demo=short#neural" : "?v=20261104-focus&demo=1#neural") : "?v=20261104-focus#neural");
+            var chParam = "&ch=" + ChannelInfo.Name;
+            var uri = new Uri(page).AbsoluteUri + (demo
+                ? (shortDemo ? "?v=20261104-focus&demo=short" + chParam + "#neural" : "?v=20261104-focus&demo=1" + chParam + "#neural")
+                : "?v=20261104-focus" + chParam + "#neural");
             File.AppendAllText(log, $"[{DateTime.Now:O}] navigating {uri}\r\n");
             _web.CoreWebView2.Navigate(uri);
         }
@@ -830,6 +833,16 @@ internal sealed class MainForm : Form
         try
         {
             var action = root.TryGetProperty("action", out var a) ? a.GetString() : "";
+
+#if MOSS_RELEASE
+            // 正式版：测试类动作一律拒绝（不是隐藏按钮，而是宿主层拦截）
+            if (action == "smoke" || action == "tptest" || action == "cleanup" ||
+                action == "symbols" || action == "stress" || action == "accept")
+            {
+                PostToWeb(new { type = "error", message = "正式版不提供测试功能" });
+                return;
+            }
+#endif
             if (action == "mode")
             {
                 var mode = root.TryGetProperty("mode", out var m) ? m.GetString() ?? "manual" : "manual";
