@@ -659,11 +659,12 @@ internal sealed class MainForm : Form
   const sec = deep('nvBsSecret');
   const test = deep('nvBsTest');
   const save = deep('nvBsSave');
+        const selfTest = deep('nvBsSelfTest');
   const lock = deep('nvBsLockPage');
   const note = deep('nvBsNote') || (setup && setup.querySelector('.nv-bs-note'));
   const on = FLAG;
   [key, sec].forEach(el => { if (el) { el.disabled = !on; el.readOnly = !on; } });
-  [test, save].forEach(el => { if (el) el.disabled = !on; });
+  [test, save, selfTest].forEach(el => { if (el) el.disabled = !on; });
   if (setup) setup.classList.toggle('locked', !on);
   const rows = setup ? setup.querySelectorAll('.nv-bs-row, .nv-bs-status, .nv-bs-actions, .nv-bs-tip') : [];
   rows.forEach(el => { el.style.display = on ? '' : 'none'; });
