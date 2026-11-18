@@ -14181,24 +14181,36 @@ window.__MOSS_UITEST = async function () {
     const ch = new URLSearchParams(location.search).get('ch') || 'dev';
     window.__MOSS_CHANNEL = ch;
     if (ch !== 'release') return;
-    const kill = () => {
-      ['nvBsSmoke', 'nvBsTp', 'nvBsSim', 'nvBsFull', 'nvBsClean', 'nvBsTestnet']
-        .forEach(function (id) {
-          const el = document.getElementById(id);
-          if (!el) return;
-          if (id === 'nvBsTestnet') {
-            const row = el.closest('.nv-bs-row');
-            if (row) row.remove(); else el.remove();
-          } else {
-            el.remove();
+    const deep = function (id) {
+      const walk = function (root) {
+        try {
+          if (root.getElementById) { const el = root.getElementById(id); if (el) return el; }
+          const all = root.querySelectorAll ? root.querySelectorAll('*') : [];
+          for (let i = 0; i < all.length; i++) {
+            const h = all[i];
+            if (h.shadowRoot) { const r = walk(h.shadowRoot); if (r) return r; }
           }
-        });
-      // 测试网标记全部抹掉
+        } catch (e) {}
+        return null;
+      };
+      return walk(document);
+    };
+    const kill = function () {
+      ['nvBsSmoke', 'nvBsTp', 'nvBsSim', 'nvBsFull', 'nvBsClean'].forEach(function (id) {
+        const el = deep(id);
+        if (el) el.remove();
+      });
+      const tn = deep('nvBsTestnet');
+      if (tn) {
+        const row = tn.closest ? tn.closest('.nv-bs-row') : null;
+        if (row) row.remove(); else tn.remove();
+      }
       try { TRADE_INFO.useTestnet = false; } catch (e) {}
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', kill);
     else kill();
-    setTimeout(kill, 1200);
+    setTimeout(kill, 800);
+    setTimeout(kill, 2000);
   } catch (e) {}
 })();
 // __MOSS_CHANNEL_GUARD

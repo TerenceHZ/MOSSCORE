@@ -242,6 +242,20 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.Settings.IsZoomControlEnabled = true;
             _web.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
             _web.CoreWebView2.NavigationCompleted += async (_, _) => {
+            try
+            {
+                if (ChannelInfo.IsRelease && _web.CoreWebView2 != null)
+                {
+                    // 正式版：把测试入口用 CSS 彻底隐藏（含 shadow DOM），宿主同时拒绝相关指令
+                    var cssJs = "(function(){var css='#nvBsSmoke,#nvBsTp,#nvBsSim,#nvBsFull,#nvBsClean{display:none!important} .nv-bs-row.nv-bs-switch{display:none!important}';" +
+                                 "function add(root){try{var s=document.createElement('style');s.textContent=css;root.appendChild(s);}catch(e){}}" +
+                                 "add(document.head);" +
+                                 "function sweep(){var a=document.querySelectorAll('*');for(var i=0;i<a.length;i++){if(a[i].shadowRoot)add(a[i].shadowRoot);}}" +
+                                 "sweep();setTimeout(sweep,600);setTimeout(sweep,1500);})();";
+                    await _web.CoreWebView2.ExecuteScriptAsync(cssJs);
+                }
+            }
+            catch { }
             try { if (!ChannelInfo.IsRelease) MaybeRunAcceptance(); } catch { }
             try { if (!ChannelInfo.IsRelease) MaybeRunStress(); } catch { } await Task.Delay(600); await ApplyEntitlementToPageAsync(); };
             TradeConfig.Load();
