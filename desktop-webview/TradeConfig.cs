@@ -56,6 +56,8 @@ internal static class TradeConfig
             Current = JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
             BinanceTradeService.SetKeys(Current.ApiKey, Current.ApiSecret);
             BinanceTradeService.UseTestnet = Current.UseTestnet;
+            // 每次启动都从手动开始，自动模式必须由用户本次主动开启
+            Current.AutoMode = false;
         }
         catch
         {
@@ -72,6 +74,8 @@ internal static class TradeConfig
             File.WriteAllText(ConfigPath, Protect(JsonSerializer.Serialize(Current)));
             BinanceTradeService.SetKeys(Current.ApiKey, Current.ApiSecret);
             BinanceTradeService.UseTestnet = Current.UseTestnet;
+            // 每次启动都从手动开始，自动模式必须由用户本次主动开启
+            Current.AutoMode = false;
         }
         catch { }
     }

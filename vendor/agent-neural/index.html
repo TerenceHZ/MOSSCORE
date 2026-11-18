@@ -11989,10 +11989,8 @@ requestAnimationFrame(frame);
       }, true);
     } catch (e) {}
     const ORDER_MODE_KEY = 'moss-order-mode';
-    const readOrderMode = () => {
-      if (TRADE_INFO.mode === 'auto' || TRADE_INFO.mode === 'manual') return TRADE_INFO.mode;
-      try { return localStorage.getItem(ORDER_MODE_KEY) === 'auto' ? 'auto' : 'manual'; } catch (e) { return 'manual'; }
-    };
+    // 默认手动：只有用户本次运行里主动点过「自动」才会用 auto，不跨重启记忆
+    const readOrderMode = () => (TRADE_INFO.mode === 'auto' ? 'auto' : 'manual');
     const LIVE_ORDER_ENABLED = () => Boolean(TRADE_INFO.autoTrade);
     const orderBusy = { value: false };
     const sendOrder = (p) => {
