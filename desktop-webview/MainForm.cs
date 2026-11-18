@@ -619,8 +619,8 @@ internal sealed class MainForm : Form
                     var cancelled = await BinanceTradeService.CancelAlgoOrdersAsync(sym);
                     steps.Add(new { name = "撤销旧委托", ok = true, msg = $"撤掉 {cancelled} 条" });
 
-                    var up = price * (1 + 0.001);
-                    var dn = price * (1 - 0.001);
+                    var up = price * (1 + 0.0005);
+                    var dn = price * (1 - 0.0005);
                     var tpPrice = isLong ? up : dn;
                     var slPrice = isLong ? dn : up;
 
@@ -640,11 +640,21 @@ internal sealed class MainForm : Form
                     catch (Exception ex) { steps.Add(new { name = "挂止损失败", ok = false, msg = ex.Message }); }
 
                     steps.Add(new { name = "挂近距离条件单", ok = okTp && okSl,
-                        msg = $"现价 {price:F4}｜止盈 {tpPrice:F4}｜止损 {slPrice:F4}（距现价 0.1%）" });
+                        msg = $"现价 {price:F4}｜止盈 {tpPrice:F4}｜止损 {slPrice:F4}（距现价 0.05%）" });
+
+                    // 立刻回传一次，让界面显示"已挂上、正在等触发"
+                    try
+                    {
+                        var prog = new { type = "tptest_progress", symbol = sym, entry = price,
+                            tp = tpPrice, sl = slPrice, qty = qtyText };
+                        await _web.CoreWebView2.ExecuteScriptAsync(
+                            $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(prog)}}}));");
+                    }
+                    catch { }
 
                     // 等触发：最多 100 秒
                     var closed = false; var waited = 0;
-                    while (waited < 100000)
+                    while (waited < 180000)
                     {
                         await Task.Delay(4000);
                         waited += 4000;
@@ -660,7 +670,7 @@ internal sealed class MainForm : Form
                     }
                     else
                     {
-                        steps.Add(new { name = "等待超时", ok = false, msg = $"100 秒内价格没走 0.1%（现价 {last:F4}），可再点一次" });
+                        steps.Add(new { name = "等待超时", ok = false, msg = $"180 秒内价格没走 0.05%（现价 {last:F4}），可再点一次" });
                     }
 
                     var left = await BinanceTradeService.CancelAlgoOrdersAsync(sym);

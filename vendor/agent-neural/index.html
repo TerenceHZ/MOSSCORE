@@ -12213,6 +12213,9 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
         if (sd0.type === 'cleanup') {
             setStatus('已清理 ' + sd0.symbol + ' 的条件委托：' + sd0.cancelled + ' 条', sd0.cancelled > 0 ? 'ok' : 'err');
         }
+        if (sd0.type === 'tptest_progress') {
+            setStatus('已挂上：' + sd0.symbol + ' 止盈 ' + sd0.tp + ' / 止损 ' + sd0.sl + '，正在等触发（最多 3 分钟）…', '');
+        }
         if (sd0.type === 'tptest') {
             try {
                 const lines = (sd0.steps || []).map(x => (x.ok ? '✓ ' : '✗ ') + x.name + '：' + (x.msg || ''));
