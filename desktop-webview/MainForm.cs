@@ -486,6 +486,16 @@ internal sealed class MainForm : Form
             }
             if (action == "selftest")
             {
+                // 自检按“当前表单里填的值”跑，不要求先保存
+                var sk = root.TryGetProperty("apiKey", out var kk) ? kk.GetString() ?? "" : "";
+                var ss = root.TryGetProperty("apiSecret", out var vv) ? vv.GetString() ?? "" : "";
+                var st = root.TryGetProperty("useTestnet", out var tt) && tt.ValueKind == JsonValueKind.True;
+                var prevKey = BinanceTradeService.ApiKey;
+                var prevSecret = BinanceTradeService.ApiSecret;
+                var prevTest = BinanceTradeService.UseTestnet;
+                if (!string.IsNullOrWhiteSpace(sk)) BinanceTradeService.SetKeys(sk, ss);
+                BinanceTradeService.UseTestnet = st;
+
                 var checks = new System.Collections.Generic.List<object>();
                 bool pingOk = false; string pingMsg = "";
                 try
@@ -500,7 +510,7 @@ internal sealed class MainForm : Form
                 }
                 catch (Exception ex) { pingMsg = ex.Message; }
                 checks.Add(new { name = "网络连通", ok = pingOk, msg = pingMsg });
-                checks.Add(new { name = "API 密钥", ok = BinanceTradeService.Configured, msg = BinanceTradeService.Configured ? "已配置" : "未配置" });
+                checks.Add(new { name = "API 密钥", ok = BinanceTradeService.Configured, msg = BinanceTradeService.Configured ? "已配置（本次填写）" : "未填写" });
                 checks.Add(new { name = "运行环境", ok = true, msg = (BinanceTradeService.UseTestnet ? "测试网（模拟盘）" : "主网（真实资金）") + " · " + BinanceTradeService.CurrentHost });
 
                 var bal = await BinanceTradeService.GetBalancesAsync();
@@ -525,6 +535,10 @@ internal sealed class MainForm : Form
                 checks.Add(new { name = "授权状态", ok = LicenseService.TradeEnabled, msg = LicenseService.TradeEnabled ? "已开通自动下单" : "未开通" });
 
                 BinanceTradeService.WriteLog("selftest", new { testnet = BinanceTradeService.UseTestnet, ok = bal.Ok });
+
+                // 还原（自检不应该改变真实配置）
+                BinanceTradeService.SetKeys(prevKey ?? "", prevSecret ?? "");
+                BinanceTradeService.UseTestnet = prevTest;
                 var payload = new { type = "selftest", ok = pingOk && bal.Ok, checks };
                 await _web.CoreWebView2.ExecuteScriptAsync(
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payload)}}}));");

@@ -12138,7 +12138,7 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       setup.addEventListener('click', (e) => { if (e.target === setup) closeSetup(); });
       document.getElementById('nvBsSelfTest')?.addEventListener('click', () => {
         setStatus('正在自检…', '');
-        postTrade({ type: 'tradeConfig', action: 'selftest', useTestnet: testnetOn() });
+        postTrade({ type: 'tradeConfig', action: 'selftest', apiKey: (keyEl.value || '').trim(), apiSecret: (secEl.value || '').trim(), useTestnet: testnetOn() });
     });
     document.getElementById('nvBsTest')?.addEventListener('click', () => {
         const k = (keyEl.value || '').trim(), v = (secEl.value || '').trim();
