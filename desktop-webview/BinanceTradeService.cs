@@ -321,6 +321,52 @@ internal static class BinanceTradeService
         return 0m;
     }
 
+
+    public sealed class AlgoOrderInfo
+    {
+        public string OrderType = "";
+        public string Quantity = "";
+        public string TriggerPrice = "";
+        public bool ReduceOnly;
+        public string Status = "";
+    }
+
+    /// <summary>列出某币当前未触发的条件单</summary>
+    public static async Task<List<AlgoOrderInfo>> ListAlgoOrdersAsync(string symbol)
+    {
+        var list = new List<AlgoOrderInfo>();
+        try
+        {
+            using var doc = await SignedAsync(FuturesBase, "/fapi/v1/openAlgoOrders",
+                new[] { new KeyValuePair<string, string>("symbol", symbol) });
+            var arr = doc.RootElement.ValueKind == JsonValueKind.Array
+                ? doc.RootElement
+                : (doc.RootElement.TryGetProperty("orders", out var inner) ? inner : default);
+            if (arr.ValueKind != JsonValueKind.Array) return list;
+            foreach (var o in arr.EnumerateArray())
+            {
+                var info = new AlgoOrderInfo();
+                if (o.TryGetProperty("orderType", out var t)) info.OrderType = t.GetString() ?? "";
+                if (o.TryGetProperty("quantity", out var q)) info.Quantity = q.GetString() ?? "";
+                if (o.TryGetProperty("triggerPrice", out var tp)) info.TriggerPrice = tp.GetString() ?? "";
+                if (o.TryGetProperty("reduceOnly", out var ro)) info.ReduceOnly = ro.ValueKind == JsonValueKind.True;
+                if (o.TryGetProperty("algoStatus", out var st)) info.Status = st.GetString() ?? "";
+                list.Add(info);
+            }
+        }
+        catch { }
+        return list;
+    }
+
+
+    /// <summary>按该交易对的 tickSize 取整并格式化成字符串（条件单触发价必须这样）</summary>
+    public static async Task<string> FormatPriceAsync(string symbol, decimal price)
+    {
+        var info = await GetSymbolInfoAsync(symbol);
+        var rounded = RoundDown(price, info.TickSize);
+        return rounded.ToString("0.############################", CultureInfo.InvariantCulture);
+    }
+
     /// <summary>测试用：按绝对触发价挂一条条件单</summary>
     public static Task PlaceConditionalForTestAsync(string symbol, string closeSide, string type, string triggerPrice, string quantity)
         => PlaceAlgoOrderAsync(symbol, closeSide, type, triggerPrice, quantity);

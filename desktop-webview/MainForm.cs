@@ -241,7 +241,8 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = true;
             _web.CoreWebView2.Settings.IsZoomControlEnabled = true;
             _web.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
-            _web.CoreWebView2.NavigationCompleted += async (_, _) => { await Task.Delay(600); await ApplyEntitlementToPageAsync(); };
+            _web.CoreWebView2.NavigationCompleted += async (_, _) => {
+            try { MaybeRunAcceptance(); } catch { } await Task.Delay(600); await ApplyEntitlementToPageAsync(); };
             TradeConfig.Load();
             StartTransferTimer();
 
@@ -409,6 +410,166 @@ internal sealed class MainForm : Form
             var json = JsonSerializer.Serialize(payload);
             await _web.CoreWebView2.ExecuteScriptAsync(
                 $"window.dispatchEvent(new CustomEvent('moss:trade',{{detail:{json}}}));");
+        }
+        catch { }
+    }
+
+
+    // ================= 自动验收（由 %LOCALAPPDATA%\MossCore\autotest.flag 触发）=================
+    private async Task RunAcceptanceSuiteAsync()
+    {
+        var rep = new System.Collections.Generic.List<object>();
+        var okAll = true;
+        void Add(string phase, bool ok, string msg)
+        {
+            rep.Add(new { phase, ok, msg, ts = DateTime.Now.ToString("HH:mm:ss") });
+            if (!ok) okAll = false;
+            BinanceTradeService.WriteLog("accept", new { phase, ok, msg });
+        }
+
+        try
+        {
+            if (!BinanceTradeService.UseTestnet) { Add("guard", false, "未开启测试网，拒绝执行"); throw new InvalidOperationException("testnet required"); }
+            if (!BinanceTradeService.Configured) { Add("guard", false, "未配置 API Key"); throw new InvalidOperationException("no key"); }
+
+            // 清场：平掉所有仓位
+            var pos0 = await BinanceTradeService.GetPositionsAsync();
+            foreach (var po in pos0)
+            {
+                var t = po.GetType();
+                var sy = t.GetProperty("symbol")?.GetValue(po) as string;
+                var am = t.GetProperty("amount")?.GetValue(po);
+                if (sy == null || am == null) continue;
+                var d = Convert.ToDouble(am);
+                await BinanceTradeService.ClosePositionAsync(sy, d > 0 ? "long" : "short");
+                await BinanceTradeService.CancelAlgoOrdersAsync(sy);
+            }
+            await Task.Delay(1500);
+            var posClear = await BinanceTradeService.GetPositionsAsync();
+            Add("0-清场", posClear.Count == 0, $"剩余持仓 {posClear.Count} 个");
+
+            var bal = await BinanceTradeService.GetBalancesAsync();
+            if (!bal.Ok) throw new InvalidOperationException(bal.Message);
+            var equity = bal.FuturesEquity;
+
+            // ---------- 阶段 1：手动单 ----------
+            var sym1 = "BTCUSDT";
+            await BinanceTradeService.CancelAlgoOrdersAsync(sym1);
+            var r1 = await BinanceTradeService.PlaceMarketOrderAsync(sym1, "long", equity, 0.05, 5, 15, 15, 1000000);
+            Add("1-手动开仓", r1.Ok, r1.Message);
+
+            var amt1 = await BinanceTradeService.GetPositionAmountAsync(sym1);
+            Add("1-仓位存在", amt1 > 0, $"{sym1} 数量 {amt1}");
+
+            var orders1 = await BinanceTradeService.ListAlgoOrdersAsync(sym1);
+            var hasTp = orders1.Exists(o => o.OrderType == "TAKE_PROFIT_MARKET");
+            var hasSl = orders1.Exists(o => o.OrderType == "STOP_MARKET");
+            Add("1-止盈止损各一条", orders1.Count == 2 && hasTp && hasSl, $"条件单 {orders1.Count} 条（TP={hasTp}, SL={hasSl}）");
+
+            // 校验触发价相对开仓价约 ±15%
+            try
+            {
+                var price1 = await BinanceTradeService.GetPriceAsync(sym1);
+                var tpO = orders1.Find(o => o.OrderType == "TAKE_PROFIT_MARKET");
+                var slO = orders1.Find(o => o.OrderType == "STOP_MARKET");
+                var tpD = Math.Abs(double.Parse(tpO!.TriggerPrice) / price1 - 1);
+                var slD = Math.Abs(double.Parse(slO!.TriggerPrice) / price1 - 1);
+                Add("1-止损止盈距离", tpD > 0.10 && tpD < 0.20 && slD > 0.10 && slD < 0.20,
+                    $"TP {tpD:P1} / SL {slD:P1}（应约 15%）");
+            }
+            catch (Exception ex) { Add("1-距离校验", false, ex.Message); }
+
+            // ---------- 阶段 2：自动开满 5 单 ----------
+            var pool = new[] { "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "BNBUSDT", "ADAUSDT", "LINKUSDT", "AVAXUSDT" };
+            var want = 5;
+            foreach (var cand in pool)
+            {
+                var posNow = await BinanceTradeService.GetPositionsAsync();
+                if (posNow.Count >= want) break;
+                if (await BinanceTradeService.GetPositionAmountAsync(cand) > 0) continue;
+                await BinanceTradeService.CancelAlgoOrdersAsync(cand);
+                var rr = await BinanceTradeService.PlaceMarketOrderAsync(cand, "long", equity, 0.05, 5, 15, 15, 1000000);
+                var oo = await BinanceTradeService.ListAlgoOrdersAsync(cand);
+                var tpOk = oo.Exists(o => o.OrderType == "TAKE_PROFIT_MARKET");
+                var slOk = oo.Exists(o => o.OrderType == "STOP_MARKET");
+                Add("2-自动开仓 " + cand, rr.Ok && oo.Count == 2 && tpOk && slOk,
+                    rr.Ok ? $"条件单 {oo.Count} 条（TP={tpOk}, SL={slOk}）" : rr.Message);
+                if (rr.Ok) await Task.Delay(800);
+            }
+
+            var pos5 = await BinanceTradeService.GetPositionsAsync();
+            Add("2-达到 5 单", pos5.Count >= 5, $"当前 {pos5.Count} 个持仓");
+
+            // ---------- 阶段 3：把每个仓位的止损止盈贴到 ±0.05%，等触发 ----------
+            var syms = new System.Collections.Generic.List<(string sym, double amt)>();
+            foreach (var po in pos5)
+            {
+                var t = po.GetType();
+                var sy = t.GetProperty("symbol")?.GetValue(po) as string;
+                var am = t.GetProperty("amount")?.GetValue(po);
+                if (sy != null && am != null) syms.Add((sy, Convert.ToDouble(am)));
+            }
+
+            foreach (var item in syms)
+            {
+                var price = await BinanceTradeService.GetPriceAsync(item.sym);
+                if (price <= 0) { Add("3-" + item.sym, false, "价格无效"); continue; }
+                await BinanceTradeService.CancelAlgoOrdersAsync(item.sym);
+                var qty = Math.Abs(item.amt).ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture);
+                var closeSide = item.amt > 0 ? "SELL" : "BUY";
+                var up = price * (1 + 0.0004);
+                var dn = price * (1 - 0.0004);
+                var tp = item.amt > 0 ? up : dn;
+                var sl = item.amt > 0 ? dn : up;
+                try
+                {
+                    var tpText2 = await BinanceTradeService.FormatPriceAsync(item.sym, (decimal)tp);
+                    var slText2 = await BinanceTradeService.FormatPriceAsync(item.sym, (decimal)sl);
+                    await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "TAKE_PROFIT_MARKET", tpText2, qty);
+                    await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "STOP_MARKET", slText2, qty);
+                    Add("3-" + item.sym + "-挂单", true, $"现价 {price:F4} TP {tp:F4} SL {sl:F4}");
+                }
+                catch (Exception ex) { Add("3-" + item.sym + "-挂单", false, ex.Message); continue; }
+
+                var closed = false; var waited = 0;
+                while (waited < 240000)
+                {
+                    await Task.Delay(4000);
+                    waited += 4000;
+                    if (await BinanceTradeService.GetPositionAmountAsync(item.sym) <= 0) { closed = true; break; }
+                }
+                Add("3-" + item.sym + "-触发", closed, closed ? $"{waited / 1000} 秒内被触发平仓" : $"240 秒未触发（现价 {(await BinanceTradeService.GetPriceAsync(item.sym)):F4}）");
+                await BinanceTradeService.CancelAlgoOrdersAsync(item.sym);
+            }
+
+            var endPos = await BinanceTradeService.GetPositionsAsync();
+            Add("4-收尾", endPos.Count == 0, $"剩余持仓 {endPos.Count} 个（触发测试应全部平掉）");
+        }
+        catch (Exception ex)
+        {
+            Add("fatal", false, ex.Message);
+        }
+
+        try
+        {
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MossCore");
+            Directory.CreateDirectory(dir);
+            var json = JsonSerializer.Serialize(new { ok = okAll, finishedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), steps = rep },
+                new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+            File.WriteAllText(Path.Combine(dir, "autotest-report.json"), json);
+        }
+        catch { }
+    }
+
+    private void MaybeRunAcceptance()
+    {
+        try
+        {
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MossCore");
+            var flag = Path.Combine(dir, "autotest.flag");
+            if (!File.Exists(flag)) return;
+            File.Delete(flag);
+            _ = RunAcceptanceSuiteAsync();
         }
         catch { }
     }
@@ -627,14 +788,16 @@ internal sealed class MainForm : Form
                     var okTp = false; var okSl = false;
                     try
                     {
-                        await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "TAKE_PROFIT_MARKET", tpPrice.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture), qtyText);
+                        var tpv = await BinanceTradeService.FormatPriceAsync(sym, (decimal)tpPrice);
+                        await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "TAKE_PROFIT_MARKET", tpv, qtyText);
                         okTp = true;
                     }
                     catch (Exception ex) { steps.Add(new { name = "挂止盈失败", ok = false, msg = ex.Message }); }
 
                     try
                     {
-                        await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "STOP_MARKET", slPrice.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture), qtyText);
+                        var slv = await BinanceTradeService.FormatPriceAsync(sym, (decimal)slPrice);
+                        await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "STOP_MARKET", slv, qtyText);
                         okSl = true;
                     }
                     catch (Exception ex) { steps.Add(new { name = "挂止损失败", ok = false, msg = ex.Message }); }
