@@ -514,36 +514,41 @@ internal sealed class MainForm : Form
             {
                 var placed = false;
                 var lastErr = "";
-                // 依次尝试更宽的价差：0.04% → 0.15% → 0.5% → 1%
-                foreach (var band in new[] { 0.0004, 0.0015, 0.005, 0.01 })
+                // 依次尝试越来越宽的价差
+                var bands = new[] { 0.0002, 0.0004, 0.0008, 0.0015 };
+                var usedBand = 0.0;
+                foreach (var band in bands)
                 {
-                    var price = await BinanceTradeService.GetPriceAsync(item.sym);
-                    if (price <= 0) { lastErr = "价格无效"; break; }
                     await BinanceTradeService.CancelAlgoOrdersAsync(item.sym);
                     var qty = Math.Abs(item.amt).ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture);
                     var closeSide = item.amt > 0 ? "SELL" : "BUY";
-                    var up = price * (1 + band);
-                    var dn = price * (1 - band);
-                    var tp = item.amt > 0 ? up : dn;
-                    var sl = item.amt > 0 ? dn : up;
-                    var tpText2 = await BinanceTradeService.FormatPriceAsync(item.sym, (decimal)tp);
-                    var slText2 = await BinanceTradeService.FormatPriceAsync(item.sym, (decimal)sl);
 
-                    var ok1 = false; var ok2 = false;
-                    try { await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "TAKE_PROFIT_MARKET", tpText2, qty); ok1 = true; }
-                    catch (Exception ex) { lastErr = ex.Message; }
-                    try { await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "STOP_MARKET", slText2, qty); ok2 = true; }
-                    catch (Exception ex) { lastErr = ex.Message; }
+                    // 先挂止损（保护腿）
+                    var p1 = await BinanceTradeService.GetPriceAsync(item.sym);
+                    if (p1 <= 0) { lastErr = "价格无效"; break; }
+                    var slPrice = item.amt > 0 ? p1 * (1 - band) : p1 * (1 + band);
+                    var slText = await BinanceTradeService.FormatPriceAsync(item.sym, (decimal)slPrice);
+                    var okSl = false;
+                    try { await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "STOP_MARKET", slText, qty); okSl = true; }
+                    catch (Exception ex) { lastErr = "止损:" + ex.Message; }
 
-                    if (ok1 && ok2)
+                    // 再挂止盈（重新取价，且比止损略宽，避免撞价）
+                    var p2 = await BinanceTradeService.GetPriceAsync(item.sym);
+                    if (p2 <= 0) { lastErr = "价格无效"; break; }
+                    var tpPrice = item.amt > 0 ? p2 * (1 + band * 1.5) : p2 * (1 - band * 1.5);
+                    var tpText = await BinanceTradeService.FormatPriceAsync(item.sym, (decimal)tpPrice);
+                    var okTp = false;
+                    try { await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "TAKE_PROFIT_MARKET", tpText, qty); okTp = true; }
+                    catch (Exception ex) { lastErr = "止盈:" + ex.Message; }
+
+                    if (okSl && okTp)
                     {
                         placed = true;
+                        usedBand = band;
                         Add("3-" + item.sym + "-挂单", true,
-                            $"价差 {band * 100:0.##}%｜现价 {price:F4} TP {tpText2} SL {slText2}");
+                            $"价差 {band * 100:0.##}%｜止损 {slText}｜止盈 {tpText}");
                         break;
                     }
-                    // 只挂上一侧不算成功：撤掉重来，换更宽的价差
-                    lastErr = (ok1 ? "止损被拒" : "止盈被拒") + "：" + lastErr;
                     await BinanceTradeService.CancelAlgoOrdersAsync(item.sym);
                 }
                 if (!placed)
@@ -553,7 +558,8 @@ internal sealed class MainForm : Form
                 }
 
                 var closed = false; var waited = 0;
-                while (waited < 240000)
+                var waitMs = usedBand <= 0.0004 ? 300000 : 480000;
+                while (waited < waitMs)
                 {
                     await Task.Delay(4000);
                     waited += 4000;
@@ -561,7 +567,7 @@ internal sealed class MainForm : Form
                 }
                 var nowPrice = await BinanceTradeService.GetPriceAsync(item.sym);
                 Add("3-" + item.sym + "-触发", closed,
-                    closed ? $"{waited / 1000} 秒内被触发平仓" : $"240 秒未触发（现价 {nowPrice:F4}）");
+                    closed ? $"{waited / 1000} 秒内被触发平仓" : $"{waited / 1000} 秒未触发（现价 {nowPrice:F4}）");
                 await BinanceTradeService.CancelAlgoOrdersAsync(item.sym);
             }
 
