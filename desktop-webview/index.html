@@ -12149,8 +12149,23 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
     });
     document.getElementById('nvBsSim')?.addEventListener('click', () => {
         const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
-        const cur = rows.find(r => (r.symbol || '') === 'BTCUSDT') || rows[0];
-        if (!cur) { setStatus('没有可用行数据', 'err'); return; }
+        if (!rows.length) { setStatus('没有可用行数据', 'err'); return; }
+        // 只在“当前环境支持”的币里挑：测试网勾了就按测试网清单过滤
+        const symSet = (window.__MOSS_SYMBOLS && testnetOn()) ? window.__MOSS_SYMBOLS.set : null;
+        const held = new Set((TRADE_INFO.positions || []).map(p => p.symbol));
+        let pool = rows.filter(r => {
+          const sym = r.symbol || '';
+          if (!sym) return false;
+          if (symSet && !symSet.has(sym)) return false;
+          if (held.has(sym)) return false;
+          return true;
+        });
+        // 优先挑主流币，方便你在币安页面上核对
+        const preferred = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','DOGEUSDT','ADAUSDT','LINKUSDT','AVAXUSDT','LTCUSDT'];
+        const poolPreferred = preferred.map(x => pool.find(r => (r.symbol||'') === x)).filter(Boolean);
+        if (poolPreferred.length) pool = poolPreferred;
+        if (!pool.length) { setStatus('当前没有可下单的币（都已持仓或不在测试网）', 'err'); return; }
+        const cur = pool[Math.floor(Math.random() * pool.length)];
         const sig = calcSignal(cur);
         queueOrderPreview({ sig, key: `${cur.symbol}-${sig.side}` });
         const autoMode = readOrderMode() === 'auto' && LIVE_ORDER_ENABLED();
@@ -12165,7 +12180,7 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
             sendOrder(p);
           }, 1200);
         } else {
-          setStatus('已伪造一条 ' + cur.symbol + ' 信号，弹出建仓卡'
+          setStatus('已伪造一条 ' + cur.symbol + ' 信号（候选 ' + pool.length + ' 个），弹出建仓卡'
             + (autoMode ? '（但已满 5 仓，不自动下单）' : '（手动模式）'), 'ok');
         }
     });
