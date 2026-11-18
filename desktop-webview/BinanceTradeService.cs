@@ -321,6 +321,10 @@ internal static class BinanceTradeService
         return 0m;
     }
 
+    /// <summary>测试用：按绝对触发价挂一条条件单</summary>
+    public static Task PlaceConditionalForTestAsync(string symbol, string closeSide, string type, string triggerPrice, string quantity)
+        => PlaceAlgoOrderAsync(symbol, closeSide, type, triggerPrice, quantity);
+
     /// <summary>下条件单（止盈/止损）：币安 2025-11 起必须用 /fapi/v1/algoOrder</summary>
     private static async Task PlaceAlgoOrderAsync(string symbol, string closeSide, string type,
         string triggerPrice, string quantity, string workingType = "MARK_PRICE")

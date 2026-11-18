@@ -567,71 +567,111 @@ internal sealed class MainForm : Form
                 await _web.CoreWebView2.ExecuteScriptAsync(
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payloadC)}}}));");
                 return;
-            }            if (action == "tptest")
+            }
+            if (action == "tptest")
             {
                 var steps = new System.Collections.Generic.List<object>();
-                var sym = "";
-                decimal entry = 0;
                 try
                 {
-                    // 先挑一个“当前没有持仓”的币，绝不影响已有仓位
-                    foreach (var cand in new[] { "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "DOGEUSDT", "XRPUSDT", "LINKUSDT", "ADAUSDT" })
+                    var want = root.TryGetProperty("symbol", out var sy) ? (sy.GetString() ?? "") : "";
+
+                    // 读取现有持仓，挑一个来测（不改别人仓位）
+                    var open = new System.Collections.Generic.List<(string sym, double amt)>();
+                    try
                     {
-                        if (await BinanceTradeService.GetPositionAmountAsync(cand) <= 0) { sym = cand; break; }
-                    }
-                    if (string.IsNullOrEmpty(sym))
-                        throw new InvalidOperationException("这些币都已有持仓，先平掉一个再测");
-                    steps.Add(new { name = "选择测试币", ok = true, msg = sym + "（当前无持仓）" });
-
-                    var bal = await BinanceTradeService.GetBalancesAsync();
-                    if (!bal.Ok) throw new InvalidOperationException(bal.Message);
-                    var priceNow = await BinanceTradeService.GetPriceAsync(sym);
-                    entry = (decimal)priceNow;
-                    steps.Add(new { name = "开仓", ok = true, msg = $"现价 {priceNow:F2}，随后挂 ±0.1% 的止盈止损" });
-
-                    // 0.1% 的止盈止损：几乎必然在几十秒内被触发
-                    var res = await BinanceTradeService.PlaceMarketOrderAsync(sym, "long", bal.FuturesEquity, 0.02, 5, 0.1, 0.1, 0);
-                    steps.Add(new { name = "下单 + 挂条件单", ok = res.Ok, msg = res.Message });
-                    if (!res.Ok) throw new InvalidOperationException(res.Message);
-
-                    // 轮询持仓，等待触发（最多 100 秒）
-                    var closed = false;
-                    var waited = 0;
-                    while (waited < 100000)
-                    {
-                        await Task.Delay(5000);
-                        waited += 5000;
-                        var amt = await BinanceTradeService.GetPositionAmountAsync(sym);
-                        if (amt <= 0) { closed = true; break; }
-                    }
-
-                    var priceAfter = await BinanceTradeService.GetPriceAsync(sym);
-                    if (closed)
-                    {
-                        var up = priceAfter > (double)entry;
-                        steps.Add(new
+                        var pr = await BinanceTradeService.GetPositionsAsync();
+                        foreach (var o in pr)
                         {
-                            name = "已触发平仓",
-                            ok = true,
-                            msg = up
-                                ? $"价格上涨到 {priceAfter:F2} → 止盈触发"
-                                : $"价格下跌到 {priceAfter:F2} → 止损触发"
-                        });
+                            var t = o.GetType();
+                            var symV = t.GetProperty("symbol")?.GetValue(o) as string;
+                            var amtV = t.GetProperty("amount")?.GetValue(o);
+                            if (symV == null || amtV == null) continue;
+                            var d = Convert.ToDouble(amtV);
+                            if (Math.Abs(d) > 0) open.Add((symV, d));
+                        }
+                    }
+                    catch (Exception ex) { steps.Add(new { name = "读取持仓", ok = false, msg = ex.Message }); }
+
+                    (string sym, double amt) target;
+                    if (!string.IsNullOrEmpty(want))
+                    {
+                        var found = open.Find(x => x.sym.Equals(want, StringComparison.OrdinalIgnoreCase));
+                        if (found.sym == null) throw new InvalidOperationException(want + " 当前没有持仓");
+                        target = found;
                     }
                     else
                     {
-                        steps.Add(new { name = "等待超时", ok = false, msg = "100 秒内价格没碰到 ±0.1%，可再点一次或换波动大的币" });
+                        if (open.Count == 0) throw new InvalidOperationException("当前没有任何持仓，先用冒烟测试或手动建仓开一个");
+                        target = open[0];
+                    }
+
+                    var sym = target.sym;
+                    var amt = Math.Abs(target.amt);
+                    var isLong = target.amt > 0;
+                    var qtyText = amt.ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture);
+                    var closeSide = isLong ? "SELL" : "BUY";
+                    steps.Add(new { name = "目标仓位", ok = true, msg = $"{sym} {(isLong ? "多" : "空")} {qtyText}" });
+
+                    var price = await BinanceTradeService.GetPriceAsync(sym);
+                    if (price <= 0) throw new InvalidOperationException("价格无效");
+
+                    // 撤掉旧的条件单，挂一对离现价 0.1% 的
+                    var cancelled = await BinanceTradeService.CancelAlgoOrdersAsync(sym);
+                    steps.Add(new { name = "撤销旧委托", ok = true, msg = $"撤掉 {cancelled} 条" });
+
+                    var up = price * (1 + 0.001);
+                    var dn = price * (1 - 0.001);
+                    var tpPrice = isLong ? up : dn;
+                    var slPrice = isLong ? dn : up;
+
+                    var okTp = false; var okSl = false;
+                    try
+                    {
+                        await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "TAKE_PROFIT_MARKET", tpPrice.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture), qtyText);
+                        okTp = true;
+                    }
+                    catch (Exception ex) { steps.Add(new { name = "挂止盈失败", ok = false, msg = ex.Message }); }
+
+                    try
+                    {
+                        await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "STOP_MARKET", slPrice.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture), qtyText);
+                        okSl = true;
+                    }
+                    catch (Exception ex) { steps.Add(new { name = "挂止损失败", ok = false, msg = ex.Message }); }
+
+                    steps.Add(new { name = "挂近距离条件单", ok = okTp && okSl,
+                        msg = $"现价 {price:F4}｜止盈 {tpPrice:F4}｜止损 {slPrice:F4}（距现价 0.1%）" });
+
+                    // 等触发：最多 100 秒
+                    var closed = false; var waited = 0;
+                    while (waited < 100000)
+                    {
+                        await Task.Delay(4000);
+                        waited += 4000;
+                        if (await BinanceTradeService.GetPositionAmountAsync(sym) <= 0) { closed = true; break; }
+                    }
+
+                    var last = await BinanceTradeService.GetPriceAsync(sym);
+                    if (closed)
+                    {
+                        var hitTp = isLong ? last >= tpPrice : last <= tpPrice;
+                        steps.Add(new { name = "已触发", ok = true,
+                            msg = hitTp ? $"止盈被打掉（价格 {last:F4}），仓位已平" : $"止损被打掉（价格 {last:F4}），仓位已平" });
+                    }
+                    else
+                    {
+                        steps.Add(new { name = "等待超时", ok = false, msg = $"100 秒内价格没走 0.1%（现价 {last:F4}），可再点一次" });
                     }
 
                     var left = await BinanceTradeService.CancelAlgoOrdersAsync(sym);
-                    steps.Add(new { name = "清理残留委托", ok = true, msg = $"撤掉 {left} 条" });
+                    if (left > 0) steps.Add(new { name = "清理剩余", ok = true, msg = $"撤掉 {left} 条" });
                 }
                 catch (Exception ex)
                 {
                     steps.Add(new { name = "中断", ok = false, msg = ex.Message });
                 }
                 BinanceTradeService.WriteLog("tptest", new { steps = steps.Count });
-                var payloadT = new { type = "tptest", ok = true, symbol = sym, steps };
+                var payloadT = new { type = "tptest", ok = true, steps };
                 await _web.CoreWebView2.ExecuteScriptAsync(
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payloadT)}}}));");
                 return;
