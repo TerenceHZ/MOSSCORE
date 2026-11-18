@@ -535,13 +535,16 @@ internal sealed class MainForm : Form
                     try { await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "STOP_MARKET", slText2, qty); ok2 = true; }
                     catch (Exception ex) { lastErr = ex.Message; }
 
-                    if (ok1 || ok2)
+                    if (ok1 && ok2)
                     {
                         placed = true;
-                        Add("3-" + item.sym + "-挂单", ok1 && ok2,
-                            $"价差 {band * 100:0.##}%｜现价 {price:F4} TP {(ok1 ? tpText2 : "跳过")} SL {(ok2 ? slText2 : "跳过")}");
+                        Add("3-" + item.sym + "-挂单", true,
+                            $"价差 {band * 100:0.##}%｜现价 {price:F4} TP {tpText2} SL {slText2}");
                         break;
                     }
+                    // 只挂上一侧不算成功：撤掉重来，换更宽的价差
+                    lastErr = (ok1 ? "止损被拒" : "止盈被拒") + "：" + lastErr;
+                    await BinanceTradeService.CancelAlgoOrdersAsync(item.sym);
                 }
                 if (!placed)
                 {
