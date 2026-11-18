@@ -76,7 +76,7 @@ internal static class BinanceTradeService
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    private static async Task<JsonDocument> SignedAsync(string baseUrl, string path, IEnumerable<KeyValuePair<string, string>>? args = null, bool post = false)
+    private static async Task<JsonDocument> SignedAsync(string baseUrl, string path, IEnumerable<KeyValuePair<string, string>>? args = null, bool post = false, bool delete = false)
     {
         if (!Configured) throw new InvalidOperationException("未配置币安 API 密钥");
         var list = new List<KeyValuePair<string, string>>(args ?? Array.Empty<KeyValuePair<string, string>>());
@@ -84,7 +84,7 @@ internal static class BinanceTradeService
         list.Add(new("recvWindow", "10000"));
         var query = string.Join("&", list.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
         var url = $"{baseUrl}{path}?{query}&signature={Sign(query)}";
-        using var req = new HttpRequestMessage(post ? HttpMethod.Post : HttpMethod.Get, url);
+        using var req = new HttpRequestMessage(delete ? HttpMethod.Delete : (post ? HttpMethod.Post : HttpMethod.Get), url);
         if (post) req.Content = new StringContent("", Encoding.UTF8, "application/x-www-form-urlencoded");
         req.Headers.Add("X-MBX-APIKEY", ApiKey);
         using var res = await Http.SendAsync(req);
@@ -266,6 +266,38 @@ internal static class BinanceTradeService
         => step <= 0 ? value : Math.Floor(value / step) * step;
 
 
+
+    /// <summary>撤销某币所有未触发的条件单（algo），返回撤销数量</summary>
+    public static async Task<int> CancelAlgoOrdersAsync(string symbol)
+    {
+        var n = 0;
+        try
+        {
+            using var doc = await SignedAsync(FuturesBase, "/fapi/v1/openAlgoOrders",
+                new[] { new KeyValuePair<string, string>("symbol", symbol) });
+            if (!doc.RootElement.TryGetProperty("orders", out var arr)) return 0;
+            foreach (var o in arr.EnumerateArray())
+            {
+                if (!o.TryGetProperty("algoId", out var idEl)) continue;
+                var id = idEl.ValueKind == JsonValueKind.Number ? idEl.GetInt64().ToString() : (idEl.GetString() ?? "");
+                if (string.IsNullOrEmpty(id)) continue;
+                try
+                {
+                    await SignedAsync(FuturesBase, "/fapi/v1/algoOrder", new[]
+                    {
+                        new KeyValuePair<string, string>("symbol", symbol),
+                        new KeyValuePair<string, string>("algoId", id)
+                    }, post: false, delete: true);
+                    n++;
+                }
+                catch { }
+            }
+        }
+        catch { }
+        WriteLog("cancel_algo", new { symbol, count = n });
+        return n;
+    }
+
     /// <summary>读取某交易对的持仓数量（无持仓返回 0）</summary>
     public static async Task<decimal> GetPositionAmountAsync(string symbol)
     {
@@ -320,6 +352,7 @@ internal static class BinanceTradeService
                 new KeyValuePair<string, string>("quantity", amtText),
                 new KeyValuePair<string, string>("reduceOnly", "true")
             }, post: true);
+            try { await CancelAlgoOrdersAsync(symbol); } catch { }
             WriteLog("close", new { symbol, side, ok = true });
             return (true, "已市价平仓");
         }
@@ -384,6 +417,9 @@ internal static class BinanceTradeService
 
             var orderSide = side == "long" ? "BUY" : "SELL";
             var closeSide = side == "long" ? "SELL" : "BUY";
+
+            // 开仓前先清掉该币可能残留的条件单，避免叠加出多套止盈止损
+            try { await CancelAlgoOrdersAsync(symbol); } catch { }
 
             // 2) 市价开仓
             string orderId;
