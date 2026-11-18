@@ -512,24 +512,42 @@ internal sealed class MainForm : Form
 
             foreach (var item in syms)
             {
-                var price = await BinanceTradeService.GetPriceAsync(item.sym);
-                if (price <= 0) { Add("3-" + item.sym, false, "价格无效"); continue; }
-                await BinanceTradeService.CancelAlgoOrdersAsync(item.sym);
-                var qty = Math.Abs(item.amt).ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture);
-                var closeSide = item.amt > 0 ? "SELL" : "BUY";
-                var up = price * (1 + 0.0004);
-                var dn = price * (1 - 0.0004);
-                var tp = item.amt > 0 ? up : dn;
-                var sl = item.amt > 0 ? dn : up;
-                try
+                var placed = false;
+                var lastErr = "";
+                // 依次尝试更宽的价差：0.04% → 0.15% → 0.5% → 1%
+                foreach (var band in new[] { 0.0004, 0.0015, 0.005, 0.01 })
                 {
+                    var price = await BinanceTradeService.GetPriceAsync(item.sym);
+                    if (price <= 0) { lastErr = "价格无效"; break; }
+                    await BinanceTradeService.CancelAlgoOrdersAsync(item.sym);
+                    var qty = Math.Abs(item.amt).ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture);
+                    var closeSide = item.amt > 0 ? "SELL" : "BUY";
+                    var up = price * (1 + band);
+                    var dn = price * (1 - band);
+                    var tp = item.amt > 0 ? up : dn;
+                    var sl = item.amt > 0 ? dn : up;
                     var tpText2 = await BinanceTradeService.FormatPriceAsync(item.sym, (decimal)tp);
                     var slText2 = await BinanceTradeService.FormatPriceAsync(item.sym, (decimal)sl);
-                    await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "TAKE_PROFIT_MARKET", tpText2, qty);
-                    await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "STOP_MARKET", slText2, qty);
-                    Add("3-" + item.sym + "-挂单", true, $"现价 {price:F4} TP {tp:F4} SL {sl:F4}");
+
+                    var ok1 = false; var ok2 = false;
+                    try { await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "TAKE_PROFIT_MARKET", tpText2, qty); ok1 = true; }
+                    catch (Exception ex) { lastErr = ex.Message; }
+                    try { await BinanceTradeService.PlaceConditionalForTestAsync(item.sym, closeSide, "STOP_MARKET", slText2, qty); ok2 = true; }
+                    catch (Exception ex) { lastErr = ex.Message; }
+
+                    if (ok1 || ok2)
+                    {
+                        placed = true;
+                        Add("3-" + item.sym + "-挂单", ok1 && ok2,
+                            $"价差 {band * 100:0.##}%｜现价 {price:F4} TP {(ok1 ? tpText2 : "跳过")} SL {(ok2 ? slText2 : "跳过")}");
+                        break;
+                    }
                 }
-                catch (Exception ex) { Add("3-" + item.sym + "-挂单", false, ex.Message); continue; }
+                if (!placed)
+                {
+                    Add("3-" + item.sym + "-挂单", false, "所有价差都被拒绝：" + lastErr);
+                    continue;
+                }
 
                 var closed = false; var waited = 0;
                 while (waited < 240000)
@@ -538,8 +556,23 @@ internal sealed class MainForm : Form
                     waited += 4000;
                     if (await BinanceTradeService.GetPositionAmountAsync(item.sym) <= 0) { closed = true; break; }
                 }
-                Add("3-" + item.sym + "-触发", closed, closed ? $"{waited / 1000} 秒内被触发平仓" : $"240 秒未触发（现价 {(await BinanceTradeService.GetPriceAsync(item.sym)):F4}）");
+                var nowPrice = await BinanceTradeService.GetPriceAsync(item.sym);
+                Add("3-" + item.sym + "-触发", closed,
+                    closed ? $"{waited / 1000} 秒内被触发平仓" : $"240 秒未触发（现价 {nowPrice:F4}）");
                 await BinanceTradeService.CancelAlgoOrdersAsync(item.sym);
+            }
+
+            // 收尾：把没被触发的仓位强制平掉，保证下一轮从干净状态开始
+            var leftover = await BinanceTradeService.GetPositionsAsync();
+            foreach (var po in leftover)
+            {
+                var t = po.GetType();
+                var sy = t.GetProperty("symbol")?.GetValue(po) as string;
+                var am = t.GetProperty("amount")?.GetValue(po);
+                if (sy == null || am == null) continue;
+                var d = Convert.ToDouble(am);
+                await BinanceTradeService.ClosePositionAsync(sy, d > 0 ? "long" : "short");
+                await BinanceTradeService.CancelAlgoOrdersAsync(sy);
             }
 
             var endPos = await BinanceTradeService.GetPositionsAsync();
