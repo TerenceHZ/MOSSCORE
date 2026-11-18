@@ -242,7 +242,8 @@ internal sealed class MainForm : Form
             _web.CoreWebView2.Settings.IsZoomControlEnabled = true;
             _web.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
             _web.CoreWebView2.NavigationCompleted += async (_, _) => {
-            try { MaybeRunAcceptance(); } catch { } await Task.Delay(600); await ApplyEntitlementToPageAsync(); };
+            try { MaybeRunAcceptance(); } catch { }
+            try { MaybeRunStress(); } catch { } await Task.Delay(600); await ApplyEntitlementToPageAsync(); };
             TradeConfig.Load();
             StartTransferTimer();
 
@@ -617,6 +618,175 @@ internal sealed class MainForm : Form
             var json = JsonSerializer.Serialize(new { ok = okAll, finishedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), steps = rep },
                 new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             File.WriteAllText(Path.Combine(dir, "autotest-report.json"), json);
+        }
+        catch { }
+    }
+
+
+    // ================= 压力验收：每个环节跑 N 遍 =================
+    private async Task RunStressSuiteAsync(int rounds)
+    {
+        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MossCore");
+        Directory.CreateDirectory(dir);
+        var path = Path.Combine(dir, "stress-report.json");
+        var all = new System.Collections.Generic.List<object>();
+        var fails = 0;
+
+        void Rec(string phase, int iter, bool ok, string msg)
+        {
+            all.Add(new { phase, iter, ok, msg, ts = DateTime.Now.ToString("HH:mm:ss") });
+            if (!ok) fails++;
+            BinanceTradeService.WriteLog("stress", new { phase, iter, ok, msg });
+            try
+            {
+                var json = JsonSerializer.Serialize(new { rounds, done = all.Count, fails, steps = all },
+                    new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+                File.WriteAllText(path, json);
+            }
+            catch { }
+        }
+
+        async Task FlattenAsync()
+        {
+            var ps = await BinanceTradeService.GetPositionsAsync();
+            foreach (var po in ps)
+            {
+                var t = po.GetType();
+                var sy = t.GetProperty("symbol")?.GetValue(po) as string;
+                var am = t.GetProperty("amount")?.GetValue(po);
+                if (sy == null || am == null) continue;
+                var d = Convert.ToDouble(am);
+                await BinanceTradeService.ClosePositionAsync(sy, d > 0 ? "long" : "short");
+                await BinanceTradeService.CancelAlgoOrdersAsync(sy);
+            }
+        }
+
+        try
+        {
+            if (!BinanceTradeService.UseTestnet) { Rec("guard", 0, false, "不是测试网，拒绝跑压力测试"); return; }
+            await FlattenAsync();
+            await Task.Delay(1500);
+            var bal = await BinanceTradeService.GetBalancesAsync();
+            if (!bal.Ok) { Rec("guard", 0, false, "账户不可用:" + bal.Message); return; }
+            var equity = bal.FuturesEquity;
+
+            // ---------- 环节 1：手动单，跑 N 遍 ----------
+            for (var i = 1; i <= rounds; i++)
+            {
+                await FlattenAsync();
+                await Task.Delay(400);
+                var sym = "BTCUSDT";
+                await BinanceTradeService.CancelAlgoOrdersAsync(sym);
+                var r = await BinanceTradeService.PlaceMarketOrderAsync(sym, "long", equity, 0.02, 5, 15, 15, 1000000);
+                var amt = await BinanceTradeService.GetPositionAmountAsync(sym);
+                var orders = await BinanceTradeService.ListAlgoOrdersAsync(sym);
+                var tp = orders.Exists(o => o.OrderType == "TAKE_PROFIT_MARKET");
+                var sl = orders.Exists(o => o.OrderType == "STOP_MARKET");
+                var qtyOk = orders.TrueForAll(o =>
+                {
+                    if (!decimal.TryParse(o.Quantity, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var q)) return false;
+                    return Math.Abs(q - amt) < 0.0000001m;
+                });
+                Rec("1-手动下单", i, r.Ok && amt > 0 && orders.Count == 2 && tp && sl && qtyOk,
+                    $"ok={r.Ok} amt={amt} orders={orders.Count} TP={tp} SL={sl} qtyMatch={qtyOk}");
+                await Task.Delay(300);
+            }
+            await FlattenAsync();
+
+            // ---------- 环节 2：自动开满 5 单，跑 N 遍 ----------
+            var pool = new[] { "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "BNBUSDT", "ADAUSDT", "LINKUSDT", "AVAXUSDT" };
+            for (var i = 1; i <= rounds; i++)
+            {
+                await FlattenAsync();
+                await Task.Delay(400);
+                var opened = 0;
+                foreach (var cand in pool)
+                {
+                    var posNow = await BinanceTradeService.GetPositionsAsync();
+                    if (posNow.Count >= 5) break;
+                    if (await BinanceTradeService.GetPositionAmountAsync(cand) > 0) continue;
+                    await BinanceTradeService.CancelAlgoOrdersAsync(cand);
+                    var rr = await BinanceTradeService.PlaceMarketOrderAsync(cand, "long", equity, 0.02, 5, 15, 15, 1000000);
+                    var oo = await BinanceTradeService.ListAlgoOrdersAsync(cand);
+                    var both = oo.Exists(o => o.OrderType == "TAKE_PROFIT_MARKET") && oo.Exists(o => o.OrderType == "STOP_MARKET") && oo.Count == 2;
+                    if (rr.Ok && both) opened++;
+                    else Rec("2-自动下单细节", i, false, $"{cand} 下单单={rr.Ok} 条件单={oo.Count} msg={rr.Message}");
+                }
+                var final = await BinanceTradeService.GetPositionsAsync();
+                Rec("2-自动满5单", i, opened == 5 && final.Count == 5, $"新开={opened} 当前持仓={final.Count}");
+                await Task.Delay(300);
+            }
+            await FlattenAsync();
+
+            // ---------- 环节 3：止盈止损触发，跑 N 遍（每遍 2 个币）----------
+            for (var i = 1; i <= rounds; i++)
+            {
+                await FlattenAsync();
+                await Task.Delay(400);
+                var tested = 0; var triggered = 0;
+                foreach (var cand in pool)
+                {
+                    if (tested >= 2) break;
+                    await BinanceTradeService.CancelAlgoOrdersAsync(cand);
+                    var rr = await BinanceTradeService.PlaceMarketOrderAsync(cand, "long", equity, 0.02, 5, 15, 15, 1000000);
+                    if (!rr.Ok) continue;
+                    tested++;
+                    var amt = await BinanceTradeService.GetPositionAmountAsync(cand);
+                    var price = await BinanceTradeService.GetPriceAsync(cand);
+                    if (amt <= 0 || price <= 0) continue;
+                    await BinanceTradeService.CancelAlgoOrdersAsync(cand);
+                    var qty = amt.ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture);
+                    var band = 0.0002;
+                    var slRes = await BinanceTradeService.PlaceConditionalWithRetryAsync(cand, "SELL", "STOP_MARKET", band, true, qty);
+                    var tpRes = await BinanceTradeService.PlaceConditionalWithRetryAsync(cand, "SELL", "TAKE_PROFIT_MARKET", band * 1.5, true, qty);
+                    if (!slRes.Ok || !tpRes.Ok)
+                    {
+                        Rec("3-挂单", i, false, cand + " SL=" + slRes.Ok + " TP=" + tpRes.Ok + " " + slRes.Message + " / " + tpRes.Message);
+                        await BinanceTradeService.CancelAlgoOrdersAsync(cand);
+                        continue;
+                    }
+
+                    var closed = false; var waited = 0;
+                    while (waited < 240000)
+                    {
+                        await Task.Delay(3000);
+                        waited += 3000;
+                        if (await BinanceTradeService.GetPositionAmountAsync(cand) <= 0) { closed = true; break; }
+                    }
+                    if (closed) triggered++;
+                    else Rec("3-触发失败", i, false, $"{cand} 240秒未触发");
+                    await BinanceTradeService.CancelAlgoOrdersAsync(cand);
+                }
+                Rec("3-触发", i, triggered == tested && tested == 2, $"测试={tested} 触发={triggered}");
+            }
+            await FlattenAsync();
+            Rec("4-收尾", 0, true, "全部平仓完成");
+        }
+        catch (Exception ex)
+        {
+            Rec("fatal", 0, false, ex.Message);
+        }
+    }
+
+    private void MaybeRunStress()
+    {
+        try
+        {
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MossCore");
+            var f = Path.Combine(dir, "stress.flag");
+            if (!File.Exists(f)) return;
+            var txt = File.ReadAllText(f).Trim();
+            File.Delete(f);
+            var n = 10;
+            int.TryParse(txt, out n);
+            if (n <= 0) n = 10;
+            var timer = new System.Windows.Forms.Timer { Interval = 4000 };
+            timer.Tick += (_, _) =>
+            {
+                timer.Stop(); timer.Dispose();
+                _ = RunStressSuiteAsync(n);
+            };
+            timer.Start();
         }
         catch { }
     }

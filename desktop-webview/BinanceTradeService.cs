@@ -367,6 +367,43 @@ internal static class BinanceTradeService
         return rounded.ToString("0.############################", CultureInfo.InvariantCulture);
     }
 
+
+    /// <summary>
+    /// 挂条件单（带重试）：以当前价为基准，按 percent 距离挂；
+    /// 遇到 -2021（会立即触发，说明价格跑过去了）自动放宽距离重试，最多 5 次。
+    /// 返回是否成功 —— 真实下单必须保证这一条返回 true，否则视为“无保护”。
+    /// </summary>
+    public static async Task<(bool Ok, string Message)> PlaceConditionalWithRetryAsync(
+        string symbol, string closeSide, string type, double percent, bool isLong, string quantity)
+    {
+        var bands = new[] { percent, percent * 1.5, percent * 2.5, percent * 4, percent * 6 };
+        string lastErr = "";
+        foreach (var band in bands)
+        {
+            var price = await GetPriceAsync(symbol);
+            if (price <= 0) return (false, "价格无效");
+            double target;
+            if (type == "TAKE_PROFIT_MARKET")
+                target = isLong ? price * (1 + band) : price * (1 - band);
+            else
+                target = isLong ? price * (1 - band) : price * (1 + band);
+            if (target <= 0) continue;
+            var txt = await FormatPriceAsync(symbol, (decimal)target);
+            try
+            {
+                await PlaceAlgoOrderAsync(symbol, closeSide, type, txt, quantity);
+                return (true, txt);
+            }
+            catch (Exception ex)
+            {
+                lastErr = ex.Message;
+                if (!lastErr.Contains("-2021")) return (false, lastErr);   // 非“会立即触发”的错误直接失败
+            }
+            await Task.Delay(150);
+        }
+        return (false, "重试 5 次仍无法挂单：" + lastErr);
+    }
+
     /// <summary>测试用：按绝对触发价挂一条条件单</summary>
     public static Task PlaceConditionalForTestAsync(string symbol, string closeSide, string type, string triggerPrice, string quantity)
         => PlaceAlgoOrderAsync(symbol, closeSide, type, triggerPrice, quantity);
@@ -497,26 +534,15 @@ internal static class BinanceTradeService
             var slText = slPrice.ToString("0.############################", CultureInfo.InvariantCulture);
 
             string? protectError = null;
+            var isLongSide = side == "long";
 
-            try
-            {
-                await PlaceAlgoOrderAsync(symbol, closeSide, "TAKE_PROFIT_MARKET", tpText, qtyText);
-            }
-            catch (Exception ex)
-            {
-                protectError = "止盈创建失败: " + ex.Message;
-            }
+            var tpRes = await PlaceConditionalWithRetryAsync(symbol, closeSide, "TAKE_PROFIT_MARKET", tpPercent / 100.0, isLongSide, qtyText);
+            if (!tpRes.Ok) protectError = "止盈创建失败: " + tpRes.Message;
 
             if (protectError == null)
             {
-                try
-                {
-                    await PlaceAlgoOrderAsync(symbol, closeSide, "STOP_MARKET", slText, qtyText);
-                }
-                catch (Exception ex)
-                {
-                    protectError = "止损创建失败: " + ex.Message;
-                }
+                var slRes = await PlaceConditionalWithRetryAsync(symbol, closeSide, "STOP_MARKET", slPercent / 100.0, isLongSide, qtyText);
+                if (!slRes.Ok) protectError = "止损创建失败: " + slRes.Message;
             }
 
             if (protectError != null)
