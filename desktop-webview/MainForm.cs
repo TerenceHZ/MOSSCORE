@@ -570,13 +570,18 @@ internal sealed class MainForm : Form
             }            if (action == "tptest")
             {
                 var steps = new System.Collections.Generic.List<object>();
-                var sym = "BTCUSDT";
+                var sym = "";
                 decimal entry = 0;
                 try
                 {
-                    try { await BinanceTradeService.CancelAlgoOrdersAsync(sym); } catch { }
-                    var amt0 = await BinanceTradeService.GetPositionAmountAsync(sym);
-                    if (amt0 > 0) throw new InvalidOperationException("BTCUSDT 还有持仓，先平掉再测");
+                    // 先挑一个“当前没有持仓”的币，绝不影响已有仓位
+                    foreach (var cand in new[] { "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "DOGEUSDT", "XRPUSDT", "LINKUSDT", "ADAUSDT" })
+                    {
+                        if (await BinanceTradeService.GetPositionAmountAsync(cand) <= 0) { sym = cand; break; }
+                    }
+                    if (string.IsNullOrEmpty(sym))
+                        throw new InvalidOperationException("这些币都已有持仓，先平掉一个再测");
+                    steps.Add(new { name = "选择测试币", ok = true, msg = sym + "（当前无持仓）" });
 
                     var bal = await BinanceTradeService.GetBalancesAsync();
                     if (!bal.Ok) throw new InvalidOperationException(bal.Message);
