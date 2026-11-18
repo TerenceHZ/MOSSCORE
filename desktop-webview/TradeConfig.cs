@@ -20,7 +20,10 @@ internal static class TradeConfig
         public string ApiKey { get; set; } = "";
         public string ApiSecret { get; set; } = "";
         public double BaselineEquity { get; set; }
+        /// <summary>真实下单总开关（保存并启用后为 true）</summary>
         public bool AutoTrade { get; set; }
+        /// <summary>下单方式：true=自动，false=手动</summary>
+        public bool AutoMode { get; set; }
         /// <summary>true = 使用币安合约测试网（模拟盘）</summary>
         public bool UseTestnet { get; set; }
         /// <summary>自动把超额盈利划转到现货（默认关闭，需用户显式开启）</summary>

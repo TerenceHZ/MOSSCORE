@@ -12149,7 +12149,7 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       document.getElementById('nvBsSave')?.addEventListener('click', () => {
         const k = (keyEl.value || '').trim(), v = (secEl.value || '').trim();
         if (!k || !v) { setStatus('请先填写 API Key 和 Secret', 'err'); return; }
-        postTrade({ type: 'tradeConfig', action: 'save', apiKey: k, apiSecret: v, autoTrade: TRADE_INFO.autoTrade, useTestnet: testnetOn() });
+        postTrade({ type: 'tradeConfig', action: 'save', apiKey: k, apiSecret: v, autoTrade: true, autoMode: readOrderMode() === 'auto', useTestnet: testnetOn() });
         setStatus('已保存到本机加密文件', 'ok');
         setTimeout(closeSetup, 700);
       });
@@ -12268,7 +12268,7 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
         if (mode === 'auto') {
           ok.textContent = live ? (hasSlot ? '自动建仓模式' : '已满 5 单 · 暂停开仓') : '自动建仓模式 · 未开启';
         } else {
-          ok.textContent = live ? (hasSlot ? '确认下单' : '已满 5 单 · 暂停开仓') : '预演模式 · 下单未开启';
+          ok.textContent = live ? (hasSlot ? '确认下单' : '已满 5 单 · 暂停开仓') : '真实下单未启用 · 去 API 面板保存';
         }
         ok.disabled = !live || !hasSlot || mode === 'auto';
       }
@@ -13138,6 +13138,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
     } catch (e) {}
           if (typeof d.configured === 'boolean') TRADE_INFO.configured = d.configured;
           if (typeof d.autoTrade === 'boolean') TRADE_INFO.autoTrade = d.autoTrade;
+        if (typeof d.autoMode === 'boolean') TRADE_INFO.mode = d.autoMode ? 'auto' : 'manual';
         if (typeof d.useTestnet === 'boolean') { TRADE_INFO.useTestnet = d.useTestnet; try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNET(); } catch (e) {} }
           if (typeof d.equity === 'number') TRADE_INFO.equity = d.equity;
           if (typeof d.available === 'number') TRADE_INFO.available = d.available;

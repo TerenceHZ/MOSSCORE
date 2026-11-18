@@ -427,9 +427,10 @@ internal sealed class MainForm : Form
             {
                 var mode = root.TryGetProperty("mode", out var m) ? m.GetString() ?? "manual" : "manual";
                 var auto = mode == "auto";
-                TradeConfig.Current.AutoTrade = auto;
+                // 只切换“自动/手动”，不改“真实下单总开关”
+                TradeConfig.Current.AutoMode = auto;
                 TradeConfig.Save();
-                PostToWeb(new { type = "config", ok = true, message = auto ? "已切换为自动下单" : "已切换为手动下单", autoTrade = auto, entitled = LicenseService.TradeEnabled, preview = false, configured = BinanceTradeService.Configured });
+                PostToWeb(new { type = "config", ok = true, message = auto ? "已切换为自动下单" : "已切换为手动下单", autoTrade = TradeConfig.Current.AutoTrade, autoMode = auto, entitled = LicenseService.TradeEnabled, preview = false, configured = BinanceTradeService.Configured });
                 return;
             }
             if (action == "test")
@@ -458,7 +459,8 @@ internal sealed class MainForm : Form
                 var autoTransfer = root.TryGetProperty("autoTransfer", out var atv) && atv.ValueKind == JsonValueKind.True;
                 TradeConfig.Current.ApiKey = key;
                 TradeConfig.Current.ApiSecret = secret;
-                TradeConfig.Current.AutoTrade = auto;
+                TradeConfig.Current.AutoTrade = true;   // “保存并启用”＝打开真实下单总开关
+                TradeConfig.Current.AutoMode = auto;
                 TradeConfig.Current.UseTestnet = useTestnet;
                 TradeConfig.Current.AutoTransfer = autoTransfer;
                 if (root.TryGetProperty("maxNotional", out var mn) && mn.TryGetDouble(out var mnv) && mnv > 0)
@@ -488,6 +490,7 @@ internal sealed class MainForm : Form
                     positions,
                     configured = BinanceTradeService.Configured,
                     autoTrade = TradeConfig.Current.AutoTrade,
+                    autoMode = TradeConfig.Current.AutoMode,
                     useTestnet = TradeConfig.Current.UseTestnet,
                     autoTransfer = TradeConfig.Current.AutoTransfer
                 });
@@ -742,6 +745,7 @@ internal sealed class MainForm : Form
                     preview = false,
                     configured = BinanceTradeService.Configured,
                     autoTrade = TradeConfig.Current.AutoTrade,
+                    autoMode = TradeConfig.Current.AutoMode,
                     useTestnet = TradeConfig.Current.UseTestnet,
                     autoTransfer = TradeConfig.Current.AutoTransfer
                 });
@@ -765,6 +769,7 @@ internal sealed class MainForm : Form
                     preview = false,
                     configured = BinanceTradeService.Configured,
                     autoTrade = TradeConfig.Current.AutoTrade,
+                    autoMode = TradeConfig.Current.AutoMode,
                     useTestnet = TradeConfig.Current.UseTestnet,
                     autoTransfer = TradeConfig.Current.AutoTransfer
                 });
