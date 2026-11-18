@@ -470,7 +470,7 @@ internal sealed class MainForm : Form
                 catch (Exception ex) { pingMsg = ex.Message; }
                 checks.Add(new { name = "网络连通", ok = pingOk, msg = pingMsg });
                 checks.Add(new { name = "API 密钥", ok = BinanceTradeService.Configured, msg = BinanceTradeService.Configured ? "已配置" : "未配置" });
-                checks.Add(new { name = "运行环境", ok = true, msg = BinanceTradeService.UseTestnet ? "测试网（模拟盘）" : "主网（真实资金）" });
+                checks.Add(new { name = "运行环境", ok = true, msg = (BinanceTradeService.UseTestnet ? "测试网（模拟盘）" : "主网（真实资金）") + " · " + BinanceTradeService.CurrentHost });
 
                 var bal = await BinanceTradeService.GetBalancesAsync();
                 checks.Add(new { name = "合约账户", ok = bal.Ok, msg = bal.Ok ? $"权益 {bal.FuturesEquity:F2} USDT / 可用 {bal.AvailableBalance:F2}" : bal.Message });

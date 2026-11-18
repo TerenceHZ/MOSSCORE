@@ -18,13 +18,20 @@ namespace MossCore;
 internal static class BinanceTradeService
 {
     private const string FuturesLive = "https://fapi.binance.com";
-    private const string FuturesTest = "https://testnet.binancefuture.com";
+    private const string FuturesTestOld = "https://testnet.binancefuture.com";
+    private const string FuturesTestNew = "https://demo-fapi.binance.com";
+
+    /// <summary>测试网基址：新老两套并存，按 API Key 来源自动切换</summary>
+    private static string TestHost = FuturesTestNew;
     private const string SpotBase = "https://api.binance.com";
 
     /// <summary>true = 连币安合约测试网（testnet.binancefuture.com）</summary>
     public static bool UseTestnet { get; set; }
 
-    private static string FuturesBase => UseTestnet ? FuturesTest : FuturesLive;
+    private static string FuturesBase => UseTestnet ? TestHost : FuturesLive;
+
+    /// <summary>当前实际使用的基址（自检显示用）</summary>
+    public static string CurrentHost => UseTestnet ? TestHost : FuturesLive;
 
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
 
@@ -82,7 +89,26 @@ internal static class BinanceTradeService
         using var res = await Http.SendAsync(req);
         var body = await res.Content.ReadAsStringAsync();
         if (!res.IsSuccessStatusCode)
+        {
+            // 测试网有两套域名（demo-fapi / testnet.binancefuture），Key 来源不同；
+            // 鉴权失败时自动换另一套重试一次。
+            var isAuthErr = body.Contains("-2015") || body.Contains("-1022") || body.Contains("Invalid API-key");
+            if (UseTestnet && isAuthErr && baseUrl != FuturesLive)
+            {
+                var alt = baseUrl.Contains("demo-fapi") ? FuturesTestOld : FuturesTestNew;
+                TestHost = alt;
+                var url2 = $"{alt}{path}?{query}&signature={Sign(query)}";
+                using var req2 = new HttpRequestMessage(HttpMethod.Get, url2);
+                req2.Headers.Add("X-MBX-APIKEY", ApiKey);
+                using var res2 = await Http.SendAsync(req2);
+                var body2 = await res2.Content.ReadAsStringAsync();
+                if (!res2.IsSuccessStatusCode)
+                    throw new InvalidOperationException($"币安接口错误 {(int)res2.StatusCode}: {body2}");
+                WriteLog("testnet_host_switch", new { host = alt });
+                return JsonDocument.Parse(body2);
+            }
             throw new InvalidOperationException($"币安接口错误 {(int)res.StatusCode}: {body}");
+        }
         return JsonDocument.Parse(body);
     }
 
