@@ -567,7 +567,71 @@ internal sealed class MainForm : Form
                 await _web.CoreWebView2.ExecuteScriptAsync(
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payloadC)}}}));");
                 return;
-            }            if (action == "smoke")
+            }            if (action == "tptest")
+            {
+                var steps = new System.Collections.Generic.List<object>();
+                var sym = "BTCUSDT";
+                decimal entry = 0;
+                try
+                {
+                    try { await BinanceTradeService.CancelAlgoOrdersAsync(sym); } catch { }
+                    var amt0 = await BinanceTradeService.GetPositionAmountAsync(sym);
+                    if (amt0 > 0) throw new InvalidOperationException("BTCUSDT 还有持仓，先平掉再测");
+
+                    var bal = await BinanceTradeService.GetBalancesAsync();
+                    if (!bal.Ok) throw new InvalidOperationException(bal.Message);
+                    var priceNow = await BinanceTradeService.GetPriceAsync(sym);
+                    entry = (decimal)priceNow;
+                    steps.Add(new { name = "开仓", ok = true, msg = $"现价 {priceNow:F2}，随后挂 ±0.1% 的止盈止损" });
+
+                    // 0.1% 的止盈止损：几乎必然在几十秒内被触发
+                    var res = await BinanceTradeService.PlaceMarketOrderAsync(sym, "long", bal.FuturesEquity, 0.02, 5, 0.1, 0.1, 0);
+                    steps.Add(new { name = "下单 + 挂条件单", ok = res.Ok, msg = res.Message });
+                    if (!res.Ok) throw new InvalidOperationException(res.Message);
+
+                    // 轮询持仓，等待触发（最多 100 秒）
+                    var closed = false;
+                    var waited = 0;
+                    while (waited < 100000)
+                    {
+                        await Task.Delay(5000);
+                        waited += 5000;
+                        var amt = await BinanceTradeService.GetPositionAmountAsync(sym);
+                        if (amt <= 0) { closed = true; break; }
+                    }
+
+                    var priceAfter = await BinanceTradeService.GetPriceAsync(sym);
+                    if (closed)
+                    {
+                        var up = priceAfter > (double)entry;
+                        steps.Add(new
+                        {
+                            name = "已触发平仓",
+                            ok = true,
+                            msg = up
+                                ? $"价格上涨到 {priceAfter:F2} → 止盈触发"
+                                : $"价格下跌到 {priceAfter:F2} → 止损触发"
+                        });
+                    }
+                    else
+                    {
+                        steps.Add(new { name = "等待超时", ok = false, msg = "100 秒内价格没碰到 ±0.1%，可再点一次或换波动大的币" });
+                    }
+
+                    var left = await BinanceTradeService.CancelAlgoOrdersAsync(sym);
+                    steps.Add(new { name = "清理残留委托", ok = true, msg = $"撤掉 {left} 条" });
+                }
+                catch (Exception ex)
+                {
+                    steps.Add(new { name = "中断", ok = false, msg = ex.Message });
+                }
+                BinanceTradeService.WriteLog("tptest", new { steps = steps.Count });
+                var payloadT = new { type = "tptest", ok = true, symbol = sym, steps };
+                await _web.CoreWebView2.ExecuteScriptAsync(
+                    $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payloadT)}}}));");
+                return;
+            }
+            if (action == "smoke")
             {
                 var steps = new System.Collections.Generic.List<object>();
                 var sym = "BTCUSDT";

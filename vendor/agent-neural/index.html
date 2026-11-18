@@ -12117,6 +12117,7 @@ requestAnimationFrame(frame);
     #nvBsSmoke{background:rgba(232,160,32,.12);border:1px solid rgba(232,160,32,.5);color:#ffc043}
     #nvBsSim{background:rgba(94,231,210,.1);border:1px solid rgba(94,231,210,.45);color:#8fe3d4}
     #nvBsClean{background:rgba(201,99,88,.12);border:1px solid rgba(201,99,88,.5);color:#e0918a}
+    #nvBsTp{background:rgba(232,160,32,.1);border:1px solid rgba(232,160,32,.45);color:#e8c07a}
 #nvBsSave{background:rgba(99,192,142,.15);border:1px solid rgba(99,192,142,.55);color:#8fd8b4}
     .nv-bs-tip{margin-top:14px;font:500 10.5px/1.7 "Microsoft YaHei",sans-serif;color:#6f5f48;letter-spacing:.02em}
 `;
@@ -12142,6 +12143,10 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       document.getElementById('nvBsClean')?.addEventListener('click', () => {
         setStatus('正在清理 BTCUSDT 的条件委托…', '');
         postTrade({ type: 'tradeConfig', action: 'cleanup', symbol: 'BTCUSDT' });
+    });
+    document.getElementById('nvBsTp')?.addEventListener('click', () => {
+        setStatus('触发测试：开仓后挂 ±0.1% 的止盈止损，等它自己打掉（最多 100 秒）…', '');
+        postTrade({ type: 'tradeConfig', action: 'tptest' });
     });
     document.getElementById('nvBsSmoke')?.addEventListener('click', () => {
         setStatus('冒烟测试中（开仓 → 止盈止损 → 平仓）…', '');
@@ -12207,6 +12212,12 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
         if (sd0.type === 'symbols' && Array.isArray(sd0.list)) {
         if (sd0.type === 'cleanup') {
             setStatus('已清理 ' + sd0.symbol + ' 的条件委托：' + sd0.cancelled + ' 条', sd0.cancelled > 0 ? 'ok' : 'err');
+        }
+        if (sd0.type === 'tptest') {
+            try {
+                const lines = (sd0.steps || []).map(x => (x.ok ? '✓ ' : '✗ ') + x.name + '：' + (x.msg || ''));
+                setStatus(lines.join(' · '), (sd0.steps || []).every(x => x.ok) ? 'ok' : 'err');
+            } catch (e) {}
         }
         if (sd0.type === 'smoke') {
             try {
@@ -14128,6 +14139,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
    <div class="nv-bs-actions">
     <button type="button" id="nvBsSelfTest">自检</button>
         <button type="button" id="nvBsSmoke">冒烟测试</button>
+        <button type="button" id="nvBsTp">触发测试</button>
         <button type="button" id="nvBsClean">清理委托</button>
         <button type="button" id="nvBsSim">模拟信号</button>
         <button type="button" id="nvBsTest">测试连接</button>
