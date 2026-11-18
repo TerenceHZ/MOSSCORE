@@ -630,11 +630,13 @@ internal sealed class MainForm : Form
             if (!File.Exists(flag)) return;
             File.Delete(flag);
             // 走客户端真实 UI 路径（页面里点按钮/走自动分支）
-            _ = Task.Run(async () =>
+            // 必须在 UI 线程里访问 CoreWebView2
+            var t = new System.Windows.Forms.Timer { Interval = 4000 };
+            t.Tick += async (_, _) =>
             {
+                t.Stop(); t.Dispose();
                 try
                 {
-                    await Task.Delay(4000);
                     if (_web.CoreWebView2 == null) return;
                     await _web.CoreWebView2.ExecuteScriptAsync("window.__MOSS_UITEST && window.__MOSS_UITEST(); true");
                 }
@@ -642,7 +644,8 @@ internal sealed class MainForm : Form
                 {
                     try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "msg.log"), "[uitest] " + ex.Message + Environment.NewLine); } catch { }
                 }
-            });
+            };
+            t.Start();
         }
         catch { }
     }

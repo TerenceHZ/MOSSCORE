@@ -12118,6 +12118,7 @@ requestAnimationFrame(frame);
     #nvBsSim{background:rgba(94,231,210,.1);border:1px solid rgba(94,231,210,.45);color:#8fe3d4}
     #nvBsClean{background:rgba(201,99,88,.12);border:1px solid rgba(201,99,88,.5);color:#e0918a}
     #nvBsTp{background:rgba(232,160,32,.1);border:1px solid rgba(232,160,32,.45);color:#e8c07a}
+    #nvBsFull{background:rgba(99,192,142,.14);border:1px solid rgba(99,192,142,.5);color:#8fd8b4}
 #nvBsSave{background:rgba(99,192,142,.15);border:1px solid rgba(99,192,142,.55);color:#8fd8b4}
     .nv-bs-tip{margin-top:14px;font:500 10.5px/1.7 "Microsoft YaHei",sans-serif;color:#6f5f48;letter-spacing:.02em}
 `;
@@ -12143,6 +12144,10 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       document.getElementById('nvBsClean')?.addEventListener('click', () => {
         setStatus('正在清理 BTCUSDT 的条件委托…', '');
         postTrade({ type: 'tradeConfig', action: 'cleanup', symbol: 'BTCUSDT' });
+    });
+    document.getElementById('nvBsFull')?.addEventListener('click', () => {
+        setStatus('全流程自测开始（手动单 → 自动 5 单 → 触发），请不要关窗口…', '');
+        window.__MOSS_UITEST && window.__MOSS_UITEST();
     });
     document.getElementById('nvBsTp')?.addEventListener('click', () => {
         setStatus('触发测试：开仓后挂 ±0.1% 的止盈止损，等它自己打掉（最多 100 秒）…', '');
@@ -14230,6 +14235,7 @@ window.__MOSS_UITEST = async function () {
     <button type="button" id="nvBsSelfTest">自检</button>
         <button type="button" id="nvBsSmoke">冒烟测试</button>
         <button type="button" id="nvBsTp">触发测试</button>
+        <button type="button" id="nvBsFull">全流程自测</button>
         <button type="button" id="nvBsClean">清理委托</button>
         <button type="button" id="nvBsSim">模拟信号</button>
         <button type="button" id="nvBsTest">测试连接</button>
