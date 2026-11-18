@@ -359,6 +359,23 @@ internal static class BinanceTradeService
     }
 
 
+
+    /// <summary>标记价格（条件单的触发基准就是它，不是最新成交价）</summary>
+    public static async Task<double> GetMarkPriceAsync(string symbol)
+    {
+        try
+        {
+            using var res = await Http.GetAsync($"{FuturesBase}/fapi/v1/premiumIndex?symbol={symbol}");
+            var body = await res.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("markPrice", out var mp) &&
+                double.TryParse(mp.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var v) && v > 0)
+                return v;
+        }
+        catch { }
+        return await GetPriceAsync(symbol);
+    }
+
     /// <summary>按该交易对的 tickSize 取整并格式化成字符串（条件单触发价必须这样）</summary>
     public static async Task<string> FormatPriceAsync(string symbol, decimal price)
     {
@@ -380,7 +397,9 @@ internal static class BinanceTradeService
         string lastErr = "";
         foreach (var band in bands)
         {
-            var price = await GetPriceAsync(symbol);
+            // 用“标记价格”做基准：条件单是按标记价判断触发的，
+            // 用最新成交价算会导致 -2021（尤其急速行情里两者会分开）
+            var price = await GetMarkPriceAsync(symbol);
             if (price <= 0) return (false, "价格无效");
             double target;
             if (type == "TAKE_PROFIT_MARKET")
