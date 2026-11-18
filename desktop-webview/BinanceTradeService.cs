@@ -265,6 +265,43 @@ internal static class BinanceTradeService
     public static decimal RoundDown(decimal value, decimal step)
         => step <= 0 ? value : Math.Floor(value / step) * step;
 
+
+    /// <summary>读取某交易对的持仓数量（无持仓返回 0）</summary>
+    public static async Task<decimal> GetPositionAmountAsync(string symbol)
+    {
+        try
+        {
+            using var doc = await SignedAsync(FuturesBase, "/fapi/v2/positionRisk");
+            foreach (var p in doc.RootElement.EnumerateArray())
+            {
+                if (!p.TryGetProperty("symbol", out var symEl)) continue;
+                if (!string.Equals(symEl.GetString(), symbol, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!p.TryGetProperty("positionAmt", out var amtEl)) continue;
+                if (decimal.TryParse(amtEl.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var amt))
+                    return Math.Abs(amt);
+            }
+        }
+        catch { }
+        return 0m;
+    }
+
+    /// <summary>下条件单（止盈/止损）：币安 2025-11 起必须用 /fapi/v1/algoOrder</summary>
+    private static async Task PlaceAlgoOrderAsync(string symbol, string closeSide, string type,
+        string triggerPrice, string quantity, string workingType = "MARK_PRICE")
+    {
+        await SignedAsync(FuturesBase, "/fapi/v1/algoOrder", new[]
+        {
+            new KeyValuePair<string, string>("algoType", "CONDITIONAL"),
+            new KeyValuePair<string, string>("symbol", symbol),
+            new KeyValuePair<string, string>("side", closeSide),
+            new KeyValuePair<string, string>("type", type),
+            new KeyValuePair<string, string>("triggerPrice", triggerPrice),
+            new KeyValuePair<string, string>("quantity", quantity),
+            new KeyValuePair<string, string>("reduceOnly", "true"),
+            new KeyValuePair<string, string>("workingType", workingType)
+        }, post: true);
+    }
+
     /// <summary>市价平掉某币的仓位（回滚用），返回是否成功</summary>
     public static async Task<(bool Ok, string Message)> ClosePositionAsync(string symbol, string side)
     {
@@ -272,12 +309,16 @@ internal static class BinanceTradeService
         {
             if (!Configured) return (false, "未配置币安 API 密钥");
             var closeSide = side == "long" ? "SELL" : "BUY";
+            var amt = await GetPositionAmountAsync(symbol);
+            if (amt <= 0) return (true, "已无持仓");
+            var amtText = amt.ToString("0.############################", CultureInfo.InvariantCulture);
             await SignedAsync(FuturesBase, "/fapi/v1/order", new[]
             {
                 new KeyValuePair<string, string>("symbol", symbol),
                 new KeyValuePair<string, string>("side", closeSide),
                 new KeyValuePair<string, string>("type", "MARKET"),
-                new KeyValuePair<string, string>("closePosition", "true")
+                new KeyValuePair<string, string>("quantity", amtText),
+                new KeyValuePair<string, string>("reduceOnly", "true")
             }, post: true);
             WriteLog("close", new { symbol, side, ok = true });
             return (true, "已市价平仓");
@@ -369,15 +410,7 @@ internal static class BinanceTradeService
 
             try
             {
-                using var tpDoc = await SignedAsync(FuturesBase, "/fapi/v1/order", new[]
-                {
-                    new KeyValuePair<string, string>("symbol", symbol),
-                    new KeyValuePair<string, string>("side", closeSide),
-                    new KeyValuePair<string, string>("type", "TAKE_PROFIT_MARKET"),
-                    new KeyValuePair<string, string>("stopPrice", tpText),
-                    new KeyValuePair<string, string>("closePosition", "true"),
-                    new KeyValuePair<string, string>("workingType", "MARK_PRICE")
-                }, post: true);
+                await PlaceAlgoOrderAsync(symbol, closeSide, "TAKE_PROFIT_MARKET", tpText, qtyText);
             }
             catch (Exception ex)
             {
@@ -388,15 +421,7 @@ internal static class BinanceTradeService
             {
                 try
                 {
-                    using var slDoc = await SignedAsync(FuturesBase, "/fapi/v1/order", new[]
-                    {
-                        new KeyValuePair<string, string>("symbol", symbol),
-                        new KeyValuePair<string, string>("side", closeSide),
-                        new KeyValuePair<string, string>("type", "STOP_MARKET"),
-                        new KeyValuePair<string, string>("stopPrice", slText),
-                        new KeyValuePair<string, string>("closePosition", "true"),
-                        new KeyValuePair<string, string>("workingType", "MARK_PRICE")
-                    }, post: true);
+                    await PlaceAlgoOrderAsync(symbol, closeSide, "STOP_MARKET", slText, qtyText);
                 }
                 catch (Exception ex)
                 {
