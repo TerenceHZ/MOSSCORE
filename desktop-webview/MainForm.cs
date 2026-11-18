@@ -526,7 +526,10 @@ internal sealed class MainForm : Form
                 checks.Add(new { name = "运行环境", ok = true, msg = (BinanceTradeService.UseTestnet ? "测试网（模拟盘）" : "主网（真实资金）") + " · " + BinanceTradeService.CurrentHost });
 
                 var bal = await BinanceTradeService.GetBalancesAsync();
-                checks.Add(new { name = "合约账户", ok = bal.Ok, msg = bal.Ok ? $"权益 {bal.FuturesEquity:F2} USDT / 可用 {bal.AvailableBalance:F2}" : bal.Message });
+                var balMsg = bal.Ok ? $"权益 {bal.FuturesEquity:F2} USDT / 可用 {bal.AvailableBalance:F2}" : bal.Message;
+                if (!bal.Ok && !BinanceTradeService.UseTestnet && balMsg.Contains("-2015"))
+                    balMsg += "（像是测试网 Key 用在了主网，请勾选「测试网」再试）";
+                checks.Add(new { name = "合约账户", ok = bal.Ok, msg = balMsg });
 
                 System.Collections.Generic.List<object> pos = new();
                 if (bal.Ok)
