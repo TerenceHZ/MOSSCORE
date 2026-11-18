@@ -21,6 +21,10 @@ internal static class TradeConfig
         public string ApiSecret { get; set; } = "";
         public double BaselineEquity { get; set; }
         public bool AutoTrade { get; set; }
+        /// <summary>true = 使用币安合约测试网（模拟盘）</summary>
+        public bool UseTestnet { get; set; }
+        /// <summary>自动把超额盈利划转到现货（默认关闭，需用户显式开启）</summary>
+        public bool AutoTransfer { get; set; }
         public string BaselineDate { get; set; } = "";
     }
 
@@ -46,6 +50,7 @@ internal static class TradeConfig
             var json = Unprotect(File.ReadAllText(ConfigPath));
             Current = JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
             BinanceTradeService.SetKeys(Current.ApiKey, Current.ApiSecret);
+            BinanceTradeService.UseTestnet = Current.UseTestnet;
         }
         catch
         {
@@ -61,6 +66,7 @@ internal static class TradeConfig
             Directory.CreateDirectory(dir);
             File.WriteAllText(ConfigPath, Protect(JsonSerializer.Serialize(Current)));
             BinanceTradeService.SetKeys(Current.ApiKey, Current.ApiSecret);
+            BinanceTradeService.UseTestnet = Current.UseTestnet;
         }
         catch { }
     }

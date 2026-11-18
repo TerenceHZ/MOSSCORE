@@ -11914,7 +11914,7 @@ requestAnimationFrame(frame);
     const ORDER_TP_PCT = 15;
     const ORDER_SL_PCT = 15;
     const ORDER_MAX_POSITIONS = 5;
-    const TRADE_INFO = { configured: false, autoTrade: false, equity: 0, available: 0, spot: 0, baseline: 0, positions: [], mode: 'manual', entitled: false, preview: false };
+    const TRADE_INFO = { configured: false, autoTrade: false, useTestnet: false, equity: 0, available: 0, spot: 0, baseline: 0, positions: [], mode: 'manual', entitled: false, preview: false };
 
     const applyEntitlement = () => {
       const q = (sel) => (sr && sr.querySelector(sel)) || document.querySelector(sel);
@@ -12109,6 +12109,9 @@ requestAnimationFrame(frame);
 .nv-bs-status.err{border-left-color:#C96358;color:#e0a49a}
     .nv-bs-actions{display:flex;gap:10px;margin-top:18px}
     .nv-bs-actions button{flex:1;padding:12px 0;font:600 12.5px/1 "Microsoft YaHei",sans-serif;cursor:pointer;letter-spacing:.06em}
+#nvBsTestnet{width:16px;height:16px;accent-color:#e8a020}
+.nv-bs-switch{align-items:center!important;gap:8px}
+.nv-bs-switch em{font:500 10px/1.4 var(--cjk);color:#80735e;font-style:normal;margin-left:6px}
 #nvBsTest{background:transparent;border:1px solid rgba(232,160,32,.4);color:#c9a35a}
 #nvBsSave{background:rgba(99,192,142,.15);border:1px solid rgba(99,192,142,.55);color:#8fd8b4}
     .nv-bs-tip{margin-top:14px;font:500 10.5px/1.7 "Microsoft YaHei",sans-serif;color:#6f5f48;letter-spacing:.02em}
@@ -12122,7 +12125,10 @@ requestAnimationFrame(frame);
       const secEl = document.getElementById('nvBsSecret');
       const statusEl = document.getElementById('nvBsStatus');
       const setStatus = (txt, cls) => { if (!statusEl) return; statusEl.textContent = txt; statusEl.className = 'nv-bs-status' + (cls ? ' ' + cls : ''); };
-      const openSetup = () => { setup.hidden = false; setTimeout(() => keyEl && keyEl.focus(), 60); };
+      const testnetOn = () => { const el = document.getElementById('nvBsTestnet'); return !!(el && el.checked); };
+window.__MOSS_SYNC_TESTNET = () => { const el = document.getElementById('nvBsTestnet'); if (el) el.checked = !!TRADE_INFO.useTestnet; };
+setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNET(); } catch (e) {} }, 1500);
+    const openSetup = () => { setup.hidden = false; setTimeout(() => keyEl && keyEl.focus(), 60); };
       const closeSetup = () => { setup.hidden = true; };
       window.__MOSS_OPEN_SETUP = openSetup;
       document.getElementById('nvBinanceEntry')?.addEventListener('click', openSetup);
@@ -12133,12 +12139,12 @@ requestAnimationFrame(frame);
         const k = (keyEl.value || '').trim(), v = (secEl.value || '').trim();
         if (!k || !v) { setStatus('请先填写 API Key 和 Secret', 'err'); return; }
         setStatus('测试中…', '');
-        postTrade({ type: 'tradeConfig', action: 'test', apiKey: k, apiSecret: v });
+        postTrade({ type: 'tradeConfig', action: 'test', apiKey: k, apiSecret: v, useTestnet: testnetOn() });
       });
       document.getElementById('nvBsSave')?.addEventListener('click', () => {
         const k = (keyEl.value || '').trim(), v = (secEl.value || '').trim();
         if (!k || !v) { setStatus('请先填写 API Key 和 Secret', 'err'); return; }
-        postTrade({ type: 'tradeConfig', action: 'save', apiKey: k, apiSecret: v, autoTrade: false });
+        postTrade({ type: 'tradeConfig', action: 'save', apiKey: k, apiSecret: v, autoTrade: TRADE_INFO.autoTrade, useTestnet: testnetOn() });
         setStatus('已保存到本机加密文件', 'ok');
         setTimeout(closeSetup, 700);
       });
@@ -12220,7 +12226,7 @@ requestAnimationFrame(frame);
       pop.classList.toggle('short', sig.side === 'short');
       opEl('nvOpSym').textContent = pairName(sig.r.symbol);
       opEl('nvOpSide').textContent = sig.side === 'long' ? '多单' : '空单';
-      const stageLabel = LIVE_ORDER_ENABLED() ? '真实下单' : '预演 · 不会真实下单';
+      const stageLabel = LIVE_ORDER_ENABLED() ? (TRADE_INFO.useTestnet ? '测试网下单' : '真实下单') : '预演 · 不会真实下单';
       opEl('nvOpStage').textContent = `${stageLabel} · 胜率 ${sig.win}% · ${Math.round(ORDER_POP_MS / 60000)} 分钟后自动关闭`;
       opEl('nvOpStage').dataset.base = stageLabel + ' · 胜率 ' + sig.win + '%';
       opEl('nvOpLev').textContent = `${ORDER_LEVERAGE}×`;
@@ -13115,6 +13121,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
     } catch (e) {}
           if (typeof d.configured === 'boolean') TRADE_INFO.configured = d.configured;
           if (typeof d.autoTrade === 'boolean') TRADE_INFO.autoTrade = d.autoTrade;
+        if (typeof d.useTestnet === 'boolean') { TRADE_INFO.useTestnet = d.useTestnet; try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNET(); } catch (e) {} }
           if (typeof d.equity === 'number') TRADE_INFO.equity = d.equity;
           if (typeof d.available === 'number') TRADE_INFO.available = d.available;
           if (typeof d.spot === 'number') TRADE_INFO.spot = d.spot;
@@ -14025,6 +14032,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
    <div class="nv-bs-note">密钥只保存在本机加密文件，不会上传云端。</div>
    <label class="nv-bs-row"><span>API Key</span><input id="nvBsKey" type="text" autocomplete="off" spellcheck="false" placeholder="粘贴 API Key"></label>
    <label class="nv-bs-row"><span>Secret</span><input id="nvBsSecret" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴 Secret Key"></label>
+        <label class="nv-bs-row nv-bs-switch"><span>测试网</span><input id="nvBsTestnet" type="checkbox"><em>勾选后连接币安模拟盘，不会真实成交</em></label>
    <div class="nv-bs-status" id="nvBsStatus">未测试</div>
    <div class="nv-bs-actions">
     <button type="button" id="nvBsTest">测试连接</button>

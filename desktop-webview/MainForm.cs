@@ -396,11 +396,15 @@ internal sealed class MainForm : Form
             {
                 var tk = root.TryGetProperty("apiKey", out var k1) ? k1.GetString() ?? "" : "";
                 var ts = root.TryGetProperty("apiSecret", out var s1) ? s1.GetString() ?? "" : "";
+                var wantTest = root.TryGetProperty("useTestnet", out var ut) && ut.ValueKind == JsonValueKind.True;
                 var prevKey = BinanceTradeService.ApiKey;
                 var prevSecret = BinanceTradeService.ApiSecret;
+                var prevTest = BinanceTradeService.UseTestnet;
                 BinanceTradeService.SetKeys(tk, ts);
+                BinanceTradeService.UseTestnet = wantTest;
                 var bal = await BinanceTradeService.GetBalancesAsync();
                 BinanceTradeService.SetKeys(prevKey ?? "", prevSecret ?? "");
+                BinanceTradeService.UseTestnet = prevTest;
                 await _web.CoreWebView2.ExecuteScriptAsync(
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(new { type = "test", ok = bal.Ok, message = bal.Message, equity = bal.FuturesEquity })}}}));");
                 return;
@@ -410,9 +414,13 @@ internal sealed class MainForm : Form
                 var key = root.TryGetProperty("apiKey", out var k) ? k.GetString() ?? "" : "";
                 var secret = root.TryGetProperty("apiSecret", out var sec) ? sec.GetString() ?? "" : "";
                 var auto = root.TryGetProperty("autoTrade", out var au) && au.ValueKind == JsonValueKind.True;
+                var useTestnet = root.TryGetProperty("useTestnet", out var utv) && utv.ValueKind == JsonValueKind.True;
+                var autoTransfer = root.TryGetProperty("autoTransfer", out var atv) && atv.ValueKind == JsonValueKind.True;
                 TradeConfig.Current.ApiKey = key;
                 TradeConfig.Current.ApiSecret = secret;
                 TradeConfig.Current.AutoTrade = auto;
+                TradeConfig.Current.UseTestnet = useTestnet;
+                TradeConfig.Current.AutoTransfer = autoTransfer;
                 TradeConfig.Save();
                 var bal2 = await BinanceTradeService.GetBalancesAsync();
                 if (bal2.Ok) TradeConfig.EnsureBaseline(bal2.FuturesEquity);
@@ -437,7 +445,9 @@ internal sealed class MainForm : Form
                     baseline = TradeConfig.Current.BaselineEquity,
                     positions,
                     configured = BinanceTradeService.Configured,
-                    autoTrade = TradeConfig.Current.AutoTrade
+                    autoTrade = TradeConfig.Current.AutoTrade,
+                    useTestnet = TradeConfig.Current.UseTestnet,
+                    autoTransfer = TradeConfig.Current.AutoTransfer
                 });
                 return;
             }
@@ -486,6 +496,19 @@ internal sealed class MainForm : Form
                 PostToWeb(new { type = "order", ok = false, message = "已满 5 个持仓，暂停新开仓" });
                 return;
             }
+            var already = positions.Any(p =>
+            {
+                var t = p.GetType();
+                var sp = t.GetProperty("symbol");
+                var v = sp?.GetValue(p) as string;
+                return string.Equals(v, symbol, StringComparison.OrdinalIgnoreCase);
+            });
+            if (already)
+            {
+                BinanceTradeService.WriteLog("skip_duplicate", new { symbol });
+                PostToWeb(new { type = "order", ok = false, message = $"已持有 {symbol}，不重复开仓" });
+                return;
+            }
             var result = await BinanceTradeService.PlaceMarketOrderAsync(
                 symbol, side, bal.FuturesEquity, 0.05, 5, 15, 15);
             PostToWeb(new { type = "order", ok = result.Ok, message = result.Message, symbol, qty = result.Qty });
@@ -505,8 +528,10 @@ internal sealed class MainForm : Form
             if (baseline <= 0) return (false, "尚未记录初始权益");
             if (equity <= baseline) return (false, "当前未超过初始权益，无需划转");
             if (equity <= baseline * 1.10) return (false, "未达到 10% 盈利线");
-            var amount = Math.Round(equity - baseline, 2);
-            if (amount < 1) return (false, "可划转金额过小");
+            // 只划走超出部分，但始终保留当前权益的 50% 作为保证金缓冲，避免划穿保证金
+            var keep = Math.Max(baseline, equity * 0.5);
+            var amount = Math.Round(equity - keep, 2);
+            if (amount < 1) return (false, "超出部分不足以划转（需保留 50% 权益作保证金缓冲）");
             return await BinanceTradeService.TransferToSpotAsync(amount);
         }
         catch (Exception ex)
@@ -523,7 +548,8 @@ internal sealed class MainForm : Form
         {
             try
             {
-                if (!BinanceTradeService.Configured || !TradeConfig.Current.AutoTrade) return;
+                if (!BinanceTradeService.Configured) return;
+                if (!TradeConfig.Current.AutoTrade || !TradeConfig.Current.AutoTransfer) return;
                 var bal = await BinanceTradeService.GetBalancesAsync();
                 if (!bal.Ok) return;
                 var res = await RunTransferAsync(bal.FuturesEquity, true);
@@ -611,7 +637,9 @@ internal sealed class MainForm : Form
                     entitled = on,
                     preview = false,
                     configured = BinanceTradeService.Configured,
-                    autoTrade = TradeConfig.Current.AutoTrade
+                    autoTrade = TradeConfig.Current.AutoTrade,
+                    useTestnet = TradeConfig.Current.UseTestnet,
+                    autoTransfer = TradeConfig.Current.AutoTransfer
                 });
             }
             catch { }
@@ -632,7 +660,9 @@ internal sealed class MainForm : Form
                     entitled = LicenseService.TradeEnabled,
                     preview = false,
                     configured = BinanceTradeService.Configured,
-                    autoTrade = TradeConfig.Current.AutoTrade
+                    autoTrade = TradeConfig.Current.AutoTrade,
+                    useTestnet = TradeConfig.Current.UseTestnet,
+                    autoTransfer = TradeConfig.Current.AutoTransfer
                 });
             }
             catch { }

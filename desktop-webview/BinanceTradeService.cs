@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -16,10 +17,40 @@ namespace MossCore;
 /// </summary>
 internal static class BinanceTradeService
 {
-    private const string FuturesBase = "https://fapi.binance.com";
+    private const string FuturesLive = "https://fapi.binance.com";
+    private const string FuturesTest = "https://testnet.binancefuture.com";
     private const string SpotBase = "https://api.binance.com";
 
+    /// <summary>true = 连币安合约测试网（testnet.binancefuture.com）</summary>
+    public static bool UseTestnet { get; set; }
+
+    private static string FuturesBase => UseTestnet ? FuturesTest : FuturesLive;
+
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
+
+    /// <summary>交易审计日志：%LOCALAPPDATA%\MossCore\trade-log.jsonl</summary>
+    private static readonly object LogLock = new();
+    private static readonly string LogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "MossCore", "trade-log.jsonl");
+
+    public static void WriteLog(string evt, object? data = null)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(LogPath)!;
+            Directory.CreateDirectory(dir);
+            var line = JsonSerializer.Serialize(new
+            {
+                ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                env = UseTestnet ? "testnet" : "live",
+                evt,
+                data
+            });
+            lock (LogLock) File.AppendAllText(LogPath, line + Environment.NewLine);
+        }
+        catch { }
+    }
 
     public static string? ApiKey { get; private set; }
     public static string? ApiSecret { get; private set; }
@@ -119,6 +150,8 @@ internal static class BinanceTradeService
     {
         public int QtyPrecision;
         public decimal StepSize = 1m;
+        public decimal MinQty = 0m;
+        public decimal MaxQty = 0m;
         public decimal TickSize = 0.0001m;
         public decimal MinNotional = 5m;
         public int PricePrecision;
@@ -143,7 +176,15 @@ internal static class BinanceTradeService
             {
                 var type = f.GetProperty("filterType").GetString();
                 if (type == "LOT_SIZE")
+                {
                     info.StepSize = decimal.Parse(f.GetProperty("stepSize").GetString() ?? "1", CultureInfo.InvariantCulture);
+                    if (f.TryGetProperty("minQty", out var mn) &&
+                        decimal.TryParse(mn.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var mnv))
+                        info.MinQty = mnv;
+                    if (f.TryGetProperty("maxQty", out var mx) &&
+                        decimal.TryParse(mx.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var mxv))
+                        info.MaxQty = mxv;
+                }
                 else if (type == "PRICE_FILTER")
                     info.TickSize = decimal.Parse(f.GetProperty("tickSize").GetString() ?? "0.0001", CultureInfo.InvariantCulture);
                 else if (type == "MIN_NOTIONAL")
@@ -166,14 +207,43 @@ internal static class BinanceTradeService
     public static decimal RoundDown(decimal value, decimal step)
         => step <= 0 ? value : Math.Floor(value / step) * step;
 
-    /// <summary>市价下单 + 止盈止损</summary>
+    /// <summary>市价平掉某币的仓位（回滚用），返回是否成功</summary>
+    public static async Task<(bool Ok, string Message)> ClosePositionAsync(string symbol, string side)
+    {
+        try
+        {
+            if (!Configured) return (false, "未配置币安 API 密钥");
+            var closeSide = side == "long" ? "SELL" : "BUY";
+            await SignedAsync(FuturesBase, "/fapi/v1/order", new[]
+            {
+                new KeyValuePair<string, string>("symbol", symbol),
+                new KeyValuePair<string, string>("side", closeSide),
+                new KeyValuePair<string, string>("type", "MARKET"),
+                new KeyValuePair<string, string>("closePosition", "true")
+            });
+            WriteLog("close", new { symbol, side, ok = true });
+            return (true, "已市价平仓");
+        }
+        catch (Exception ex)
+        {
+            WriteLog("close", new { symbol, side, ok = false, error = ex.Message });
+            return (false, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// 市价下单 + 止盈止损。
+    /// 安全策略：止盈或止损任一创建失败 → 立即市价平仓回滚，并返回失败原因。
+    /// </summary>
     public static async Task<(bool Ok, string Message, double Qty)> PlaceMarketOrderAsync(
         string symbol, string side, double equity, double equityPercent, int leverage,
         double tpPercent, double slPercent)
     {
+        string? openSideDone = null;
         try
         {
             if (!Configured) return (false, "未配置币安 API 密钥", 0);
+
             var info = await GetSymbolInfoAsync(symbol);
             var price = await GetPriceAsync(symbol);
             if (price <= 0) return (false, "价格无效", 0);
@@ -181,77 +251,123 @@ internal static class BinanceTradeService
             var margin = equity * equityPercent;
             var notional = margin * leverage;
             if (notional < (double)info.MinNotional)
-                return (false, $"名义价值 {notional:F2} 低于最小下单 {info.MinNotional}", 0);
+                return (false, $"名义价值 {notional:F2} 低于最小下单 {info.MinNotional:F2}", 0);
 
             var rawQty = (decimal)(notional / price);
             var qty = RoundDown(rawQty, info.StepSize);
             if (qty <= 0) return (false, "可下单数量为 0", 0);
+            if (info.MinQty > 0 && qty < info.MinQty)
+                return (false, $"数量 {qty} 小于最小下单量 {info.MinQty}（名义价值需更大）", 0);
+            if (info.MaxQty > 0 && qty > info.MaxQty)
+                return (false, $"数量 {qty} 超过单笔上限 {info.MaxQty}", 0);
+
             var qtyText = qty.ToString("0.############################", CultureInfo.InvariantCulture);
 
-            // 设置杠杆
+            // 1) 设置杠杆：失败直接中止（避免用错误杠杆开仓）
             try
             {
                 using var levDoc = await SignedAsync(FuturesBase, "/fapi/v1/leverage", new[]
                 {
-                    new KeyValuePair<string,string>("symbol", symbol),
-                    new KeyValuePair<string,string>("leverage", leverage.ToString(CultureInfo.InvariantCulture))
+                    new KeyValuePair<string, string>("symbol", symbol),
+                    new KeyValuePair<string, string>("leverage", leverage.ToString(CultureInfo.InvariantCulture))
                 });
             }
-            catch { /* 已有持仓时杠杆不可改，忽略 */ }
+            catch (Exception ex)
+            {
+                WriteLog("leverage_fail", new { symbol, leverage, error = ex.Message });
+                return (false, $"设置 {leverage}x 杠杆失败（该币可能不支持该杠杆）：{ex.Message}", 0);
+            }
 
             var orderSide = side == "long" ? "BUY" : "SELL";
             var closeSide = side == "long" ? "SELL" : "BUY";
 
+            // 2) 市价开仓
             string orderId;
             using (var od = await SignedAsync(FuturesBase, "/fapi/v1/order", new[]
             {
-                new KeyValuePair<string,string>("symbol", symbol),
-                new KeyValuePair<string,string>("side", orderSide),
-                new KeyValuePair<string,string>("type", "MARKET"),
-                new KeyValuePair<string,string>("quantity", qtyText)
+                new KeyValuePair<string, string>("symbol", symbol),
+                new KeyValuePair<string, string>("side", orderSide),
+                new KeyValuePair<string, string>("type", "MARKET"),
+                new KeyValuePair<string, string>("quantity", qtyText)
             }))
             {
                 orderId = od.RootElement.TryGetProperty("orderId", out var oid) ? oid.GetRawText() : "0";
             }
+            openSideDone = side;
+            WriteLog("open", new { symbol, side, qty = qtyText, price, leverage, orderId });
 
-            // 止盈止损
+            // 3) 止盈止损（任一失败 → 回滚）
             var tpPrice = RoundDown((decimal)(price * (1 + (side == "long" ? tpPercent : -tpPercent) / 100.0)), info.TickSize);
             var slPrice = RoundDown((decimal)(price * (1 + (side == "long" ? -slPercent : slPercent) / 100.0)), info.TickSize);
             var tpText = tpPrice.ToString("0.############################", CultureInfo.InvariantCulture);
             var slText = slPrice.ToString("0.############################", CultureInfo.InvariantCulture);
 
+            string? protectError = null;
+
             try
             {
                 using var tpDoc = await SignedAsync(FuturesBase, "/fapi/v1/order", new[]
                 {
-                    new KeyValuePair<string,string>("symbol", symbol),
-                    new KeyValuePair<string,string>("side", closeSide),
-                    new KeyValuePair<string,string>("type", "TAKE_PROFIT_MARKET"),
-                    new KeyValuePair<string,string>("stopPrice", tpText),
-                    new KeyValuePair<string,string>("closePosition", "true"),
-                    new KeyValuePair<string,string>("workingType", "MARK_PRICE")
+                    new KeyValuePair<string, string>("symbol", symbol),
+                    new KeyValuePair<string, string>("side", closeSide),
+                    new KeyValuePair<string, string>("type", "TAKE_PROFIT_MARKET"),
+                    new KeyValuePair<string, string>("stopPrice", tpText),
+                    new KeyValuePair<string, string>("closePosition", "true"),
+                    new KeyValuePair<string, string>("workingType", "MARK_PRICE")
                 });
             }
-            catch { }
-
-            try
+            catch (Exception ex)
             {
-                using var slDoc = await SignedAsync(FuturesBase, "/fapi/v1/order", new[]
-                {
-                    new KeyValuePair<string,string>("symbol", symbol),
-                    new KeyValuePair<string,string>("side", closeSide),
-                    new KeyValuePair<string,string>("type", "STOP_MARKET"),
-                    new KeyValuePair<string,string>("stopPrice", slText),
-                    new KeyValuePair<string,string>("closePosition", "true"),
-                    new KeyValuePair<string,string>("workingType", "MARK_PRICE")
-                });
+                protectError = "止盈创建失败: " + ex.Message;
             }
-            catch { }
 
+            if (protectError == null)
+            {
+                try
+                {
+                    using var slDoc = await SignedAsync(FuturesBase, "/fapi/v1/order", new[]
+                    {
+                        new KeyValuePair<string, string>("symbol", symbol),
+                        new KeyValuePair<string, string>("side", closeSide),
+                        new KeyValuePair<string, string>("type", "STOP_MARKET"),
+                        new KeyValuePair<string, string>("stopPrice", slText),
+                        new KeyValuePair<string, string>("closePosition", "true"),
+                        new KeyValuePair<string, string>("workingType", "MARK_PRICE")
+                    });
+                }
+                catch (Exception ex)
+                {
+                    protectError = "止损创建失败: " + ex.Message;
+                }
+            }
+
+            if (protectError != null)
+            {
+                WriteLog("protect_fail", new { symbol, orderId, error = protectError });
+                var closed = await ClosePositionAsync(symbol, side);
+                openSideDone = null;
+                WriteLog("rollback", new { symbol, ok = closed.Ok, closed.Message });
+                var tail = closed.Ok
+                    ? "已自动市价平仓回滚，本次未留仓位"
+                    : $"自动回滚也失败（{closed.Message}），请立刻去币安手动平仓！";
+                return (false, $"{protectError} → {tail}", 0);
+            }
+
+            WriteLog("protect_ok", new { symbol, tp = tpText, sl = slText });
+            openSideDone = null;
             return (true, $"下单成功 orderId={orderId}", (double)qty);
         }
         catch (Exception ex)
         {
+            WriteLog("order_error", new { symbol, side, error = ex.Message });
+            if (openSideDone != null)
+            {
+                var closed = await ClosePositionAsync(symbol, openSideDone);
+                WriteLog("rollback", new { symbol, ok = closed.Ok, closed.Message });
+                if (!closed.Ok)
+                    return (false, $"{ex.Message}；回滚失败（{closed.Message}），请立刻去币安手动平仓！", 0);
+                return (false, $"{ex.Message}（已自动平仓回滚）", 0);
+            }
             return (false, ex.Message, 0);
         }
     }
