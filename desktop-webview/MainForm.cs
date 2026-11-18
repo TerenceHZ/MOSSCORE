@@ -559,7 +559,15 @@ internal sealed class MainForm : Form
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payload)}}}));");
                 return;
             }
-            if (action == "smoke")
+            if (action == "cleanup")
+            {
+                var sym = root.TryGetProperty("symbol", out var sy) ? (sy.GetString() ?? "BTCUSDT") : "BTCUSDT";
+                var n = await BinanceTradeService.CancelAlgoOrdersAsync(sym);
+                var payloadC = new { type = "cleanup", ok = true, symbol = sym, cancelled = n };
+                await _web.CoreWebView2.ExecuteScriptAsync(
+                    $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payloadC)}}}));");
+                return;
+            }            if (action == "smoke")
             {
                 var steps = new System.Collections.Generic.List<object>();
                 var sym = "BTCUSDT";

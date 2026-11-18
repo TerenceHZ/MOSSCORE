@@ -275,7 +275,11 @@ internal static class BinanceTradeService
         {
             using var doc = await SignedAsync(FuturesBase, "/fapi/v1/openAlgoOrders",
                 new[] { new KeyValuePair<string, string>("symbol", symbol) });
-            if (!doc.RootElement.TryGetProperty("orders", out var arr)) return 0;
+            // 币安这个接口返回的是数组（不是 {orders:[]}），两种都兼容
+            var arr = doc.RootElement.ValueKind == JsonValueKind.Array
+                ? doc.RootElement
+                : (doc.RootElement.TryGetProperty("orders", out var inner) ? inner : default);
+            if (arr.ValueKind != JsonValueKind.Array) return 0;
             foreach (var o in arr.EnumerateArray())
             {
                 if (!o.TryGetProperty("algoId", out var idEl)) continue;
