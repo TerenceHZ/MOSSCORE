@@ -388,6 +388,24 @@ internal sealed class MainForm : Form
                 var code = root.TryGetProperty("code", out var c) ? c.GetString() ?? "" : "";
                 _ = HandleActivationAsync(code);
             }
+            if (type == "uitest_report")
+            {
+                try
+                {
+                    var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MossCore");
+                    Directory.CreateDirectory(dir);
+                    var okAll = true;
+                    if (root.TryGetProperty("log", out var lg) && lg.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var it in lg.EnumerateArray())
+                            if (it.TryGetProperty("ok", out var okEl) && okEl.ValueKind == JsonValueKind.False) okAll = false;
+                    }
+                    var report = new { ok = okAll, mode = "ui", finishedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), steps = root.GetProperty("log") };
+                    File.WriteAllText(Path.Combine(dir, "autotest-report.json"),
+                        JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+                }
+                catch { }
+            }
             if (type == "trade") _ = HandleTradeAsync(root);
             if (type == "tradeConfig") _ = HandleTradeConfigAsync(root);
         }

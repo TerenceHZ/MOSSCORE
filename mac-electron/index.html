@@ -14084,6 +14084,93 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
   if(native){ native.addEventListener('message',e=>{let m=e.data;if(typeof m==='string'){try{m=JSON.parse(m)}catch{return}}if(!m)return;if(m.type==='activation-state'){setShown(!!m.show,m.error,m.loading)}}); }
   setShown(true);
 })();
+
+/* ================= UI 自测（客户端内真实路径） ================= */
+window.__MOSS_UITEST = async function () {
+  const log = [];
+  const push = (phase, ok, msg) => { log.push({ phase, ok, msg, ts: new Date().toLocaleTimeString() }); try { console.log('[UITEST]', phase, ok, msg); } catch (e) {} };
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const waitEvent = (type, timeout = 30000) => new Promise((resolve) => {
+    const t0 = Date.now();
+    const onTrade = (ev) => { const d = ev && ev.detail; if (!d) return; if (type === 'order' && d.type === 'order') { cleanup(); resolve(d); } if (type === 'tptest' && d.type === 'tptest') { cleanup(); resolve(d); } };
+    const onBin = (ev) => { const d = ev && ev.detail; if (!d) return; if (type === 'tptest' && d.type === 'tptest') { cleanup(); resolve(d); } };
+    const timer = setTimeout(() => { cleanup(); resolve(null); }, timeout);
+    function cleanup() { clearTimeout(timer); window.removeEventListener('moss:trade', onTrade); window.removeEventListener('moss:binance', onBin); }
+    window.addEventListener('moss:trade', onTrade);
+    window.addEventListener('moss:binance', onBin);
+  });
+  const rowFor = (sym) => ((window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || []).find(r => (r.symbol || '') === sym);
+  const posCount = () => (TRADE_INFO.positions || []).length;
+
+  try {
+    if (!TRADE_INFO.useTestnet) { push('guard', false, '当前不是测试网，拒绝执行'); throw new Error('not testnet'); }
+
+    // ---- 阶段 1：手动单（真实点击「确认下单」按钮）----
+    TRADE_INFO.mode = 'manual';
+    try { localStorage.setItem('moss-order-mode', 'manual'); } catch (e) {}
+    postTrade({ type: 'tradeConfig', action: 'mode', mode: 'manual' });
+    const row = rowFor('BTCUSDT') || ((window.__MOSS_LIVE.rows || [])[0]);
+    if (!row) { push('1-手动', false, '没有行情行'); throw new Error('no rows'); }
+    const sig = calcSignal(row);
+    queueOrderPreview({ sig, key: `${row.symbol}-${sig.side}` });
+    await sleep(900);
+    const okBtn = document.getElementById('nvOpOk');
+    push('1-卡片按钮状态', !!(okBtn && !okBtn.disabled), okBtn ? okBtn.textContent : '找不到按钮');
+    if (!okBtn || okBtn.disabled) { push('1-手动', false, '按钮不可点：' + (okBtn ? okBtn.textContent : '')); }
+    else {
+      okBtn.click();                       // 真实点击
+      const res = await waitEvent('order', 30000);
+      push('1-手动下单', !!(res && res.ok), res ? (res.message || '') : '无响应');
+      await sleep(1500);
+      push('1-持仓数', posCount() > 0, String(posCount()));
+    }
+
+    // ---- 阶段 2：自动模式，连开直到 5 仓 ----
+    queueOrderPreview({ sig: calcSignal(row), key: `${row.symbol}-${sig.side}` });
+    await sleep(600);
+    const sw = document.getElementById('nvOpSwitch');
+    if (sw && readOrderMode() !== 'auto') { sw.click(); await sleep(500); }
+    push('2-模式', readOrderMode() === 'auto', '当前模式 ' + readOrderMode());
+
+    const pool = ['ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'BNBUSDT', 'ADAUSDT'];
+    for (const sym of pool) {
+      if (posCount() >= 5) break;
+      const r = rowFor(sym);
+      if (!r) { push('2-' + sym, false, '没有行情行'); continue; }
+      const s2 = calcSignal(r);
+      queueOrderPreview({ sig: s2, key: `${sym}-${s2.side}` });
+      await sleep(1400);                    // 等自动分支触发
+      push('2-' + sym, posCount() >= 1, '持仓数 ' + posCount());
+      await sleep(800);
+    }
+    postTrade({ type: 'tradeConfig', action: 'status' });
+    await sleep(2500);
+    push('2-五单', posCount() >= 5, '当前 ' + posCount() + ' 仓');
+
+    // ---- 阶段 3：触发测试（每个仓位一次，走按钮同逻辑）----
+    const symsNow = (TRADE_INFO.positions || []).map(p => p.symbol);
+    push('3-待测仓位', symsNow.length > 0, symsNow.join(','));
+    for (const sym of symsNow) {
+      postTrade({ type: 'tradeConfig', action: 'tptest', symbol: sym });
+      const res = await waitEvent('tptest', 300000);
+      if (!res) { push('3-' + sym, false, '无响应/超时'); continue; }
+      const steps = res.steps || [];
+      const bad = steps.filter(x => !x.ok);
+      push('3-' + sym, bad.length === 0, steps.map(x => (x.ok ? '✓' : '✗') + x.name + ':' + x.msg).join(' | '));
+      await sleep(1500);
+    }
+
+    // 收尾
+    postTrade({ type: 'tradeConfig', action: 'status' });
+    await sleep(2000);
+    push('4-收尾', posCount() === 0, '剩余 ' + posCount() + ' 仓');
+  } catch (e) {
+    push('fatal', false, e && e.message ? e.message : String(e));
+  } finally {
+    postTrade({ type: 'uitest_report', log });
+  }
+};
+
 </script>
 
     <div class="nv-order-pop" id="nvOrderPop" hidden>
