@@ -358,9 +358,18 @@ internal sealed class MainForm : Form
             // 诊断：把收到的消息类型写日志，便于排查“点了没反应”
             try
             {
-                var preview = (raw ?? "").Length > 200 ? raw!.Substring(0, 200) : raw;
+                // 只记录 type/action，绝不落盘 Key/Secret
+                string tag = "?";
+                try
+                {
+                    using var dd = JsonDocument.Parse(raw ?? "{}");
+                    var ty = dd.RootElement.TryGetProperty("type", out var t0) ? t0.GetString() : "";
+                    var ac = dd.RootElement.TryGetProperty("action", out var a0) ? a0.GetString() : "";
+                    tag = (ty ?? "") + (string.IsNullOrEmpty(ac) ? "" : "/" + ac);
+                }
+                catch { }
                 File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "msg.log"),
-                    $"[{DateTime.Now:HH:mm:ss}] {preview}\r\n");
+                    $"[{DateTime.Now:HH:mm:ss}] {tag}\r\n");
             }
             catch { }
 
@@ -523,7 +532,7 @@ internal sealed class MainForm : Form
                 }
                 checks.Add(new { name = "读取持仓", ok = bal.Ok, msg = bal.Ok ? $"当前 {pos.Count} 个持仓（上限 5）" : "账户不可用" });
 
-                var maxNotional = TradeConfig.Current.MaxNotional;
+                var maxNotional = BinanceTradeService.UseTestnet ? 1000000 : TradeConfig.Current.MaxNotional;
                 var margin = bal.FuturesEquity * 0.05;
                 var estNotional = margin * 5;
                 checks.Add(new
@@ -603,7 +612,8 @@ internal sealed class MainForm : Form
                 return;
             }
             var result = await BinanceTradeService.PlaceMarketOrderAsync(
-                symbol, side, bal.FuturesEquity, 0.05, 5, 15, 15, TradeConfig.Current.MaxNotional);
+                symbol, side, bal.FuturesEquity, 0.05, 5, 15, 15,
+                BinanceTradeService.UseTestnet ? 1000000 : TradeConfig.Current.MaxNotional);
             PostToWeb(new { type = "order", ok = result.Ok, message = result.Message, symbol, qty = result.Qty });
         }
         catch (Exception ex)
