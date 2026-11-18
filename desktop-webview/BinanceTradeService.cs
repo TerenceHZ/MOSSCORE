@@ -237,7 +237,7 @@ internal static class BinanceTradeService
     /// </summary>
     public static async Task<(bool Ok, string Message, double Qty)> PlaceMarketOrderAsync(
         string symbol, string side, double equity, double equityPercent, int leverage,
-        double tpPercent, double slPercent)
+        double tpPercent, double slPercent, double maxNotional = 0)
     {
         string? openSideDone = null;
         try
@@ -250,6 +250,11 @@ internal static class BinanceTradeService
 
             var margin = equity * equityPercent;
             var notional = margin * leverage;
+            if (maxNotional > 0 && notional > maxNotional)
+            {
+                WriteLog("blocked_max_notional", new { symbol, notional, maxNotional });
+                return (false, $"名义价值 {notional:F2} 超过安全上限 {maxNotional:F0} USDT（可在面板调整）", 0);
+            }
             if (notional < (double)info.MinNotional)
                 return (false, $"名义价值 {notional:F2} 低于最小下单 {info.MinNotional:F2}", 0);
 
@@ -378,6 +383,7 @@ internal static class BinanceTradeService
         try
         {
             if (!Configured) return (false, "未配置币安 API 密钥");
+            if (UseTestnet) return (false, "测试网不支持资金划转，已跳过");
             if (amount <= 0) return (false, "划转金额无效");
             using var doc = await SignedAsync(FuturesBase, "/sapi/v1/futures/transfer", new[]
             {

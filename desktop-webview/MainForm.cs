@@ -421,6 +421,8 @@ internal sealed class MainForm : Form
                 TradeConfig.Current.AutoTrade = auto;
                 TradeConfig.Current.UseTestnet = useTestnet;
                 TradeConfig.Current.AutoTransfer = autoTransfer;
+                if (root.TryGetProperty("maxNotional", out var mn) && mn.TryGetDouble(out var mnv) && mnv > 0)
+                    TradeConfig.Current.MaxNotional = mnv;
                 TradeConfig.Save();
                 var bal2 = await BinanceTradeService.GetBalancesAsync();
                 if (bal2.Ok) TradeConfig.EnsureBaseline(bal2.FuturesEquity);
@@ -449,6 +451,50 @@ internal sealed class MainForm : Form
                     useTestnet = TradeConfig.Current.UseTestnet,
                     autoTransfer = TradeConfig.Current.AutoTransfer
                 });
+                return;
+            }
+            if (action == "selftest")
+            {
+                var checks = new System.Collections.Generic.List<object>();
+                bool pingOk = false; string pingMsg = "";
+                try
+                {
+                    using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+                    var baseUrl = BinanceTradeService.UseTestnet ? "https://testnet.binancefuture.com" : "https://fapi.binance.com";
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    var pr = await http.GetAsync(baseUrl + "/fapi/v1/time");
+                    sw.Stop();
+                    pingOk = pr.IsSuccessStatusCode;
+                    pingMsg = $"{(BinanceTradeService.UseTestnet ? "测试网" : "主网")} HTTP {(int)pr.StatusCode}，{sw.ElapsedMilliseconds}ms";
+                }
+                catch (Exception ex) { pingMsg = ex.Message; }
+                checks.Add(new { name = "网络连通", ok = pingOk, msg = pingMsg });
+                checks.Add(new { name = "API 密钥", ok = BinanceTradeService.Configured, msg = BinanceTradeService.Configured ? "已配置" : "未配置" });
+                checks.Add(new { name = "运行环境", ok = true, msg = BinanceTradeService.UseTestnet ? "测试网（模拟盘）" : "主网（真实资金）" });
+
+                var bal = await BinanceTradeService.GetBalancesAsync();
+                checks.Add(new { name = "合约账户", ok = bal.Ok, msg = bal.Ok ? $"权益 {bal.FuturesEquity:F2} USDT / 可用 {bal.AvailableBalance:F2}" : bal.Message });
+
+                System.Collections.Generic.List<object> pos = new();
+                if (bal.Ok)
+                {
+                    try { pos = await BinanceTradeService.GetPositionsAsync(); } catch { }
+                }
+                checks.Add(new { name = "读取持仓", ok = bal.Ok, msg = bal.Ok ? $"当前 {pos.Count} 个持仓（上限 5）" : "账户不可用" });
+
+                var maxNotional = TradeConfig.Current.MaxNotional;
+                var margin = bal.FuturesEquity * 0.05;
+                var estNotional = margin * 5;
+                checks.Add(new
+                {
+                    name = "单笔仓位测算",
+                    ok = estNotional > 0 && (maxNotional <= 0 || estNotional <= maxNotional),
+                    msg = $"保证金 {margin:F2} × 5x = 名义 {estNotional:F2} USDT（上限 {maxNotional:F0}）"
+                });
+                checks.Add(new { name = "授权状态", ok = LicenseService.TradeEnabled, msg = LicenseService.TradeEnabled ? "已开通自动下单" : "未开通" });
+
+                BinanceTradeService.WriteLog("selftest", new { testnet = BinanceTradeService.UseTestnet, ok = bal.Ok });
+                PostToWeb(new { type = "selftest", ok = pingOk && bal.Ok, checks });
                 return;
             }
             if (action == "transfer")
@@ -510,7 +556,7 @@ internal sealed class MainForm : Form
                 return;
             }
             var result = await BinanceTradeService.PlaceMarketOrderAsync(
-                symbol, side, bal.FuturesEquity, 0.05, 5, 15, 15);
+                symbol, side, bal.FuturesEquity, 0.05, 5, 15, 15, TradeConfig.Current.MaxNotional);
             PostToWeb(new { type = "order", ok = result.Ok, message = result.Message, symbol, qty = result.Qty });
         }
         catch (Exception ex)

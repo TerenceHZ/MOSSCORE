@@ -25,6 +25,8 @@ internal static class TradeConfig
         public bool UseTestnet { get; set; }
         /// <summary>自动把超额盈利划转到现货（默认关闭，需用户显式开启）</summary>
         public bool AutoTransfer { get; set; }
+        /// <summary>单笔名义价值安全上限（USDT），防止误下单</summary>
+        public double MaxNotional { get; set; } = 200;
         public string BaselineDate { get; set; } = "";
     }
 
