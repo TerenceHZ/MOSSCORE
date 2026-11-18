@@ -340,10 +340,33 @@ internal sealed class MainForm : Form
     {
         try
         {
-            var raw = e.TryGetWebMessageAsString();
+            string? raw = null;
+            try { raw = e.TryGetWebMessageAsString(); } catch { /* 对象消息会抛异常，走下面的 JSON 分支 */ }
             if (string.IsNullOrWhiteSpace(raw)) raw = e.WebMessageAsJson;
+
+            // 页面可能发对象，也可能发 JSON 字符串，这里统一解码一次
+            if (!string.IsNullOrWhiteSpace(raw) && raw.TrimStart().StartsWith("\""))
+            {
+                try
+                {
+                    var inner = JsonSerializer.Deserialize<string>(raw);
+                    if (!string.IsNullOrWhiteSpace(inner)) raw = inner;
+                }
+                catch { }
+            }
+
+            // 诊断：把收到的消息类型写日志，便于排查“点了没反应”
+            try
+            {
+                var preview = (raw ?? "").Length > 200 ? raw!.Substring(0, 200) : raw;
+                File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "msg.log"),
+                    $"[{DateTime.Now:HH:mm:ss}] {preview}\r\n");
+            }
+            catch { }
+
             using var doc = JsonDocument.Parse(raw);
             var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Object) return;
             var type = root.TryGetProperty("type", out var t) ? t.GetString() : null;
             if (type == "quit")
             {
@@ -358,7 +381,15 @@ internal sealed class MainForm : Form
             if (type == "trade") _ = HandleTradeAsync(root);
             if (type == "tradeConfig") _ = HandleTradeConfigAsync(root);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            try
+            {
+                File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "msg.log"),
+                    $"[{DateTime.Now:HH:mm:ss}] ERROR {ex.Message}\r\n");
+            }
+            catch { }
+        }
     }
 
     private async void PostToWeb(object payload)
