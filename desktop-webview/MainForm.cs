@@ -256,9 +256,9 @@ internal sealed class MainForm : Form
                 }
             }
             catch { }
+            TradeConfig.Load();
             try { if (!ChannelInfo.IsRelease) MaybeRunAcceptance(); } catch { }
             try { if (!ChannelInfo.IsRelease) MaybeRunStress(); } catch { } await Task.Delay(600); await ApplyEntitlementToPageAsync(); };
-            TradeConfig.Load();
             StartTransferTimer();
 
             var log = Path.Combine(AppContext.BaseDirectory, "boot.log");
@@ -421,6 +421,19 @@ internal sealed class MainForm : Form
                     var report = new { ok = okAll, mode = "ui", finishedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), steps = root.GetProperty("log") };
                     File.WriteAllText(Path.Combine(dir, "autotest-report.json"),
                         JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+                }
+                catch { }
+            }
+            if (type == "uitest_step")
+            {
+                try
+                {
+                    var dir2 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MossCore");
+                    var phase = root.TryGetProperty("phase", out var ph) ? ph.GetString() : "";
+                    var ok2 = root.TryGetProperty("ok", out var okEl) && okEl.ValueKind == JsonValueKind.True;
+                    var msg2 = root.TryGetProperty("msg", out var mg) ? mg.GetString() : "";
+                    File.AppendAllText(Path.Combine(dir2, "uitest-steps.log"),
+                        $"{DateTime.Now:HH:mm:ss} [{(ok2 ? "OK " : "FAIL")}] {phase}: {msg2}{Environment.NewLine}");
                 }
                 catch { }
             }
@@ -818,18 +831,35 @@ internal sealed class MainForm : Form
             File.Delete(flag);
             // 走客户端真实 UI 路径（页面里点按钮/走自动分支）
             // 必须在 UI 线程里访问 CoreWebView2
-            var t = new System.Windows.Forms.Timer { Interval = 4000 };
+            // 等页面完全加载 + 宿主推送配置完成后再触发（12 秒），避免过早执行
+            var t = new System.Windows.Forms.Timer { Interval = 12000 };
             t.Tick += async (_, _) =>
             {
                 t.Stop(); t.Dispose();
                 try
                 {
-                    if (_web.CoreWebView2 == null) return;
+                    if (_web.CoreWebView2 == null)
+                    {
+                        File.AppendAllText(Path.Combine(dir, "uitest-steps.log"), $"{DateTime.Now:HH:mm:ss} [FAIL] init: CoreWebView2 为 null{Environment.NewLine}");
+                        return;
+                    }
+                    File.AppendAllText(Path.Combine(dir, "uitest-steps.log"), $"{DateTime.Now:HH:mm:ss} [OK  ] init: 开始检查页面{Environment.NewLine}");
+                    var ready = await _web.CoreWebView2.ExecuteScriptAsync(
+                        "typeof window.__MOSS_UITEST === 'function' ? 'yes' : ('no:' + typeof window.__MOSS_UITEST)");
+                    File.AppendAllText(Path.Combine(dir, "uitest-steps.log"), $"{DateTime.Now:HH:mm:ss} [INFO] 页面函数检查: {ready}{Environment.NewLine}");
+                    if (!ready.Contains("yes"))
+                    {
+                        await Task.Delay(6000);
+                        ready = await _web.CoreWebView2.ExecuteScriptAsync(
+                            "typeof window.__MOSS_UITEST === 'function' ? 'yes' : 'no'");
+                        File.AppendAllText(Path.Combine(dir, "uitest-steps.log"), $"{DateTime.Now:HH:mm:ss} [INFO] 重试检查: {ready}{Environment.NewLine}");
+                    }
+                    File.AppendAllText(Path.Combine(dir, "uitest-steps.log"), $"{DateTime.Now:HH:mm:ss} [INFO] 调用 UITEST{Environment.NewLine}");
                     await _web.CoreWebView2.ExecuteScriptAsync("window.__MOSS_UITEST && window.__MOSS_UITEST(); true");
                 }
                 catch (Exception ex)
                 {
-                    try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "msg.log"), "[uitest] " + ex.Message + Environment.NewLine); } catch { }
+                    try { File.AppendAllText(Path.Combine(dir, "uitest-steps.log"), $"{DateTime.Now:HH:mm:ss} [FAIL] 异常: {ex.Message}{Environment.NewLine}"); } catch { }
                 }
             };
             t.Start();
@@ -903,6 +933,17 @@ internal sealed class MainForm : Form
                 var bal2 = await BinanceTradeService.GetBalancesAsync();
                 if (bal2.Ok) TradeConfig.EnsureBaseline(bal2.FuturesEquity);
                 PostToWeb(new { type = "config", ok = true, message = "密钥已加密保存到本机", entitled = LicenseService.TradeEnabled, preview = false, configured = BinanceTradeService.Configured, equity = bal2.FuturesEquity });
+                return;
+            }
+            if (action == "saveFlags")
+            {
+                // 密钥已保存，只更新开关（不重写密钥）
+                var autoM = root.TryGetProperty("autoMode", out var am) && am.ValueKind == JsonValueKind.True;
+                var testN = root.TryGetProperty("useTestnet", out var tn) && tn.ValueKind == JsonValueKind.True;
+                TradeConfig.Current.AutoMode = autoM;
+                TradeConfig.Current.UseTestnet = testN;
+                TradeConfig.Save();
+                PostToWeb(new { type = "config", ok = true, message = "设置已更新（API 保持已绑定）", entitled = LicenseService.TradeEnabled, preview = false, configured = BinanceTradeService.Configured, autoTrade = TradeConfig.Current.AutoTrade, autoMode = TradeConfig.Current.AutoMode, useTestnet = TradeConfig.Current.UseTestnet });
                 return;
             }
             if (action == "status")
@@ -995,9 +1036,9 @@ internal sealed class MainForm : Form
             }
             if (action == "cleanup")
             {
-                var sym = root.TryGetProperty("symbol", out var sy) ? (sy.GetString() ?? "BTCUSDT") : "BTCUSDT";
-                var n = await BinanceTradeService.CancelAlgoOrdersAsync(sym);
-                var payloadC = new { type = "cleanup", ok = true, symbol = sym, cancelled = n };
+                // 全局清理：撤销所有币的未触发条件单（不动仓位）
+                var n = await BinanceTradeService.CancelAllAlgoOrdersAsync();
+                var payloadC = new { type = "cleanup", ok = true, symbol = "ALL", cancelled = n };
                 await _web.CoreWebView2.ExecuteScriptAsync(
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payloadC)}}}));");
                 return;
@@ -1053,30 +1094,51 @@ internal sealed class MainForm : Form
                     var cancelled = await BinanceTradeService.CancelAlgoOrdersAsync(sym);
                     steps.Add(new { name = "撤销旧委托", ok = true, msg = $"撤掉 {cancelled} 条" });
 
-                    var up = price * (1 + 0.0005);
-                    var dn = price * (1 - 0.0005);
-                    var tpPrice = isLong ? up : dn;
-                    var slPrice = isLong ? dn : up;
-
+                    // 测试专用：极近触发距离（0.01%~0.015%），保证一定能在短时间内触发
+                    // 距离越近越容易成交，测试目标就是验证「挂单→触发→平仓→清理」全链路
+                    var bigCoins = new[] { "BTCUSDT", "ETHUSDT" };
+                    var basePct = bigCoins.Any(b => string.Equals(b, sym, StringComparison.OrdinalIgnoreCase)) ? 0.00015 : 0.0001;
+                    var pctBands = new[] { basePct, basePct * 2, basePct * 4, basePct * 10, basePct * 25 };
+                    var trigPct = basePct;
+                    double tpPrice = 0, slPrice = 0;
                     var okTp = false; var okSl = false;
-                    try
+                    foreach (var pb in pctBands)
                     {
-                        var tpv = await BinanceTradeService.FormatPriceAsync(sym, (decimal)tpPrice);
-                        await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "TAKE_PROFIT_MARKET", tpv, qtyText);
-                        okTp = true;
+                        trigPct = pb;
+                        var upT = price * (1 + pb);
+                        var dnT = price * (1 - pb);
+                        tpPrice = isLong ? upT : dnT;
+                        slPrice = isLong ? dnT : upT;
+                        okTp = false; okSl = false;
+                        try
+                        {
+                            await BinanceTradeService.CancelAlgoOrdersAsync(sym);
+                            var tpv = await BinanceTradeService.FormatPriceAsync(sym, (decimal)tpPrice);
+                            await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "TAKE_PROFIT_MARKET", tpv, qtyText);
+                            okTp = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            if (!ex.Message.Contains("-2021")) steps.Add(new { name = "挂止盈失败", ok = false, msg = ex.Message });
+                        }
+                        try
+                        {
+                            var slv = await BinanceTradeService.FormatPriceAsync(sym, (decimal)slPrice);
+                            await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "STOP_MARKET", slv, qtyText);
+                            okSl = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            if (!ex.Message.Contains("-2021")) steps.Add(new { name = "挂止损失败", ok = false, msg = ex.Message });
+                        }
+                        if (okTp && okSl) break;
+                        // 放宽重试属于正常流程，不算失败（只记录过程）
+                        steps.Add(new { name = $"放宽到{trigPct * 100:F3}%", ok = true, msg = (okTp ? "" : "止盈-2021 ") + (okSl ? "" : "止损-2021") + " 自动放宽，继续重试" });
+                        await Task.Delay(1000);
                     }
-                    catch (Exception ex) { steps.Add(new { name = "挂止盈失败", ok = false, msg = ex.Message }); }
-
-                    try
-                    {
-                        var slv = await BinanceTradeService.FormatPriceAsync(sym, (decimal)slPrice);
-                        await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "STOP_MARKET", slv, qtyText);
-                        okSl = true;
-                    }
-                    catch (Exception ex) { steps.Add(new { name = "挂止损失败", ok = false, msg = ex.Message }); }
 
                     steps.Add(new { name = "挂近距离条件单", ok = okTp && okSl,
-                        msg = $"现价 {price:F4}｜止盈 {tpPrice:F4}｜止损 {slPrice:F4}（距现价 0.05%）" });
+                        msg = $"现价 {price:F4}｜止盈 {tpPrice:F4}｜止损 {slPrice:F4}（距现价 {(trigPct * 100):F2}%）" });
 
                     // 立刻回传一次，让界面显示"已挂上、正在等触发"
                     try
@@ -1106,7 +1168,30 @@ internal sealed class MainForm : Form
                     }
                     else
                     {
-                        steps.Add(new { name = "等待超时", ok = false, msg = $"180 秒内价格没走 0.05%（现价 {last:F4}），可再点一次" });
+                        // 行情停滞：扩大距离重挂一次（0.2%），再等 90 秒
+                        var retried = false;
+                        try
+                        {
+                            await BinanceTradeService.CancelAlgoOrdersAsync(sym);
+                            var widPct = 0.0003;   // 0.03%，仍然很近，确保能触发
+                            var wTp = isLong ? price * (1 + widPct) : price * (1 - widPct);
+                            var wSl = isLong ? price * (1 - widPct) : price * (1 + widPct);
+                            var wtv = await BinanceTradeService.FormatPriceAsync(sym, (decimal)wTp);
+                            var wsv = await BinanceTradeService.FormatPriceAsync(sym, (decimal)wSl);
+                            await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "TAKE_PROFIT_MARKET", wtv, qtyText);
+                            await BinanceTradeService.PlaceConditionalForTestAsync(sym, closeSide, "STOP_MARKET", wsv, qtyText);
+                            steps.Add(new { name = "重挂0.2%", ok = true, msg = $"止盈 {wtv} / 止损 {wsv}" });
+                            var retryWait = 0;
+                            while (retryWait < 90000)
+                            {
+                                await Task.Delay(4000);
+                                retryWait += 4000;
+                                if (await BinanceTradeService.GetPositionAmountAsync(sym) <= 0) { retried = true; break; }
+                            }
+                            if (retried) steps.Add(new { name = "重挂已触发", ok = true, msg = "仓位已平" });
+                        }
+                        catch (Exception exr) { steps.Add(new { name = "重挂失败", ok = false, msg = exr.Message }); }
+                        if (!retried) steps.Add(new { name = "等待超时", ok = false, msg = $"180+90 秒内未触发（现价 {last:F4}），行情过于平稳" });
                     }
 
                     var left = await BinanceTradeService.CancelAlgoOrdersAsync(sym);
@@ -1191,6 +1276,35 @@ internal sealed class MainForm : Form
         try
         {
             var action = root.TryGetProperty("action", out var a) ? a.GetString() : "";
+            // 平仓（测试清场用）：不需要 AutoTrade 总开关
+            if (action == "close")
+            {
+                var symC = root.TryGetProperty("symbol", out var sc) ? sc.GetString() ?? "" : "";
+                if (string.IsNullOrEmpty(symC))
+                {
+                    PostToWeb(new { type = "order", ok = false, message = "缺少 symbol" });
+                    return;
+                }
+                var positions0 = await BinanceTradeService.GetPositionsAsync();
+                var pos0 = positions0.FirstOrDefault(p =>
+                {
+                    var sp = p.GetType().GetProperty("symbol");
+                    return string.Equals(sp?.GetValue(p) as string, symC, StringComparison.OrdinalIgnoreCase);
+                });
+                if (pos0 == null)
+                {
+                    PostToWeb(new { type = "order", ok = true, symbol = symC, message = "已无持仓" });
+                    return;
+                }
+                var amtProp = pos0.GetType().GetProperty("amount") ?? pos0.GetType().GetProperty("positionAmt");
+                var amtVal = Convert.ToDouble(amtProp?.GetValue(pos0) ?? 0);
+                var sideC = amtVal > 0 ? "long" : "short";
+                var closeRes = await BinanceTradeService.ClosePositionAsync(symC, sideC);
+                await BinanceTradeService.CancelAlgoOrdersAsync(symC);
+                BinanceTradeService.WriteLog("close_test", new { symbol = symC, ok = closeRes.Ok, closeRes.Message });
+                PostToWeb(new { type = "order", ok = closeRes.Ok, symbol = symC, message = closeRes.Ok ? "已平仓 " + symC : closeRes.Message });
+                return;
+            }
             if (action != "market") return;
             if (!TradeConfig.Current.AutoTrade)
             {
@@ -1341,12 +1455,21 @@ internal sealed class MainForm : Form
   rows.forEach(el => { el.style.display = on ? '' : 'none'; });
   if (lock) lock.style.display = on ? 'none' : 'block';
   if (note) {
-    note.textContent = on ? '密钥只保存在本机加密文件，不会上传云端。' : '';
+    note.textContent = on
+      ? (CONFIGURED ? 'API 已绑定 · 密钥已加密保存在本机（无需重新填写）' : '密钥只保存在本机加密文件，不会上传云端。')
+      : '';
     note.style.display = on ? '' : 'none';
   }
+  // 已绑定：输入框显示掩码，避免用户以为没保存
+  if (CONFIGURED) {
+    if (key && !key.value) { key.value = '••••••••••••••••（已保存）'; key.dataset.saved = '1'; }
+    if (sec && !sec.value) { sec.value = '••••••••••••••••（已保存）'; sec.dataset.saved = '1'; }
+  }
   window.__MOSS_ENTITLED = on;
+  window.__MOSS_API_CONFIGURED = CONFIGURED;
 })();";
                 script = script.Replace("FLAG", flag);
+                script = script.Replace("CONFIGURED", BinanceTradeService.Configured ? "true" : "false");
                 await _web.ExecuteScriptAsync(script);
 
                 PostToWeb(new

@@ -302,6 +302,65 @@ internal static class BinanceTradeService
         return n;
     }
 
+    /// <summary>
+    /// 撤销「所有币」的未触发条件单（不动仓位）。
+    /// 用于收尾清理，避免平仓后因网络抖动留下孤儿委托。
+    /// </summary>
+    public static async Task<int> CancelAllAlgoOrdersAsync()
+    {
+        var total = 0;
+        try
+        {
+            // 先列出当前所有持仓，只清这些币（安全，不误伤无关委托）
+            var symbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                using var pos = await SignedAsync(FuturesBase, "/fapi/v2/positionRisk", Array.Empty<KeyValuePair<string, string>>());
+                if (pos.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var p in pos.RootElement.EnumerateArray())
+                    {
+                        if (!p.TryGetProperty("symbol", out var se)) continue;
+                        var sym = se.GetString();
+                        if (string.IsNullOrEmpty(sym)) continue;
+                        // 无论有无持仓都清一遍（可能是刚平掉的）
+                        symbols.Add(sym);
+                    }
+                }
+            }
+            catch { }
+
+            // 再额外用 openAlgoOrders 的全局查询（不带 symbol）兜底
+            try
+            {
+                using var doc = await SignedAsync(FuturesBase, "/fapi/v1/openAlgoOrders", Array.Empty<KeyValuePair<string, string>>());
+                var arr = doc.RootElement.ValueKind == JsonValueKind.Array
+                    ? doc.RootElement
+                    : (doc.RootElement.TryGetProperty("orders", out var inner) ? inner : default);
+                if (arr.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var o in arr.EnumerateArray())
+                    {
+                        if (o.TryGetProperty("symbol", out var se2))
+                        {
+                            var sym = se2.GetString();
+                            if (!string.IsNullOrEmpty(sym)) symbols.Add(sym);
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            foreach (var sym in symbols)
+            {
+                try { total += await CancelAlgoOrdersAsync(sym); } catch { }
+            }
+        }
+        catch { }
+        WriteLog("cancel_all_algo", new { total });
+        return total;
+    }
+
     /// <summary>读取某交易对的持仓数量（无持仓返回 0）</summary>
     public static async Task<decimal> GetPositionAmountAsync(string symbol)
     {

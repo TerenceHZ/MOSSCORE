@@ -1,2 +1,2 @@
 chcp 65001 >nul
-powershell -NoProfile -ExecutionPolicy Bypass -File "D:\数据库\scripts\build.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "D:\数据库\scripts\build.ps1" %*

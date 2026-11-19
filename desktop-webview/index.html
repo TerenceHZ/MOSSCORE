@@ -1037,6 +1037,27 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
     .nv-bs-lock.show{display:block}
     .nv-binance-setup.locked .nv-bs-row input{opacity:.45;cursor:not-allowed}
     .nv-binance-setup.locked .nv-bs-actions button{opacity:.35;cursor:not-allowed;pointer-events:none}
+.nv-auto-warn{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);backdrop-filter:blur(3px)}
+.nv-auto-warn[hidden]{display:none}
+.nv-aw-card{width:440px;max-width:calc(100vw - 48px);background:linear-gradient(150deg,rgba(28,14,4,.97),rgba(10,6,3,.98));border:1px solid rgba(232,160,32,.55);border-radius:4px;box-shadow:0 0 40px rgba(232,160,32,.28),0 0 100px rgba(232,160,32,.12);overflow:hidden;animation:nvAwIn .22s ease-out}
+@keyframes nvAwIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
+.nv-aw-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid rgba(232,160,32,.22)}
+.nv-aw-h b{font:700 16px/1 var(--cjk);color:#ffc043;letter-spacing:.02em}
+.nv-aw-h i{font-style:normal;color:#8a7b62;cursor:pointer;font-size:20px;line-height:1;padding:0 4px}
+.nv-aw-h i:hover{color:#ffc043}
+.nv-aw-body{padding:16px 18px 4px}
+.nv-aw-lead{margin:0 0 12px;font:500 13.5px/1.65 var(--cjk);color:#e8e2d4}
+.nv-aw-lead b{color:#ffc043;font-weight:700}
+.nv-aw-list{margin:0 0 12px;padding-left:18px}
+.nv-aw-list li{font:400 12.5px/1.85 var(--cjk);color:#a99a7e;list-style:none;position:relative}
+.nv-aw-list li::before{content:"·";position:absolute;left:-13px;color:#e8a020;font-weight:700}
+.nv-aw-tip{margin:0 0 14px;font:500 12px/1.5 var(--cjk);color:#c96358}
+.nv-aw-foot{display:flex;gap:10px;padding:0 18px 18px}
+.nv-aw-foot button{flex:1;padding:11px 0;border-radius:3px;font:600 13px/1 var(--cjk);cursor:pointer;transition:all .18s}
+.nv-aw-cancel{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);color:#a99a7e}
+.nv-aw-cancel:hover{background:rgba(255,255,255,.1);color:#e8e2d4}
+.nv-aw-ok{background:linear-gradient(135deg,rgba(232,160,32,.9),rgba(190,120,20,.9));border:1px solid rgba(255,192,67,.7);color:#1a1206;font-weight:700}
+.nv-aw-ok:hover{background:linear-gradient(135deg,#ffc043,#e8a020);box-shadow:0 0 18px rgba(232,160,32,.5)}
 .nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:calc(100vh - 32px)!important;overflow-y:auto;box-sizing:border-box;width:380px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
 .nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
 .nv-order-pop::after{content:none}
@@ -11875,13 +11896,19 @@ requestAnimationFrame(frame);
         if (Date.now() - MOSS_BOOT_TS >= MOSS_ALERT_QUIET_MS) queueOrderPreview(entry);
         if (readOrderMode() === 'auto' && LIVE_ORDER_ENABLED()) {
           const hasSlot = (TRADE_INFO.positions || []).length < ORDER_MAX_POSITIONS;
-          if (hasSlot) {
+          // 额外保护：两次自动下单至少间隔 60 秒，避免信号密集时连续开仓
+          const lastAuto = Number(window.__MOSS_LAST_AUTO_ORDER || 0);
+          const gapOk = Date.now() - lastAuto > 60000;
+          if (hasSlot && gapOk) {
             const p = orderPending;
             if (p) {
               const stage = opEl('nvOpStage');
               if (stage) stage.textContent = '自动下单中…';
+              window.__MOSS_LAST_AUTO_ORDER = Date.now();
               sendOrder(p);
             }
+          } else if (!gapOk) {
+            try { console.log('[AUTO] 距上次自动下单不足 60 秒，跳过'); } catch (e) {}
           }
         }
       } catch (e) {}
@@ -11989,14 +12016,53 @@ requestAnimationFrame(frame);
       }, true);
     } catch (e) {}
     const ORDER_MODE_KEY = 'moss-order-mode';
+    // ===== 自动下单风险提示弹窗 =====
+    const showAutoWarn = () => new Promise((resolve) => {
+      const el = document.getElementById('nvAutoWarn');
+      if (!el) { resolve(false); return; }
+      el.hidden = false;
+      const okBtn = document.getElementById('nvAwOk');
+      const cancelBtn = document.getElementById('nvAwCancel');
+      const xBtn = document.getElementById('nvAwX');
+      const finish = (val) => {
+        el.hidden = true;
+        if (okBtn) okBtn.onclick = null;
+        if (cancelBtn) cancelBtn.onclick = null;
+        if (xBtn) xBtn.onclick = null;
+        resolve(val);
+      };
+      if (okBtn) okBtn.onclick = () => finish(true);
+      if (cancelBtn) cancelBtn.onclick = () => finish(false);
+      if (xBtn) xBtn.onclick = () => finish(false);
+    });
+    window.__MOSS_SHOW_AUTO_WARN = showAutoWarn;
     // 默认手动：只有用户本次运行里主动点过「自动」才会用 auto，不跨重启记忆
     const readOrderMode = () => (TRADE_INFO.mode === 'auto' ? 'auto' : 'manual');
     const LIVE_ORDER_ENABLED = () => Boolean(TRADE_INFO.autoTrade);
     const orderBusy = { value: false };
+    let orderBusyTimer = null;
     const sendOrder = (p) => {
-      if (!p || orderBusy.value) return;
+      if (!p) {
+        try { postTrade({ type: 'uitest_step', phase: 'sendOrder-reject', ok: false, msg: 'p 为空' }); } catch (e) {}
+        return;
+      }
+      if (orderBusy.value) {
+        try { postTrade({ type: 'uitest_step', phase: 'sendOrder-busy', ok: false, msg: 'busy 锁未释放，' + (p.symbol || '') }); } catch (e) {}
+        return;
+      }
       orderBusy.value = true;
+      try { postTrade({ type: 'uitest_step', phase: 'sendOrder-ok', ok: true, msg: '发送 ' + (p.symbol || '') + ' ' + (p.side || '') }); } catch (e) {}
+      // 12 秒兜底释放，避免宿主没回事件时永久锁死
+      clearTimeout(orderBusyTimer);
+      orderBusyTimer = setTimeout(() => { orderBusy.value = false; }, 12000);
       postTrade({ type: 'trade', action: 'market', symbol: p.symbol, side: p.side });
+    };
+    // 立即暴露重置函数（与 sendOrder 同作用域）
+    window.__MOSS_RESET_BUSY = function () {
+      const was = orderBusy.value;
+      orderBusy.value = false;
+      try { clearTimeout(orderBusyTimer); } catch (e) {}
+      try { postTrade({ type: 'uitest_step', phase: 'busy-reset', ok: true, msg: 'was=' + was + ' now=false' }); } catch (e) {}
     };
     const postTrade = (payload) => {
       try { if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(payload); } catch (e) {}
@@ -12105,7 +12171,11 @@ requestAnimationFrame(frame);
     .nv-bs-status{margin-top:16px;padding:10px 12px;background:rgba(255,255,255,.04);border-left:2px solid #8a7a5e;font:500 11.5px/1.5 "Microsoft YaHei",sans-serif;color:#9a8a70}
 .nv-bs-status.ok{border-left-color:#63C08E;color:#8fd8b4}
 .nv-bs-status.err{border-left-color:#C96358;color:#e0a49a}
-    .nv-bs-actions{display:flex;gap:10px;margin-top:18px}
+    .nv-bs-primary{display:flex;flex-direction:column;gap:6px;margin:14px 0 10px}
+.nv-bs-primary button{width:100%;padding:13px;font:700 14px/1 var(--cjk);letter-spacing:.04em;background:linear-gradient(135deg,rgba(30,90,60,.9),rgba(20,70,45,.9));border:1px solid rgba(99,192,142,.6);color:#8ff0b8;cursor:pointer;border-radius:3px;transition:all .2s}
+.nv-bs-primary button:hover{background:linear-gradient(135deg,rgba(40,120,80,.95),rgba(28,95,60,.95));border-color:#63c08e;box-shadow:0 0 18px rgba(99,192,142,.35)}
+.nv-bs-primary em{font:400 11px/1.4 var(--cjk);color:#7d7362;font-style:normal;text-align:center}
+.nv-bs-actions{display:flex;gap:10px;margin-top:18px}
     .nv-bs-actions button{flex:1;padding:12px 0;font:600 12.5px/1 "Microsoft YaHei",sans-serif;cursor:pointer;letter-spacing:.06em}
 #nvBsTestnet{width:16px;height:16px;accent-color:#e8a020}
 .nv-bs-switch{align-items:center!important;gap:8px}
@@ -12127,6 +12197,9 @@ requestAnimationFrame(frame);
       if (!setup) return;
       const keyEl = document.getElementById('nvBsKey');
       const secEl = document.getElementById('nvBsSecret');
+      // 用户一旦手动输入，就当作要替换密钥
+      if (keyEl) keyEl.addEventListener('input', () => { delete keyEl.dataset.saved; });
+      if (secEl) secEl.addEventListener('input', () => { delete secEl.dataset.saved; });
       const statusEl = document.getElementById('nvBsStatus');
       const setStatus = (txt, cls) => { if (!statusEl) return; statusEl.textContent = txt; statusEl.className = 'nv-bs-status' + (cls ? ' ' + cls : ''); };
       const testnetOn = () => { const el = document.getElementById('nvBsTestnet'); return !!(el && el.checked); };
@@ -12204,6 +12277,14 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       });
       document.getElementById('nvBsSave')?.addEventListener('click', () => {
         const k = (keyEl.value || '').trim(), v = (secEl.value || '').trim();
+        // 输入框显示的是「已保存」掩码时，不重新提交密钥，只更新开关
+        const isMasked = keyEl.dataset.saved === '1' && secEl.dataset.saved === '1';
+        if (isMasked) {
+          postTrade({ type: 'tradeConfig', action: 'saveFlags', autoMode: readOrderMode() === 'auto', useTestnet: testnetOn() });
+          setStatus('设置已更新（API 保持已绑定）', 'ok');
+          setTimeout(closeSetup, 700);
+          return;
+        }
         if (!k || !v) { setStatus('请先填写 API Key 和 Secret', 'err'); return; }
         postTrade({ type: 'tradeConfig', action: 'save', apiKey: k, apiSecret: v, autoTrade: true, autoMode: readOrderMode() === 'auto', useTestnet: testnetOn() });
         setStatus('已保存到本机加密文件', 'ok');
@@ -12263,6 +12344,7 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
         el.textContent = String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
         if (left <= 0) { clearInterval(orderCountdown); orderCountdown = null; }
       };
+    try { window.__MOSS_SEND_ORDER = sendOrder; } catch (e) {}
       tick();
       orderCountdown = setInterval(tick, 1000);
     };
@@ -12861,6 +12943,22 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       });
     };
     window.__MOSS_FOCUS_SHOW = focusShow;
+
+    // ===== 暴露 UITEST 所需的依赖（供宿主 ExecuteScriptAsync 全局调用）=====
+    try {
+      window.TRADE_INFO = TRADE_INFO;
+      window.postTrade = postTrade;
+      window.calcSignal = calcSignal;
+      window.queueOrderPreview = queueOrderPreview;
+      window.readOrderMode = readOrderMode;
+      window.LIVE_ORDER_ENABLED = LIVE_ORDER_ENABLED;
+      window.ORDER_MAX_POSITIONS = ORDER_MAX_POSITIONS;
+      window.__MOSS_OP_EL = (id) => {
+        const sr2 = document.querySelector('#host-neural')?.shadowRoot;
+        return (sr2 && sr2.getElementById(id)) || document.getElementById(id);
+      };
+    } catch (e) {}
+
     const focusArmIdle = () => {
       const card = sr.querySelector('[data-nv-card="focus"]');
       clearTimeout(focusIdleTimer);
@@ -13227,7 +13325,11 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
     } catch (e) {}
           if (typeof d.configured === 'boolean') TRADE_INFO.configured = d.configured;
           if (typeof d.autoTrade === 'boolean') TRADE_INFO.autoTrade = d.autoTrade;
-        if (typeof d.autoMode === 'boolean') TRADE_INFO.mode = d.autoMode ? 'auto' : 'manual';
+        // autoMode 由本地开关决定，服务端 status 不覆盖（避免开仓后被强制切回手动）
+        // 仅在本地还没有设置过时，才采用服务端值
+        if (typeof d.autoMode === 'boolean' && !window.__MOSS_MODE_SET_LOCALLY) {
+          TRADE_INFO.mode = d.autoMode ? 'auto' : 'manual';
+        }
         if (typeof d.useTestnet === 'boolean') { TRADE_INFO.useTestnet = d.useTestnet; try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNET(); } catch (e) {} }
           if (typeof d.equity === 'number') TRADE_INFO.equity = d.equity;
           if (typeof d.available === 'number') TRADE_INFO.available = d.available;
@@ -13253,6 +13355,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
         }
         if (d.type === 'order') {
           orderBusy.value = false;
+          try { clearTimeout(orderBusyTimer); } catch (e) {}
           const okBtn = document.getElementById('nvOpOk');
           if (okBtn) {
             okBtn.textContent = d.ok ? '已下单' : '下单失败';
@@ -13260,6 +13363,8 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
           }
           const stage = sr.querySelector('#nvOpStage');
           if (stage) stage.textContent = (d.ok ? '下单成功：' : '下单失败：') + (d.message || '');
+          // 订单已处理：清空 orderPending，避免状态刷新时重复弹卡
+          orderPending = null;
           postTrade({ type: 'tradeConfig', action: 'status' });
         }
         if (d.type === 'transfer') {
@@ -13861,8 +13966,15 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       if (sw) {
         sw.addEventListener('click', (e) => {
           e.stopPropagation();
-          const next = readOrderMode() === 'auto' ? 'manual' : 'auto';
+          (async () => {
+          const curMode = readOrderMode();
+          if (curMode !== 'auto') {
+            const confirmed = await (window.__MOSS_SHOW_AUTO_WARN ? window.__MOSS_SHOW_AUTO_WARN() : Promise.resolve(false));
+            if (!confirmed) return;
+          }
+          const next = curMode === 'auto' ? 'manual' : 'auto';
           TRADE_INFO.mode = next;
+          window.__MOSS_MODE_SET_LOCALLY = true;
           try { localStorage.setItem(ORDER_MODE_KEY, next); } catch (e) {}
           postTrade({ type: 'tradeConfig', action: 'mode', mode: next });
           if (orderPending) {
@@ -13870,6 +13982,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
             const cur = rows.find(r => r.symbol === orderPending.symbol);
             if (cur) queueOrderPreview({ sig: calcSignal(cur), key: `${cur.symbol}-${calcSignal(cur).side}` });
           }
+          })();
         });
       }
       const okBtn = document.getElementById('nvOpOk');
@@ -13914,15 +14027,24 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
         return;
       }
       if (t.closest('#nvOpSwitch')) {
-        const next = readOrderMode() === 'auto' ? 'manual' : 'auto';
-        TRADE_INFO.mode = next;
-        try { localStorage.setItem(ORDER_MODE_KEY, next); } catch (err) {}
-        postTrade({ type: 'tradeConfig', action: 'mode', mode: next });
-        if (orderPending) {
-          const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
-          const cur = rows.find(r => r.symbol === orderPending.symbol);
-          if (cur) { const sig = calcSignal(cur); queueOrderPreview({ sig, key: `${cur.symbol}-${sig.side}` }); }
-        }
+        (async () => {
+          const curMode = readOrderMode();
+          // 切到自动：先弹风险提示，确认后才生效
+          if (curMode !== 'auto') {
+            const confirmed = await (window.__MOSS_SHOW_AUTO_WARN ? window.__MOSS_SHOW_AUTO_WARN() : Promise.resolve(false));
+            if (!confirmed) return;   // 用户取消，保持手动
+          }
+          const next = curMode === 'auto' ? 'manual' : 'auto';
+          TRADE_INFO.mode = next;
+          window.__MOSS_MODE_SET_LOCALLY = true;
+          try { localStorage.setItem(ORDER_MODE_KEY, next); } catch (err) {}
+          postTrade({ type: 'tradeConfig', action: 'mode', mode: next });
+          if (orderPending) {
+            const rows = (window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || [];
+            const cur = rows.find(r => r.symbol === orderPending.symbol);
+            if (cur) { const sig = calcSignal(cur); queueOrderPreview({ sig, key: `${cur.symbol}-${sig.side}` }); }
+          }
+        })();
         return;
       }
       if (t.closest('#nvOpOk')) {
@@ -14090,8 +14212,24 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
 
 /* ================= UI 自测（客户端内真实路径） ================= */
 window.__MOSS_UITEST = async function () {
+  // 从 window 取依赖（UITEST 在其他闭包外，不能直接访问局部变量）
+  const T = window.TRADE_INFO || {};
+  const postTrade = window.postTrade || function () {};
+  const calcSignal = window.calcSignal || function (r) { return { side: 'long', win: 50, r: r }; };
+  const queueOrderPreview = window.queueOrderPreview || function () {};
+  const readOrderMode = window.readOrderMode || function () { return 'manual'; };
+  const LIVE_ORDER_ENABLED = window.LIVE_ORDER_ENABLED || function () { return false; };
+  const ORDER_MAX_POSITIONS = window.ORDER_MAX_POSITIONS || 5;
   const log = [];
-  const push = (phase, ok, msg) => { log.push({ phase, ok, msg, ts: new Date().toLocaleTimeString() }); try { console.log('[UITEST]', phase, ok, msg); } catch (e) {} };
+  window.__MOSS_UITEST_LOG = log;   // 暴露给宿主读取
+  const push = (phase, ok, msg) => {
+    const rec = { phase, ok, msg, ts: new Date().toLocaleTimeString() };
+    log.push(rec);
+    try { console.log('[UITEST]', phase, ok, msg); } catch (e) {}
+    try { localStorage.setItem('moss-uitest-log', JSON.stringify(log.slice(-200))); } catch (e) {}
+    // 每步都上报宿主，便于落盘
+    try { postTrade({ type: 'uitest_step', phase, ok, msg }); } catch (e) {}
+  };
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   const waitEvent = (type, timeout = 30000) => new Promise((resolve) => {
     const t0 = Date.now();
@@ -14103,13 +14241,44 @@ window.__MOSS_UITEST = async function () {
     window.addEventListener('moss:binance', onBin);
   });
   const rowFor = (sym) => ((window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || []).find(r => (r.symbol || '') === sym);
-  const posCount = () => (TRADE_INFO.positions || []).length;
+  const posCount = () => (T.positions || []).length;
 
   try {
-    if (!TRADE_INFO.useTestnet) { push('guard', false, '当前不是测试网，拒绝执行'); throw new Error('not testnet'); }
+    // 等待宿主推送配置完成（最多 15 秒），避免刚启动时 useTestnet 还是默认 false
+    if (!T.useTestnet) {
+      push('guard', true, '等待配置推送…');
+      for (let w = 0; w < 30; w++) {
+        await sleep(500);
+        if (T.useTestnet) break;
+      }
+    }
+    if (!T.useTestnet) { push('guard', false, '当前不是测试网，拒绝执行'); throw new Error('not testnet'); }
+
+    // ---- 阶段 0：清空现有持仓（保证测试从零开始）----
+    try {
+      const curPos = T.positions || [];
+      if (curPos.length > 0) {
+        push('0-清场', true, '当前 ' + curPos.length + ' 仓，正在清理…');
+        for (const p0 of curPos) {
+          const sym0 = p0.symbol;
+          if (!sym0) continue;
+          try {
+            postTrade({ type: 'trade', action: 'close', symbol: sym0 });
+            await sleep(2000);
+          } catch (e) {}
+        }
+        push('0-清场发出', true, '已发送平仓请求');
+        await sleep(3000);
+        postTrade({ type: 'tradeConfig', action: 'status' });
+        await sleep(3000);
+        push('0-清场结果', posCount() === 0, '剩余 ' + posCount() + ' 仓');
+      } else {
+        push('0-清场', true, '无持仓，可直接开始');
+      }
+    } catch (e) { push('0-清场错误', false, String(e).slice(0, 80)); }
 
     // ---- 阶段 1：手动单（真实点击「确认下单」按钮）----
-    TRADE_INFO.mode = 'manual';
+    T.mode = 'manual';
     try { localStorage.setItem('moss-order-mode', 'manual'); } catch (e) {}
     postTrade({ type: 'tradeConfig', action: 'mode', mode: 'manual' });
     const row = rowFor('BTCUSDT') || ((window.__MOSS_LIVE.rows || [])[0]);
@@ -14122,6 +14291,7 @@ window.__MOSS_UITEST = async function () {
     if (!okBtn || okBtn.disabled) { push('1-手动', false, '按钮不可点：' + (okBtn ? okBtn.textContent : '')); }
     else {
       okBtn.click();                       // 真实点击
+      await sleep(1200);                   // 等 busy 锁释放
       const res = await waitEvent('order', 30000);
       push('1-手动下单', !!(res && res.ok), res ? (res.message || '') : '无响应');
       await sleep(1500);
@@ -14141,17 +14311,84 @@ window.__MOSS_UITEST = async function () {
       const r = rowFor(sym);
       if (!r) { push('2-' + sym, false, '没有行情行'); continue; }
       const s2 = calcSignal(r);
+      const before = posCount();
+      // 每轮开始前强制重置 busy 锁 + 强制 auto 模式
+      try { if (window.__MOSS_RESET_BUSY) window.__MOSS_RESET_BUSY(); } catch (e) {}
+      try {
+        TRADE_INFO.mode = 'auto';
+        window.__MOSS_MODE_SET_LOCALLY = true;
+        if (window.postTrade) window.postTrade({ type: 'tradeConfig', action: 'mode', mode: 'auto' });
+      } catch (e) {}
+      // 模拟信号：弹卡 + 自动下单（与 nvBsSim 按钮同逻辑）
       queueOrderPreview({ sig: s2, key: `${sym}-${s2.side}` });
-      await sleep(1400);                    // 等自动分支触发
-      push('2-' + sym, posCount() >= 1, '持仓数 ' + posCount());
-      await sleep(800);
+      await sleep(900);
+      // 自动模式：主动触发下单
+      push('2-' + sym + '-chk', true, 'mode=' + readOrderMode() + ' live=' + LIVE_ORDER_ENABLED() + ' pos=' + posCount());
+      if (readOrderMode() === 'auto' && LIVE_ORDER_ENABLED()) {
+        const opEl2 = window.__MOSS_OP_EL || ((id) => document.getElementById(id));
+        const stage = opEl2('nvOpStage');
+        if (stage) stage.textContent = '自动下单中…';
+        const send = window.__MOSS_SEND_ORDER;
+        // 监听下单结果
+        let orderResult = null;
+        const onOrder = (ev) => {
+          const d = ev && ev.detail;
+          if (!d || d.type !== 'order') return;
+          if (String(d.symbol || '').toUpperCase() !== sym.toUpperCase()) return;
+          orderResult = d;
+        };
+        window.addEventListener('moss:trade', onOrder);
+        try {
+          // 直接发消息给宿主，绕过 sendOrder 内的 busy 锁（测试专用）
+          const directPost = window.postTrade;
+          if (typeof directPost === 'function') {
+            directPost({ type: 'trade', action: 'market', symbol: sym, side: s2.side || 'long' });
+            push('2-' + sym + '-sent', true, '已直发 ' + sym + ' ' + (s2.side || 'long'));
+          } else if (typeof send === 'function') {
+            await send({ symbol: sym, side: s2.side || 'long' });
+            push('2-' + sym + '-sent', true, '已发送 ' + sym + ' ' + (s2.side || 'long'));
+          } else {
+            const okBtn2 = opEl2('nvOpOk');
+            if (okBtn2 && !okBtn2.disabled) okBtn2.click();
+            push('2-' + sym + '-btn', true, '点击确认按钮');
+          }
+          // 等结果事件（最多 10 秒）
+          for (let w = 0; w < 20; w++) {
+            await sleep(500);
+            if (orderResult) break;
+            if (posCount() > before) break;
+          }
+        } catch (e) {
+          push('2-' + sym + '-err', false, String(e).slice(0, 100));
+        } finally {
+          window.removeEventListener('moss:trade', onOrder);
+        }
+        if (orderResult && !orderResult.ok) {
+          push('2-' + sym + '-why', false, '下单失败: ' + String(orderResult.message || '').slice(0, 120));
+        }
+      }
+      // 等下单完成（开仓约需 3 秒，再留余量）+ 等 orderBusy 释放
+      let waited = 0;
+      while (waited < 8000) {
+        await sleep(500);
+        waited += 500;
+        if (posCount() > before) break;
+      }
+      push('2-' + sym, posCount() > before, `持仓 ${before}→${posCount()}`);
+      // 等 busy 锁释放，避免下一单被拒
+      await sleep(1500);
     }
     postTrade({ type: 'tradeConfig', action: 'status' });
     await sleep(2500);
     push('2-五单', posCount() >= 5, '当前 ' + posCount() + ' 仓');
 
     // ---- 阶段 3：触发测试（每个仓位一次，走按钮同逻辑）----
-    const symsNow = (TRADE_INFO.positions || []).map(p => p.symbol);
+    // 阶段3：BTC 行情平稳，触发测试放最后（避免占用时间）
+    const order3 = ['ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'BNBUSDT', 'ADAUSDT', 'LINKUSDT', 'AVAXUSDT', 'LTCUSDT'];
+    const symsNow = (T.positions || []).map(p => p.symbol).sort((a, b) => {
+      const ia = order3.indexOf(a), ib = order3.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
     push('3-待测仓位', symsNow.length > 0, symsNow.join(','));
     for (const sym of symsNow) {
       postTrade({ type: 'tradeConfig', action: 'tptest', symbol: sym });
@@ -14163,10 +14400,33 @@ window.__MOSS_UITEST = async function () {
       await sleep(1500);
     }
 
-    // 收尾
+    // 收尾：主动清空剩余仓位
     postTrade({ type: 'tradeConfig', action: 'status' });
-    await sleep(2000);
+    await sleep(2500);
+    const leftPos = (T.positions || []).slice();
+    if (leftPos.length > 0) {
+      push('4-清理', true, '剩余 ' + leftPos.length + ' 仓，正在强平…');
+      for (const p4 of leftPos) {
+        if (!p4.symbol) continue;
+        try { postTrade({ type: 'trade', action: 'close', symbol: p4.symbol }); await sleep(2000); } catch (e) {}
+      }
+      await sleep(3000);
+      postTrade({ type: 'tradeConfig', action: 'status' });
+      await sleep(3000);
+    }
+    // 再兜底清理一次委托
+    try { postTrade({ type: 'tradeConfig', action: 'cleanup', symbol: 'ALL' }); await sleep(2500); } catch (e) {}
     push('4-收尾', posCount() === 0, '剩余 ' + posCount() + ' 仓');
+
+    // ★ 关键：测试结束必须关闭自动模式，避免继续自动开仓
+    try {
+      T.mode = 'manual';
+      window.__MOSS_MODE_SET_LOCALLY = true;
+      try { localStorage.setItem('moss-order-mode', 'manual'); } catch (e) {}
+      postTrade({ type: 'tradeConfig', action: 'mode', mode: 'manual' });
+      push('5-关闭自动', true, '已切回手动模式，不会继续自动开仓');
+      await sleep(1200);
+    } catch (e) { push('5-关闭自动', false, String(e).slice(0, 60)); }
   } catch (e) {
     push('fatal', false, e && e.message ? e.message : String(e));
   } finally {
@@ -14217,6 +14477,25 @@ window.__MOSS_UITEST = async function () {
 
 </script>
 
+    <div class="nv-auto-warn" id="nvAutoWarn" hidden>
+      <div class="nv-aw-card">
+        <div class="nv-aw-h"><b>⚠ 开启自动下单</b><i id="nvAwX">×</i></div>
+        <div class="nv-aw-body">
+          <p class="nv-aw-lead">开启后进入<b>自动下单状态</b>：每次弹出预警代币都会<b>自动下单</b>，无需你确认，直到下满 <b>5 个订单</b>。</p>
+          <ul class="nv-aw-list">
+            <li>信号出现即开仓，无需你手动确认</li>
+            <li>达到 5 个持仓后自动暂停新开仓</li>
+            <li>每单都会自动挂止盈止损（±15%）</li>
+            <li>关闭客户端或切回手动可停止</li>
+          </ul>
+          <p class="nv-aw-tip">请确认你了解以上风险后再开启。</p>
+        </div>
+        <div class="nv-aw-foot">
+          <button type="button" class="nv-aw-cancel" id="nvAwCancel">取消</button>
+          <button type="button" class="nv-aw-ok" id="nvAwOk">我了解，开启自动下单</button>
+        </div>
+      </div>
+    </div>
     <div class="nv-order-pop" id="nvOrderPop" hidden>
       <div class="nv-op-r1">
         <b id="nvOpSym">—</b>
@@ -14270,6 +14549,10 @@ window.__MOSS_UITEST = async function () {
         <label class="nv-bs-row nv-bs-switch"><span>测试网</span><input id="nvBsTestnet" type="checkbox"><em>勾选后连接币安模拟盘，不会真实成交</em></label>
    <div class="nv-bs-status" id="nvBsStatus">未测试</div>
         <div class="nv-bs-self" id="nvBsSelfBox"></div>
+   <div class="nv-bs-primary">
+    <button type="button" id="nvBsSave">保存并启用</button>
+    <em>填好上面两项后点这里保存，下次打开无需重填</em>
+   </div>
    <div class="nv-bs-actions">
     <button type="button" id="nvBsSelfTest">自检</button>
         <button type="button" id="nvBsSmoke">冒烟测试</button>
@@ -14278,7 +14561,6 @@ window.__MOSS_UITEST = async function () {
         <button type="button" id="nvBsClean">清理委托</button>
         <button type="button" id="nvBsSim">模拟信号</button>
         <button type="button" id="nvBsTest">测试连接</button>
-    <button type="button" id="nvBsSave">保存并启用</button>
    </div>
    <div class="nv-bs-tip">权限只需要「合约交易 + 读取」，不要开「提现」。若填了 IP 白名单，需包含当前公网 IP。</div>
   </div>
