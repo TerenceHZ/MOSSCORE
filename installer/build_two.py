@@ -48,6 +48,8 @@ def build(channel, setup_name, appver):
     iss = re.sub(r'OutputBaseFilename=.*', 'OutputBaseFilename=%s' % setup_name, iss)
     # 版本资源必须是纯数字（dev 后缀只能出现在文件名/显示名里）
     iss = re.sub(r'VersionInfoVersion=.*', 'VersionInfoVersion=%s' % VER, iss)
+    icon = os.path.join(ROOT, 'installer', 'icon-dev.ico' if channel == 'dev' else 'icon-setup.ico')
+    iss = re.sub(r'SetupIconFile=.*', lambda m: 'SetupIconFile=%s' % icon, iss)
     iss = re.sub(r'OutputDir=.*', lambda m: 'OutputDir=%s' % os.path.join(ROOT, 'installer', 'dist'), iss)
 
     iss_path = os.path.join(ROOT, "installer", "dist", "build-%s.iss" % channel)
