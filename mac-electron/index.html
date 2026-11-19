@@ -12016,6 +12016,26 @@ requestAnimationFrame(frame);
       }, true);
     } catch (e) {}
     const ORDER_MODE_KEY = 'moss-order-mode';
+    // ===== 自动下单风险提示弹窗 =====
+    const showAutoWarn = () => new Promise((resolve) => {
+      const el = document.getElementById('nvAutoWarn');
+      if (!el) { resolve(false); return; }
+      el.hidden = false;
+      const okBtn = document.getElementById('nvAwOk');
+      const cancelBtn = document.getElementById('nvAwCancel');
+      const xBtn = document.getElementById('nvAwX');
+      const finish = (val) => {
+        el.hidden = true;
+        if (okBtn) okBtn.onclick = null;
+        if (cancelBtn) cancelBtn.onclick = null;
+        if (xBtn) xBtn.onclick = null;
+        resolve(val);
+      };
+      if (okBtn) okBtn.onclick = () => finish(true);
+      if (cancelBtn) cancelBtn.onclick = () => finish(false);
+      if (xBtn) xBtn.onclick = () => finish(false);
+    });
+    window.__MOSS_SHOW_AUTO_WARN = showAutoWarn;
     // 默认手动：只有用户本次运行里主动点过「自动」才会用 auto，不跨重启记忆
     const readOrderMode = () => (TRADE_INFO.mode === 'auto' ? 'auto' : 'manual');
     const LIVE_ORDER_ENABLED = () => Boolean(TRADE_INFO.autoTrade);
@@ -13949,7 +13969,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
           (async () => {
           const curMode = readOrderMode();
           if (curMode !== 'auto') {
-            const confirmed = await showAutoWarn();
+            const confirmed = await (window.__MOSS_SHOW_AUTO_WARN ? window.__MOSS_SHOW_AUTO_WARN() : Promise.resolve(false));
             if (!confirmed) return;
           }
           const next = curMode === 'auto' ? 'manual' : 'auto';
@@ -14011,7 +14031,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
           const curMode = readOrderMode();
           // 切到自动：先弹风险提示，确认后才生效
           if (curMode !== 'auto') {
-            const confirmed = await showAutoWarn();
+            const confirmed = await (window.__MOSS_SHOW_AUTO_WARN ? window.__MOSS_SHOW_AUTO_WARN() : Promise.resolve(false));
             if (!confirmed) return;   // 用户取消，保持手动
           }
           const next = curMode === 'auto' ? 'manual' : 'auto';
