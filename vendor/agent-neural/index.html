@@ -14231,228 +14231,213 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
 
 /* ================= UI 自测（客户端内真实路径） ================= */
 window.__MOSS_UITEST = async function () {
-  // 从 window 取依赖（UITEST 在其他闭包外，不能直接访问局部变量）
+  // 从 window 取依赖（UITEST 在其他闭包外）
   const T = window.TRADE_INFO || {};
   const postTrade = window.postTrade || function () {};
-  const calcSignal = window.calcSignal || function (r) { return { side: 'long', win: 50, r: r }; };
   const queueOrderPreview = window.queueOrderPreview || function () {};
   const readOrderMode = window.readOrderMode || function () { return 'manual'; };
   const LIVE_ORDER_ENABLED = window.LIVE_ORDER_ENABLED || function () { return false; };
   const ORDER_MAX_POSITIONS = window.ORDER_MAX_POSITIONS || 5;
+
   const log = [];
-  window.__MOSS_UITEST_LOG = log;   // 暴露给宿主读取
+  window.__MOSS_UITEST_LOG = log;
   const push = (phase, ok, msg) => {
     const rec = { phase, ok, msg, ts: new Date().toLocaleTimeString() };
     log.push(rec);
     try { console.log('[UITEST]', phase, ok, msg); } catch (e) {}
     try { localStorage.setItem('moss-uitest-log', JSON.stringify(log.slice(-200))); } catch (e) {}
-    // 每步都上报宿主，便于落盘
     try { postTrade({ type: 'uitest_step', phase, ok, msg }); } catch (e) {}
   };
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-  const waitEvent = (type, timeout = 30000) => new Promise((resolve) => {
-    const t0 = Date.now();
-    const onTrade = (ev) => { const d = ev && ev.detail; if (!d) return; if (type === 'order' && d.type === 'order') { cleanup(); resolve(d); } if (type === 'tptest' && d.type === 'tptest') { cleanup(); resolve(d); } };
-    const onBin = (ev) => { const d = ev && ev.detail; if (!d) return; if (type === 'tptest' && d.type === 'tptest') { cleanup(); resolve(d); } };
-    const timer = setTimeout(() => { cleanup(); resolve(null); }, timeout);
-    function cleanup() { clearTimeout(timer); window.removeEventListener('moss:trade', onTrade); window.removeEventListener('moss:binance', onBin); }
-    window.addEventListener('moss:trade', onTrade);
-    window.addEventListener('moss:binance', onBin);
-  });
+  const opEl = (id) => {
+    const sr = document.querySelector('#host-neural')?.shadowRoot;
+    return (sr && sr.getElementById(id)) || document.getElementById(id);
+  };
   const rowFor = (sym) => ((window.__MOSS_LIVE && window.__MOSS_LIVE.rows) || []).find(r => (r.symbol || '') === sym);
   const posCount = () => (T.positions || []).length;
+  const waitOrderResult = (sym, timeout = 15000) => new Promise((resolve) => {
+    let done = false;
+    const onOrder = (ev) => {
+      const d = ev && ev.detail;
+      if (!d || d.type !== 'order') return;
+      if (sym && String(d.symbol || '').toUpperCase() !== String(sym).toUpperCase()) return;
+      if (done) return;
+      done = true;
+      window.removeEventListener('moss:trade', onOrder);
+      resolve(d);
+    };
+    window.addEventListener('moss:trade', onOrder);
+    setTimeout(() => { if (!done) { done = true; window.removeEventListener('moss:trade', onOrder); resolve(null); } }, timeout);
+  });
 
   try {
-    // 等待宿主推送配置完成（最多 15 秒），避免刚启动时 useTestnet 还是默认 false
-    if (!T.useTestnet) {
-      push('guard', true, '等待配置推送…');
-      for (let w = 0; w < 30; w++) {
-        await sleep(500);
-        if (T.useTestnet) break;
-      }
-    }
+    // ============ 前置：必须是测试网 ============
+    if (!T.useTestnet) await sleep(2000);
     if (!T.useTestnet) { push('guard', false, '当前不是测试网，拒绝执行'); throw new Error('not testnet'); }
+    push('0-环境', true, '测试网 · 胜率门槛 ' + (window.__MOSS_SIG_MIN_WIN || 60) + '%');
 
-    // ---- 阶段 0：清空现有持仓（保证测试从零开始）----
-    try {
-      const curPos = T.positions || [];
-      if (curPos.length > 0) {
-        push('0-清场', true, '当前 ' + curPos.length + ' 仓，正在清理…');
-        for (const p0 of curPos) {
-          const sym0 = p0.symbol;
-          if (!sym0) continue;
-          try {
-            postTrade({ type: 'trade', action: 'close', symbol: sym0 });
-            await sleep(2000);
-          } catch (e) {}
-        }
-        push('0-清场发出', true, '已发送平仓请求');
-        await sleep(3000);
-        postTrade({ type: 'tradeConfig', action: 'status' });
-        await sleep(3000);
-        push('0-清场结果', posCount() === 0, '剩余 ' + posCount() + ' 仓');
-      } else {
-        push('0-清场', true, '无持仓，可直接开始');
-      }
-    } catch (e) { push('0-清场错误', false, String(e).slice(0, 80)); }
+    // ============ 阶段1：验证「默认手动」+ 手动建仓 ============
+    push('1-开始', true, '验证默认手动模式');
 
-    // ---- 阶段 1：手动单（真实点击「确认下单」按钮）----
-    T.mode = 'manual';
-    try { localStorage.setItem('moss-order-mode', 'manual'); } catch (e) {}
-    postTrade({ type: 'tradeConfig', action: 'mode', mode: 'manual' });
-    const row = rowFor('BTCUSDT') || ((window.__MOSS_LIVE.rows || [])[0]);
-    if (!row) { push('1-手动', false, '没有行情行'); throw new Error('no rows'); }
-    const sig = calcSignal(row);
-    queueOrderPreview({ sig, key: `${row.symbol}-${sig.side}` });
-    await sleep(900);
-    const okBtn = document.getElementById('nvOpOk');
-    push('1-卡片按钮状态', !!(okBtn && !okBtn.disabled), okBtn ? okBtn.textContent : '找不到按钮');
-    if (!okBtn || okBtn.disabled) { push('1-手动', false, '按钮不可点：' + (okBtn ? okBtn.textContent : '')); }
-    else {
-      okBtn.click();                       // 真实点击
-      await sleep(1200);                   // 等 busy 锁释放
-      const res = await waitEvent('order', 30000);
-      push('1-手动下单', !!(res && res.ok), res ? (res.message || '') : '无响应');
-      await sleep(1500);
-      push('1-持仓数', posCount() > 0, String(posCount()));
+    // 打开订单卡（点模拟信号按钮，走真实 UI）
+    const simBtn = opEl('nvBsSim');
+    if (!simBtn) { push('1-模拟信号', false, '找不到模拟信号按钮'); throw new Error('no sim btn'); }
+    simBtn.click();
+    await sleep(1800);
+
+    // ① 验证默认是手动
+    const modeAtOpen = readOrderMode();
+    const modeText = opEl('nvOpModeText') ? opEl('nvOpModeText').textContent : '';
+    push('1-默认模式', modeAtOpen === 'manual', `开关显示「${modeText}」，实际 ${modeAtOpen}`);
+    if (modeAtOpen !== 'manual') {
+      push('1-默认模式', false, '默认不是手动！必须修复');
+      throw new Error('default mode is not manual');
     }
 
-    // ---- 阶段 2：自动模式，连开直到 5 仓 ----
-    queueOrderPreview({ sig: calcSignal(row), key: `${row.symbol}-${sig.side}` });
-    await sleep(600);
-    const sw = document.getElementById('nvOpSwitch');
-    if (sw && readOrderMode() !== 'auto') { sw.click(); await sleep(500); }
-    push('2-模式', readOrderMode() === 'auto', '当前模式 ' + readOrderMode());
+    // ② 点开关 → 应该弹警告
+    const sw = opEl('nvOpSwitch');
+    if (!sw) throw new Error('no switch');
+    sw.click();
+    await sleep(700);
 
-    const pool = ['ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'BNBUSDT', 'ADAUSDT'];
+    const warnEl = document.getElementById('nvAutoWarn');
+    const warnShown = warnEl && !warnEl.hidden;
+    push('1-风险提示', warnShown, warnShown ? '点击开关后弹出风险提示' : '未弹出风险提示（错误）');
+    if (!warnShown) throw new Error('warning not shown');
+
+    // ③ 点取消 → 应该回到手动
+    const cancelBtn = document.getElementById('nvAwCancel');
+    cancelBtn.click();
+    await sleep(600);
+    const modeAfterCancel = readOrderMode();
+    push('1-取消后', modeAfterCancel === 'manual', `取消后模式：${modeAfterCancel}`);
+
+    // ④ 再点开关 + 确认 → 变自动
+    sw.click();
+    await sleep(700);
+    const okBtn2 = document.getElementById('nvAwOk');
+    if (!okBtn2) throw new Error('no confirm btn');
+    okBtn2.click();
+    await sleep(700);
+    const modeAfterConfirm = readOrderMode();
+    push('1-确认后', modeAfterConfirm === 'auto', `确认后模式：${modeAfterConfirm}`);
+    if (modeAfterConfirm !== 'auto') throw new Error('confirm did not switch to auto');
+
+    // ⑤ 切回手动，做手动下单测试
+    sw.click();
+    await sleep(600);
+    push('1-切回手动', readOrderMode() === 'manual', `模式：${readOrderMode()}`);
+
+    // ⑥ 真实点击「确认下单」
+    const okBtn = opEl('nvOpOk');
+    if (!okBtn) throw new Error('no ok btn');
+    const orderPromise = waitOrderResult(null, 30000);
+    const okText = okBtn.textContent;
+    okBtn.click();
+    push('1-点击下单', true, '按钮文字：' + okText);
+    const orderRes = await orderPromise;
+    push('1-手动下单', !!(orderRes && orderRes.ok), orderRes ? (orderRes.message || '') : '无响应');
+    await sleep(2000);
+    push('1-持仓数', posCount() > 0, '当前 ' + posCount() + ' 仓');
+    if (!(orderRes && orderRes.ok)) throw new Error('manual order failed: ' + (orderRes ? orderRes.message : 'timeout'));
+
+    // ============ 阶段2：自动建仓（走真实开关） ============
+    push('2-开始', true, '切换到自动模式（走真实开关+确认）');
+    // 点开关 + 确认
+    sw.click();
+    await sleep(700);
+    document.getElementById('nvAwOk').click();
+    await sleep(700);
+    const autoOn = readOrderMode() === 'auto';
+    push('2-自动模式', autoOn, '模式：' + readOrderMode());
+    if (!autoOn) throw new Error('cannot enter auto mode');
+
+    const pool = ['ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'BNBUSDT', 'ADAUSDT', 'LINKUSDT'];
     for (const sym of pool) {
       if (posCount() >= 5) break;
-      const r = rowFor(sym);
-      if (!r) { push('2-' + sym, false, '没有行情行'); continue; }
-      const s2 = calcSignal(r);
+      const cur = (T.positions || []).map(p => p.symbol);
+      if (cur.includes(sym)) { push('2-' + sym, true, '已持有，跳过'); continue; }
       const before = posCount();
-      // 每轮开始前强制重置 busy 锁 + 强制 auto 模式
-      try { if (window.__MOSS_RESET_BUSY) window.__MOSS_RESET_BUSY(); } catch (e) {}
-      try {
-        TRADE_INFO.mode = 'auto';
-        window.__MOSS_MODE_SET_LOCALLY = true;
-        if (window.postTrade) window.postTrade({ type: 'tradeConfig', action: 'mode', mode: 'auto' });
-      } catch (e) {}
-      // 模拟信号：弹卡 + 自动下单（与 nvBsSim 按钮同逻辑）
-      queueOrderPreview({ sig: s2, key: `${sym}-${s2.side}` });
-      await sleep(900);
-      // 自动模式：主动触发下单
-      push('2-' + sym + '-chk', true, 'mode=' + readOrderMode() + ' live=' + LIVE_ORDER_ENABLED() + ' pos=' + posCount());
-      if (readOrderMode() === 'auto' && LIVE_ORDER_ENABLED()) {
-        const opEl2 = window.__MOSS_OP_EL || ((id) => document.getElementById(id));
-        const stage = opEl2('nvOpStage');
-        if (stage) stage.textContent = '自动下单中…';
-        const send = window.__MOSS_SEND_ORDER;
-        // 监听下单结果
-        let orderResult = null;
-        const onOrder = (ev) => {
-          const d = ev && ev.detail;
-          if (!d || d.type !== 'order') return;
-          if (String(d.symbol || '').toUpperCase() !== sym.toUpperCase()) return;
-          orderResult = d;
-        };
-        window.addEventListener('moss:trade', onOrder);
-        try {
-          // 直接发消息给宿主，绕过 sendOrder 内的 busy 锁（测试专用）
-          const directPost = window.postTrade;
-          if (typeof directPost === 'function') {
-            directPost({ type: 'trade', action: 'market', symbol: sym, side: s2.side || 'long' });
-            push('2-' + sym + '-sent', true, '已直发 ' + sym + ' ' + (s2.side || 'long'));
-          } else if (typeof send === 'function') {
-            await send({ symbol: sym, side: s2.side || 'long' });
-            push('2-' + sym + '-sent', true, '已发送 ' + sym + ' ' + (s2.side || 'long'));
-          } else {
-            const okBtn2 = opEl2('nvOpOk');
-            if (okBtn2 && !okBtn2.disabled) okBtn2.click();
-            push('2-' + sym + '-btn', true, '点击确认按钮');
-          }
-          // 等结果事件（最多 10 秒）
-          for (let w = 0; w < 20; w++) {
-            await sleep(500);
-            if (orderResult) break;
-            if (posCount() > before) break;
-          }
-        } catch (e) {
-          push('2-' + sym + '-err', false, String(e).slice(0, 100));
-        } finally {
-          window.removeEventListener('moss:trade', onOrder);
-        }
-        if (orderResult && !orderResult.ok) {
-          push('2-' + sym + '-why', false, '下单失败: ' + String(orderResult.message || '').slice(0, 120));
-        }
-      }
-      // 等下单完成（开仓约需 3 秒，再留余量）+ 等 orderBusy 释放
-      let waited = 0;
-      while (waited < 8000) {
-        await sleep(500);
-        waited += 500;
+      // 走真实模拟信号按钮
+      const sim = opEl('nvBsSim');
+      if (!sim) break;
+      sim.click();
+      // 如果没弹到目标币，重试几次
+      let tried = 0;
+      while (tried < 3) {
+        await sleep(1500);
         if (posCount() > before) break;
+        if (!readOrderMode().includes('auto')) break;
+        tried++;
+        if (tried < 3) { sim.click(); }
       }
-      push('2-' + sym, posCount() > before, `持仓 ${before}→${posCount()}`);
-      // 等 busy 锁释放，避免下一单被拒
-      await sleep(1500);
+      push('2-' + (posCount() > before ? sym : sym + '-skip'), posCount() > before, `持仓 ${before}→${posCount()}`);
+      await sleep(1200);
     }
     postTrade({ type: 'tradeConfig', action: 'status' });
     await sleep(2500);
     push('2-五单', posCount() >= 5, '当前 ' + posCount() + ' 仓');
 
-    // ---- 阶段 3：触发测试（每个仓位一次，走按钮同逻辑）----
-    // 阶段3：BTC 行情平稳，触发测试放最后（避免占用时间）
-    const order3 = ['ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'BNBUSDT', 'ADAUSDT', 'LINKUSDT', 'AVAXUSDT', 'LTCUSDT'];
-    const symsNow = (T.positions || []).map(p => p.symbol).sort((a, b) => {
-      const ia = order3.indexOf(a), ib = order3.indexOf(b);
-      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-    });
-    push('3-待测仓位', symsNow.length > 0, symsNow.join(','));
+    // ============ 阶段3：触发测试 ============
+    const symsNow = (T.positions || []).map(p => p.symbol);
+    push('3-待测', symsNow.length > 0, symsNow.join(','));
+
+    // 每个仓位跑触发测试
     for (const sym of symsNow) {
       postTrade({ type: 'tradeConfig', action: 'tptest', symbol: sym });
-      const res = await waitEvent('tptest', 300000);
-      if (!res) { push('3-' + sym, false, '无响应/超时'); continue; }
+      // 等 tptest 结果
+      const res = await new Promise((resolve) => {
+        let done = false;
+        const onBin = (ev) => {
+          const d = ev && ev.detail;
+          if (!d || d.type !== 'tptest') return;
+          if (done) return;
+          done = true;
+          window.removeEventListener('moss:binance', onBin);
+          resolve(d);
+        };
+        window.addEventListener('moss:binance', onBin);
+        setTimeout(() => { if (!done) { done = true; window.removeEventListener('moss:binance', onBin); resolve(null); } }, 300000);
+      });
+      if (!res) { push('3-' + sym, false, '超时'); continue; }
       const steps = res.steps || [];
       const bad = steps.filter(x => !x.ok);
-      push('3-' + sym, bad.length === 0, steps.map(x => (x.ok ? '✓' : '✗') + x.name + ':' + x.msg).join(' | '));
+      push('3-' + sym, bad.length === 0, steps.map(x => (x.ok ? '✓' : '✗') + x.name).join(' '));
       await sleep(1500);
     }
 
-    // 收尾：主动清空剩余仓位
+    // ============ 阶段4：关闭自动模式 ============
+    if (readOrderMode() === 'auto') {
+      sw.click();
+      await sleep(800);
+      push('4-关闭自动', readOrderMode() === 'manual', '模式：' + readOrderMode());
+    }
+
+    // 收尾：清空所有仓位
     postTrade({ type: 'tradeConfig', action: 'status' });
-    await sleep(2500);
+    await sleep(2000);
     const leftPos = (T.positions || []).slice();
     if (leftPos.length > 0) {
-      push('4-清理', true, '剩余 ' + leftPos.length + ' 仓，正在强平…');
+      push('4-清理', true, '剩余 ' + leftPos.length + ' 仓，正在平仓');
       for (const p4 of leftPos) {
         if (!p4.symbol) continue;
-        try { postTrade({ type: 'trade', action: 'close', symbol: p4.symbol }); await sleep(2000); } catch (e) {}
+        postTrade({ type: 'trade', action: 'close', symbol: p4.symbol });
+        await sleep(1800);
       }
-      await sleep(3000);
+      await sleep(2500);
       postTrade({ type: 'tradeConfig', action: 'status' });
-      await sleep(3000);
+      await sleep(2500);
     }
-    // 再兜底清理一次委托
-    try { postTrade({ type: 'tradeConfig', action: 'cleanup', symbol: 'ALL' }); await sleep(2500); } catch (e) {}
+    postTrade({ type: 'tradeConfig', action: 'cleanup', symbol: 'ALL' });
+    await sleep(2000);
     push('4-收尾', posCount() === 0, '剩余 ' + posCount() + ' 仓');
 
-    // ★ 关键：测试结束必须关闭自动模式，避免继续自动开仓
-    try {
-      T.mode = 'manual';
-      window.__MOSS_MODE_SET_LOCALLY = true;
-      try { localStorage.setItem('moss-order-mode', 'manual'); } catch (e) {}
-      postTrade({ type: 'tradeConfig', action: 'mode', mode: 'manual' });
-      push('5-关闭自动', true, '已切回手动模式，不会继续自动开仓');
-      await sleep(1200);
-    } catch (e) { push('5-关闭自动', false, String(e).slice(0, 60)); }
   } catch (e) {
     push('fatal', false, e && e.message ? e.message : String(e));
   } finally {
     postTrade({ type: 'uitest_report', log });
   }
 };
-
 
 /* ================= 渠道守卫：正式版移除所有测试入口 ================= */
 (function () {
