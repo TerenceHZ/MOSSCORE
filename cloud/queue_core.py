@@ -101,11 +101,13 @@ def calc_signal_win(r):
     return max(20, min(92, round(win)))
 
 
+# 建仓播报胜率门槛（云端唯一来源）
+# 客户端 SIG_MIN_WIN 与此保持一致，仅作兜底
+SIG_MIN_WIN = 60
+
+
 def left_qualifies(r):
-    win = calc_signal_win(r)
-    if win < 72:
-        return False
-    return (r.get("stage") == "entry") or win >= 82
+    return calc_signal_win(r) >= SIG_MIN_WIN
 
 
 def focus_hit(r):
@@ -228,18 +230,26 @@ def compute_side(db, side, rows, now):
 
     if not pool:
         # 无可用候选：返回最后一次播报的币，保证所有设备显示一致
+        # 但必须用「当前数据」复核胜率，避免 27% 胜率的币还挂在建仓卡片上
         last = db.execute(
             "SELECT symbol, played_at FROM last_played WHERE side=?", (side,)
         ).fetchone()
         if last:
-            return {
-                "symbol": last[0],
-                "startedAt": last[1],
-                "endsAt": last[1],
-                "remainingMs": 0,
-                "queue": [],
-                "stale": True,
-            }
+            row_now = next((r for r in rows if r.get("symbol") == last[0]), None)
+            still_ok = row_now is not None and left_qualifies(row_now)
+            if still_ok:
+                return {
+                    "symbol": last[0],
+                    "startedAt": last[1],
+                    "endsAt": last[1],
+                    "remainingMs": 0,
+                    "queue": [],
+                    "stale": True,
+                }
+            # 已不达标：清掉这个残留，避免客户端继续显示低胜率币
+            db.execute("DELETE FROM slot WHERE side=?", (side,))
+            db.execute("DELETE FROM last_played WHERE side=?", (side,))
+            db.commit()
         return {"symbol": None, "queue": []}
 
     nxt = pool[0]

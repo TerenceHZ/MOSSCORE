@@ -11842,6 +11842,10 @@ requestAnimationFrame(frame);
       return { r, chg, oi5, oi15, vol, score, stage, side, win, target, stop, targetText: fmtPx(target), stopText: fmtPx(stop) };
     };
     window.__MOSS_CALC_SIGNAL = calcSignal;
+    // ===== 建仓信号胜率门槛（真实下单保护）=====
+    // 低于此胜率不进入建仓播报，也不允许自动下单
+    const SIG_MIN_WIN = 60;
+    window.__MOSS_SIG_MIN_WIN = SIG_MIN_WIN;
     const SIG_SLOT_MS = 5 * 60 * 1000;
     const SIG_IDLE_MS = 15 * 60 * 1000;
     let sigQueue = [];
@@ -12606,6 +12610,13 @@ setTimeout(() => { try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNE
       if (Date.now() - MOSS_BOOT_TS < MOSS_ALERT_QUIET_MS) { window.__MOSS_QUIET_SKIP = (window.__MOSS_QUIET_SKIP || 0) + 1; return; }
       const el = document.querySelector('#nvSignal');
       if (!el || !sig || window.__MOSS_LIVE_FRESH === false) return;
+      // ★ 最后一道保险：胜率低于门槛一律不弹建仓窗（真金白银决策）
+      const _minWin = Number(window.__MOSS_SIG_MIN_WIN || 60);
+      const _win = Number((sig && sig.win) || 0);
+      if (_win < _minWin) {
+        try { console.log('[SIGNAL] BLOCKED low win:', sig && sig.r && sig.r.symbol, _win + '%', '<', _minWin + '%'); } catch (e) {}
+        return;
+      }
       el.className = 'nv-signal open ' + sig.side;
       el.setAttribute('aria-hidden', 'false');
       clearInterval(signalTimerId);
@@ -13201,7 +13212,9 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       const sigCandidates = [];
       (rows || []).forEach(r => {
         const sig = calcSignal(r);
-        if (sig.win >= 72 && (r.stage === 'entry' || sig.win >= 82)) {
+        // 统一门槛：胜率 >= SIG_MIN_WIN（默认 70%）
+        const minWin = Number(window.__MOSS_SIG_MIN_WIN || 60);
+        if (sig.win >= minWin) {
           sigCandidates.push({ sig, lane: Number(r.change24h || 0) >= 0 ? 'gain' : 'loss' });
         }
       });
@@ -13436,8 +13449,14 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
         try {
           const sig = window.__MOSS_CALC_SIGNAL ? window.__MOSS_CALC_SIGNAL(row) : null;
           if (!sig) return;
+          // 胜率门槛：低于 70% 不播报（真金白银决策，指标必须过硬）
+          const minWin = Number(window.__MOSS_SIG_MIN_WIN || 60);
+          if (Number(sig.win || 0) < minWin) {
+            console.log('[CLOUD-L] skip low win:', sym, sig.win + '%', '< ' + minWin + '%');
+            return;
+          }
           show({ key: String(sym) + '-' + sig.side, sig });
-          console.log('[CLOUD-L] switch ->', sym);
+          console.log('[CLOUD-L] switch ->', sym, sig.win + '%');
         } catch (e) {
           console.log('[CLOUD-L] error', String(e).slice(0, 100));
         }
