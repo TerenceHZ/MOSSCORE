@@ -2,7 +2,8 @@
 # MOSS CORE macOS installer (skip activation build)
 # Usage:
 #   curl -fsSL https://43-160-232-254.sslip.io/mac-build.sh -o ~/mac-build.sh
-#   bash ~/mac-build.sh
+#   bash ~/mac-build.sh              # 正式版
+#   bash ~/mac-build.sh dev          # 测试版（DEV 图标）
 
 set -e
 
@@ -14,9 +15,30 @@ NC='\033[0m'
 API_URL="https://43-160-232-254.sslip.io"
 API_TOKEN="yb4m3bG30ZIW0v4CwBzgGxoidZhRllej8vAmfxk6jzo"
 
+# 通道：dev / release
+CHANNEL="release"
+if [[ "$1" == "dev" ]]; then
+  CHANNEL="dev"
+fi
+
+if [[ "$CHANNEL" == "dev" ]]; then
+  APP_NAME="MOSS CORE DEV"
+  SCRIPT_NAME="pack:arm64:dev"
+  ICON_FILE="icon-dev.png"
+  OUT_DIR="dist-dev"
+  INSTALL_NAME="MOSS CORE DEV"
+else
+  APP_NAME="MOSS CORE"
+  SCRIPT_NAME="pack:arm64"
+  ICON_FILE="icon.png"
+  OUT_DIR="dist"
+  INSTALL_NAME="MOSS CORE"
+fi
+
 echo ""
 echo "========================================"
-echo "  MOSS CORE macOS installer"
+echo "  MOSS CORE macOS installer [$CHANNEL]"
+echo "  icon: $ICON_FILE"
 echo "========================================"
 echo ""
 
@@ -100,10 +122,12 @@ cat > "$CONF_DIR/data-source.json" << EOF
 EOF
 echo -e "${GREEN}OK${NC} config written"
 
-# 6. patch index.html - skip activation screen
-echo ""
-# 不再修改 index.html，激活界面保持原样
-echo -e "${GREEN}OK${NC} index.html kept original (activation enabled)"
+# 6. check icon exists
+if [ "$CHANNEL" == "dev" ] && [ ! -f "$CONF_DIR/icon-dev.png" ]; then
+  echo -e "${YELLOW}icon-dev.png missing, fallback to icon.png${NC}"
+  ICON_FILE="icon.png"
+fi
+echo -e "${GREEN}OK${NC} icon: $ICON_FILE"
 
 # 7. install deps
 echo ""
@@ -115,12 +139,14 @@ echo -e "${GREEN}OK${NC} dependencies installed"
 
 # 8. build
 echo ""
-echo "Packaging app (1-3 min)..."
-npm run pack:arm64
+echo "Packaging app [$CHANNEL] (1-3 min)..."
+npm run "$SCRIPT_NAME"
 
-APP_PATH="$CONF_DIR/dist/MOSS CORE-darwin-arm64/MOSS CORE.app"
+APP_PATH="$CONF_DIR/$OUT_DIR/$APP_NAME-darwin-arm64/$APP_NAME.app"
 if [ ! -d "$APP_PATH" ]; then
   echo -e "${RED}BUILD FAILED${NC}"
+  echo "Expected: $APP_PATH"
+  ls -la "$CONF_DIR/$OUT_DIR" 2>/dev/null || true
   exit 1
 fi
 echo -e "${GREEN}OK${NC} build complete"
@@ -134,21 +160,22 @@ fi
 # 10. install
 echo ""
 echo "Installing to /Applications..."
-rm -rf "/Applications/MOSS CORE.app"
-cp -R "$APP_PATH" "/Applications/MOSS CORE.app"
-xattr -cr "/Applications/MOSS CORE.app" 2>/dev/null || true
-echo -e "${GREEN}OK${NC} installed"
+rm -rf "/Applications/$INSTALL_NAME.app"
+cp -R "$APP_PATH" "/Applications/$INSTALL_NAME.app"
+xattr -cr "/Applications/$INSTALL_NAME.app" 2>/dev/null || true
+echo -e "${GREEN}OK${NC} installed: /Applications/$INSTALL_NAME.app"
 
 # 11. done
 echo ""
 echo "========================================"
-echo -e "${GREEN}  DONE${NC}"
+echo -e "${GREEN}  DONE  [$CHANNEL]${NC}"
 echo "========================================"
 echo ""
-echo "Open MOSS CORE from Launchpad or Applications."
+echo "Name: $INSTALL_NAME"
+echo "Icon: $ICON_FILE"
 echo ""
 read -p "Launch now? (y/n) " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-  open "/Applications/MOSS CORE.app"
+  open "/Applications/$INSTALL_NAME.app"
 fi
