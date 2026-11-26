@@ -167,7 +167,10 @@ P "      OK" Green
 # ---- 7. 桌面 + 服务器 ----
 P "[7/7] 导出安装包" Gray
 $deskName = if ($Channel -eq 'release') { "MOSS-CORE-Setup-v$VER-正式.exe" } else { "MOSS-CORE-Setup-v$VER-dev.exe" }
-Copy-Item $setup (Join-Path ([Environment]::GetFolderPath('Desktop')) $deskName) -Force
+$deskPath = Join-Path ([Environment]::GetFolderPath('Desktop')) $deskName
+# 先删除旧文件，确保「创建时间」和「修改时间」都是最新的
+if (Test-Path $deskPath) { Remove-Item $deskPath -Force -ErrorAction SilentlyContinue }
+Copy-Item $setup $deskPath -Force
 scp -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -i $PEM $setup "$SERVER`:/tmp/s.exe" 2>$null
 $r = ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -i $PEM $SERVER "sudo mv /tmp/s.exe /var/www/moss-site/downloads/$deskName; sudo chown caddy:caddy /var/www/moss-site/downloads/*.exe; echo OK" 2>&1
 if ($r -match 'OK') { P "      OK 已上传" Green } else { P "      上传失败" Yellow }

@@ -1058,6 +1058,24 @@ linear-gradient(var(--nv-c),var(--nv-c)) right bottom/1px 13px no-repeat;opacity
 .nv-aw-cancel:hover{background:rgba(255,255,255,.1);color:#e8e2d4}
 .nv-aw-ok{background:linear-gradient(135deg,rgba(232,160,32,.9),rgba(190,120,20,.9));border:1px solid rgba(255,192,67,.7);color:#1a1206;font-weight:700}
 .nv-aw-ok:hover{background:linear-gradient(135deg,#ffc043,#e8a020);box-shadow:0 0 18px rgba(232,160,32,.5)}
+.nv-auto-warn{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);backdrop-filter:blur(3px)}
+.nv-auto-warn[hidden]{display:none}
+.nv-aw-card{width:440px;max-width:calc(100vw - 48px);background:linear-gradient(150deg,rgba(28,14,4,.97),rgba(10,6,3,.98));border:1px solid rgba(232,160,32,.55);border-radius:4px;box-shadow:0 0 40px rgba(232,160,32,.28);overflow:hidden}
+.nv-aw-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid rgba(232,160,32,.22)}
+.nv-aw-h b{font:700 16px/1 var(--cjk);color:#ffc043}
+.nv-aw-h i{font-style:normal;color:#8a7b62;cursor:pointer;font-size:20px;padding:0 4px}
+.nv-aw-h i:hover{color:#ffc043}
+.nv-aw-body{padding:16px 18px 4px}
+.nv-aw-lead{margin:0 0 12px;font:500 13.5px/1.65 var(--cjk);color:#e8e2d4}
+.nv-aw-lead b{color:#ffc043;font-weight:700}
+.nv-aw-list{margin:0 0 12px;padding-left:18px}
+.nv-aw-list li{font:400 12.5px/1.85 var(--cjk);color:#a99a7e;list-style:none;position:relative}
+.nv-aw-list li::before{content:"·";position:absolute;left:-13px;color:#e8a020;font-weight:700}
+.nv-aw-tip{margin:0 0 14px;font:500 12px/1.5 var(--cjk);color:#c96358}
+.nv-aw-foot{display:flex;gap:10px;padding:0 18px 18px}
+.nv-aw-foot button{flex:1;padding:11px 0;border-radius:3px;font:600 13px/1 var(--cjk);cursor:pointer}
+.nv-aw-cancel{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);color:#a99a7e}
+.nv-aw-ok{background:linear-gradient(135deg,rgba(232,160,32,.9),rgba(190,120,20,.9));border:1px solid rgba(255,192,67,.7);color:#1a1206;font-weight:700}
 .nv-order-pop{position:fixed;left:0;top:0;height:auto!important;max-height:calc(100vh - 32px)!important;overflow-y:auto;box-sizing:border-box;width:380px;z-index:2000;padding:14px 16px 12px;border:1px solid rgba(99,192,142,.62);background:linear-gradient(150deg,rgba(6,20,14,.42),rgba(3,4,4,.34));backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);-webkit-backdrop-filter:blur(7px) brightness(1.24) saturate(1.35);box-shadow:0 0 30px rgba(99,192,142,.42),0 0 70px rgba(99,192,142,.16),inset 0 0 34px rgba(99,192,142,.1);animation:nvOpIn .28s ease-out;overflow:hidden;isolation:isolate}
 .nv-order-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 120% at 16% 0%,rgba(99,192,142,.3),transparent 64%),linear-gradient(112deg,transparent 16%,rgba(99,192,142,.24) 38%,transparent 62%,rgba(255,255,255,.07) 80%,transparent 96%);background-size:180% 180%,220% 220%;animation:nvhotbg 6s ease-in-out infinite;pointer-events:none}
 .nv-order-pop::after{content:none}
@@ -12020,24 +12038,23 @@ requestAnimationFrame(frame);
       }, true);
     } catch (e) {}
     const ORDER_MODE_KEY = 'moss-order-mode';
-    // ===== 自动下单风险提示弹窗 =====
     const showAutoWarn = () => new Promise((resolve) => {
       const el = document.getElementById('nvAutoWarn');
       if (!el) { resolve(false); return; }
       el.hidden = false;
-      const okBtn = document.getElementById('nvAwOk');
-      const cancelBtn = document.getElementById('nvAwCancel');
-      const xBtn = document.getElementById('nvAwX');
-      const finish = (val) => {
+      const okB = document.getElementById('nvAwOk');
+      const cancelB = document.getElementById('nvAwCancel');
+      const xB = document.getElementById('nvAwX');
+      const finish = (v) => {
         el.hidden = true;
-        if (okBtn) okBtn.onclick = null;
-        if (cancelBtn) cancelBtn.onclick = null;
-        if (xBtn) xBtn.onclick = null;
-        resolve(val);
+        if (okB) okB.onclick = null;
+        if (cancelB) cancelB.onclick = null;
+        if (xB) xB.onclick = null;
+        resolve(v);
       };
-      if (okBtn) okBtn.onclick = () => finish(true);
-      if (cancelBtn) cancelBtn.onclick = () => finish(false);
-      if (xBtn) xBtn.onclick = () => finish(false);
+      if (okB) okB.onclick = () => finish(true);
+      if (cancelB) cancelB.onclick = () => finish(false);
+      if (xB) xB.onclick = () => finish(false);
     });
     window.__MOSS_SHOW_AUTO_WARN = showAutoWarn;
     // 默认手动：只有用户本次运行里主动点过「自动」才会用 auto，不跨重启记忆
@@ -13343,7 +13360,17 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
         if (typeof d.autoMode === 'boolean' && !window.__MOSS_MODE_SET_LOCALLY) {
           TRADE_INFO.mode = d.autoMode ? 'auto' : 'manual';
         }
-        if (typeof d.useTestnet === 'boolean') { TRADE_INFO.useTestnet = d.useTestnet; try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNET(); } catch (e) {} }
+        if (typeof d.useTestnet === 'boolean') {
+          TRADE_INFO.useTestnet = d.useTestnet;
+          try { window.__MOSS_SYNC_TESTNET && window.__MOSS_SYNC_TESTNET(); } catch (e) {}
+          // 启动时加载符号列表（仅测试网，用于过滤测试网不支持的币）
+          if (d.useTestnet && d.entitled === true && !window.__MOSS_SYMBOLS && !window.__MOSS_SYM_REQ) {
+            window.__MOSS_SYM_REQ = true;
+            setTimeout(() => {
+              try { postTrade({ type: 'tradeConfig', action: 'symbols' }); } catch (e) {}
+            }, 3000);
+          }
+        }
           if (typeof d.equity === 'number') TRADE_INFO.equity = d.equity;
           if (typeof d.available === 'number') TRADE_INFO.available = d.available;
           if (typeof d.spot === 'number') TRADE_INFO.spot = d.spot;
@@ -13438,6 +13465,16 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
 
       const applyLeft = (sym) => {
         if (!sym) return;
+        // 测试网模式下：跳过测试网不支持的币
+        try {
+          if (window.TRADE_INFO && window.TRADE_INFO.useTestnet && window.__MOSS_SYMBOLS) {
+            const symSet = window.__MOSS_SYMBOLS.set;
+            if (symSet && symSet.size > 0 && !symSet.has(String(sym))) {
+              console.log('[CLOUD-L] skip (not on testnet):', sym);
+              return;
+            }
+          }
+        } catch (e) {}
         const cur = window.__MOSS_SIG_CURRENT;
         const curBase = cur ? String(cur).replace(/-(long|short)$/, '') : '';
         if (curBase === String(sym)) return;
@@ -14271,6 +14308,69 @@ window.__MOSS_UITEST = async function () {
   });
 
   try {
+    // ============ clean 模式：彻底清空持仓和委托 ============
+    if (window.__MOSS_CLEAN_MODE) {
+      push('clean', true, '开始彻底清理');
+      if (readOrderMode() === 'auto') {
+        const swc = opEl('nvOpSwitch');
+        if (swc) { swc.click(); await sleep(800); }
+      }
+      push('clean-关闭自动', readOrderMode() === 'manual', '模式：' + readOrderMode());
+      postTrade({ type: 'tradeConfig', action: 'cleanup', symbol: 'ALL' });
+      await sleep(3000);
+      postTrade({ type: 'tradeConfig', action: 'status' });
+      await sleep(2500);
+      let round = 0;
+      while ((T.positions || []).length > 0 && round < 10) {
+        round++;
+        const list = (T.positions || []).slice();
+        push('clean-平仓', true, `第 ${round} 轮，剩余 ${list.length} 仓`);
+        for (const px of list) {
+          if (!px.symbol) continue;
+          postTrade({ type: 'trade', action: 'close', symbol: px.symbol });
+          await sleep(2000);
+        }
+        await sleep(2500);
+        postTrade({ type: 'tradeConfig', action: 'status' });
+        await sleep(2500);
+      }
+      postTrade({ type: 'tradeConfig', action: 'cleanup', symbol: 'ALL' });
+      await sleep(3000);
+      postTrade({ type: 'tradeConfig', action: 'orphan' });
+      await sleep(2000);
+      push('clean-最终', (T.positions || []).length === 0, '最终持仓：' + (T.positions || []).length + ' 仓');
+      return;
+    }
+
+    // ============ live 模式：只开自动建仓，不跑测试 ============
+    if (window.__MOSS_LIVE_MODE) {
+      push('live', true, '长期监听模式启动');
+      const simBtn0 = opEl('nvBsSim');
+      if (!simBtn0) throw new Error('no sim btn');
+      simBtn0.click();
+      await sleep(2000);
+      const sw0 = opEl('nvOpSwitch');
+      if (!sw0) throw new Error('no switch');
+      if (readOrderMode() !== 'auto') {
+        sw0.click();
+        await sleep(900);
+        const ok0 = document.getElementById('nvAwOk');
+        if (ok0) ok0.click();
+        await sleep(900);
+      }
+      push('live-自动模式', readOrderMode() === 'auto', '模式：' + readOrderMode());
+      // 报告当前持仓（用于验证止损是否触发）
+      await sleep(2000);
+      postTrade({ type: 'tradeConfig', action: 'status' });
+      await sleep(3000);
+      const posNow = (T.positions || []).map(x => x.symbol);
+      push('live-持仓', true, '持仓: [' + posNow.join(',') + '] 共 ' + posNow.length + ' 仓');
+      const x0 = document.querySelector('#nvOrderPop [data-nv-op-close]');
+      if (x0) x0.click();
+      push('live-ready', true, '等待云端信号...');
+      return;
+    }
+
     // ============ 前置：必须是测试网 ============
     if (!T.useTestnet) await sleep(2000);
     if (!T.useTestnet) { push('guard', false, '当前不是测试网，拒绝执行'); throw new Error('not testnet'); }
@@ -14481,6 +14581,25 @@ window.__MOSS_UITEST = async function () {
 
 </script>
 
+    <div class="nv-auto-warn" id="nvAutoWarn" hidden>
+      <div class="nv-aw-card">
+        <div class="nv-aw-h"><b>⚠ 开启自动下单</b><i id="nvAwX">×</i></div>
+        <div class="nv-aw-body">
+          <p class="nv-aw-lead">开启后进入<b>自动下单状态</b>：每次弹出预警代币都会<b>自动下单</b>，无需你确认，直到下满 <b>5 个订单</b>。</p>
+          <ul class="nv-aw-list">
+            <li>信号出现即开仓，无需你手动确认</li>
+            <li>达到 5 个持仓后自动暂停新开仓</li>
+            <li>每单都会自动挂止盈止损（±15%）</li>
+            <li>关闭客户端或切回手动可停止</li>
+          </ul>
+          <p class="nv-aw-tip">请确认你了解以上风险后再开启。</p>
+        </div>
+        <div class="nv-aw-foot">
+          <button type="button" class="nv-aw-cancel" id="nvAwCancel">取消</button>
+          <button type="button" class="nv-aw-ok" id="nvAwOk">我了解，开启自动下单</button>
+        </div>
+      </div>
+    </div>
     <div class="nv-auto-warn" id="nvAutoWarn" hidden>
       <div class="nv-aw-card">
         <div class="nv-aw-h"><b>⚠ 开启自动下单</b><i id="nvAwX">×</i></div>

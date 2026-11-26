@@ -490,6 +490,8 @@ internal static class BinanceTradeService
     private static async Task PlaceAlgoOrderAsync(string symbol, string closeSide, string type,
         string triggerPrice, string quantity, string workingType = "MARK_PRICE")
     {
+        // closePosition=true：按仓位整体平仓，不锁定数量。
+        // 好处：仓位在别处被平掉后，这条条件单在币安侧会失效，避免孤儿委托。
         await SignedAsync(FuturesBase, "/fapi/v1/algoOrder", new[]
         {
             new KeyValuePair<string, string>("algoType", "CONDITIONAL"),
@@ -497,8 +499,7 @@ internal static class BinanceTradeService
             new KeyValuePair<string, string>("side", closeSide),
             new KeyValuePair<string, string>("type", type),
             new KeyValuePair<string, string>("triggerPrice", triggerPrice),
-            new KeyValuePair<string, string>("quantity", quantity),
-            new KeyValuePair<string, string>("reduceOnly", "true"),
+            new KeyValuePair<string, string>("closePosition", "true"),
             new KeyValuePair<string, string>("workingType", workingType)
         }, post: true);
     }
@@ -674,5 +675,59 @@ internal static class BinanceTradeService
         {
             return (false, ex.Message);
         }
+    }
+
+    /// <summary>
+    /// 清理孤儿委托：条件单存在但对应币已无持仓时，撤掉这些委托。
+    /// 场景：止盈或止损触发平仓后，币安可能只撤掉其中一个，另一个留在挂单里。
+    /// </summary>
+    public static async Task<int> CleanOrphanAlgoOrdersAsync()
+    {
+        var cancelled = 0;
+        try
+        {
+            var held = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var pd = await SignedAsync(FuturesBase, "/fapi/v2/positionRisk"))
+            {
+                foreach (var p in pd.RootElement.EnumerateArray())
+                {
+                    if (!p.TryGetProperty("symbol", out var symEl)) continue;
+                    if (!p.TryGetProperty("positionAmt", out var amtEl)) continue;
+                    var amtText = amtEl.GetString() ?? "0";
+                    if (!double.TryParse(amtText, NumberStyles.Any, CultureInfo.InvariantCulture, out var amt) || amt == 0) continue;
+                    var sym = symEl.GetString() ?? "";
+                    if (!string.IsNullOrWhiteSpace(sym)) held.Add(sym);
+                }
+            }
+
+            var orphans = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var doc = await SignedAsync(FuturesBase, "/fapi/v1/openAlgoOrders", Array.Empty<KeyValuePair<string, string>>()))
+            {
+                var arr = doc.RootElement.ValueKind == JsonValueKind.Array
+                    ? doc.RootElement
+                    : (doc.RootElement.TryGetProperty("orders", out var inner) ? inner : doc.RootElement);
+                foreach (var o in arr.EnumerateArray())
+                {
+                    if (!o.TryGetProperty("symbol", out var sEl)) continue;
+                    var sym = sEl.GetString() ?? "";
+                    if (!string.IsNullOrWhiteSpace(sym) && !held.Contains(sym)) orphans.Add(sym);
+                }
+            }
+
+            foreach (var sym in orphans)
+            {
+                var n = await CancelAlgoOrdersAsync(sym);
+                if (n > 0)
+                {
+                    cancelled += n;
+                    WriteLog("orphan_cancelled", new { symbol = sym, count = n });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            WriteLog("orphan_error", new { error = ex.Message });
+        }
+        return cancelled;
     }
 }

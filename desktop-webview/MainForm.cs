@@ -827,8 +827,14 @@ internal sealed class MainForm : Form
         {
             var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MossCore");
             var flag = Path.Combine(dir, "autotest.flag");
-            if (!File.Exists(flag)) return;
-            File.Delete(flag);
+            var liveFlag = Path.Combine(dir, "livetest.flag");
+            var cleanFlag = Path.Combine(dir, "cleanup.flag");
+            var isLive = File.Exists(liveFlag);
+            var isClean = File.Exists(cleanFlag);
+            if (!File.Exists(flag) && !isLive && !isClean) return;
+            if (File.Exists(flag)) File.Delete(flag);
+            if (isLive) File.Delete(liveFlag);
+            if (isClean) File.Delete(cleanFlag);
             // 走客户端真实 UI 路径（页面里点按钮/走自动分支）
             // 必须在 UI 线程里访问 CoreWebView2
             // 等页面完全加载 + 宿主推送配置完成后再触发（12 秒），避免过早执行
@@ -854,8 +860,13 @@ internal sealed class MainForm : Form
                             "typeof window.__MOSS_UITEST === 'function' ? 'yes' : 'no'");
                         File.AppendAllText(Path.Combine(dir, "uitest-steps.log"), $"{DateTime.Now:HH:mm:ss} [INFO] 重试检查: {ready}{Environment.NewLine}");
                     }
-                    File.AppendAllText(Path.Combine(dir, "uitest-steps.log"), $"{DateTime.Now:HH:mm:ss} [INFO] 调用 UITEST{Environment.NewLine}");
-                    await _web.CoreWebView2.ExecuteScriptAsync("window.__MOSS_UITEST && window.__MOSS_UITEST(); true");
+                    File.AppendAllText(Path.Combine(dir, "uitest-steps.log"), $"{DateTime.Now:HH:mm:ss} [INFO] 调用 UITEST{(isClean ? " (clean 模式)" : (isLive ? " (live 模式)" : ""))}{Environment.NewLine}");
+                    if (isClean)
+                        await _web.CoreWebView2.ExecuteScriptAsync("window.__MOSS_CLEAN_MODE = true; window.__MOSS_UITEST && window.__MOSS_UITEST(); true");
+                    else if (isLive)
+                        await _web.CoreWebView2.ExecuteScriptAsync("window.__MOSS_LIVE_MODE = true; window.__MOSS_UITEST && window.__MOSS_UITEST(); true");
+                    else
+                        await _web.CoreWebView2.ExecuteScriptAsync("window.__MOSS_UITEST && window.__MOSS_UITEST(); true");
                 }
                 catch (Exception ex)
                 {
@@ -881,7 +892,8 @@ internal sealed class MainForm : Form
 #if MOSS_RELEASE
             // 正式版：测试类动作一律拒绝（不是隐藏按钮，而是宿主层拦截）
             if (action == "smoke" || action == "tptest" || action == "cleanup" ||
-                action == "symbols" || action == "stress" || action == "accept")
+                action == "symbols" || action == "stress" || action == "accept" ||
+                action == "orphan")
             {
                 PostToWeb(new { type = "error", message = "正式版不提供测试功能" });
                 return;
@@ -1041,6 +1053,15 @@ internal sealed class MainForm : Form
                 var payloadC = new { type = "cleanup", ok = true, symbol = "ALL", cancelled = n };
                 await _web.CoreWebView2.ExecuteScriptAsync(
                     $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payloadC)}}}));");
+                return;
+            }
+            if (action == "orphan")
+            {
+                // 清理孤儿委托：无持仓但仍有条件单的，撤掉
+                var n = await BinanceTradeService.CleanOrphanAlgoOrdersAsync();
+                var payloadO = new { type = "orphan", ok = true, cancelled = n };
+                await _web.CoreWebView2.ExecuteScriptAsync(
+                    $"window.dispatchEvent(new CustomEvent('moss:binance',{{detail:{System.Text.Json.JsonSerializer.Serialize(payloadO)}}}));");
                 return;
             }
             if (action == "tptest")
@@ -1372,6 +1393,7 @@ internal sealed class MainForm : Form
     }
 
     private System.Threading.Timer? _transferTimer;
+    private System.Threading.Timer? _orphanTimer;
 
     private void StartTransferTimer()
     {
@@ -1388,6 +1410,25 @@ internal sealed class MainForm : Form
             }
             catch { }
         }, null, TimeSpan.FromMinutes(2), TimeSpan.FromHours(2));
+        StartOrphanCleanupTimer();
+    }
+
+    /// <summary>
+    /// 定时清理孤儿条件单：币已无持仓但止盈/止损委托还挂着的，一律撤掉。
+    /// 止盈或止损触发平仓后，币安有时只撤一个，另一个会残留。
+    /// </summary>
+    private void StartOrphanCleanupTimer()
+    {
+        _orphanTimer ??= new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                if (!BinanceTradeService.Configured) return;
+                var n = await BinanceTradeService.CleanOrphanAlgoOrdersAsync();
+                if (n > 0) PostToWeb(new { type = "orphan_cleanup", ok = true, cancelled = n });
+            }
+            catch { }
+        }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(3));
     }
 
     private async Task HandleActivationAsync(string code)
