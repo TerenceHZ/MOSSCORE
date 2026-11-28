@@ -821,6 +821,8 @@ internal sealed class MainForm : Form
         catch { }
     }
 
+
+
     private void MaybeRunAcceptance()
     {
         try

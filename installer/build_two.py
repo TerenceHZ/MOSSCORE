@@ -3,7 +3,7 @@
 import io, os, re, shutil, subprocess
 
 ROOT = r"D:\MOSS"
-VER = "1.0.62"
+VER = "1.0.63"
 ISCC = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 DOTNET = r"C:\Users\ROG\.dotnet\dotnet.exe"
 SRC = os.path.join(ROOT, "desktop-webview")
