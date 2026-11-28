@@ -11163,6 +11163,7 @@ requestAnimationFrame(frame);
     const showTab = (name) => {
       tabs.forEach(t => t.classList.toggle('on', t.dataset.nvTab === name));
       panes.forEach(p => { if (p.dataset.pane || p.dataset.nvPane) p.hidden = (p.dataset.pane || p.dataset.nvPane) !== name; });
+          if (name === 'history') { try { renderCaptureLog(); } catch (e) {} }
     };
     tabs.forEach(t => t.addEventListener('click', () => showTab(t.dataset.nvTab)));
     const setDrawerMode = (mode) => {
@@ -13546,6 +13547,9 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
         const right = rows.filter((x) => x.side === 'right');
         window.__MOSS_CLOUD_HISTORY = { left, right, at: Date.now() };
         console.log('[CLOUD-H] left=', left.length, 'right=', right.length);
+        // 数据到了要重画，否则先打开抽屉的人永远看到“暂无记录”
+        try { renderCaptureLog(); } catch (e) {}
+        try { renderSignalHistory(); } catch (e) {}
       };
 
       const fetchAlerts = async () => {
@@ -13708,11 +13712,28 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       const cf2 = window.__MOSS_CLOUD_HIST_FN;
       const cloudRecs = (typeof cf2 === 'function') ? cf2(isRightView ? 'right' : 'left') : null;
       let recs = cloudRecs && cloudRecs.length ? cloudRecs : readLog(viewKey());
-      // 代币详情模式：只显示「当前币种」的记录
+      // 代币详情模式：按币种过滤，但左右两条链的云端记录一起查
       const onlySym = window.__MOSS_ROW_DETAIL_SYMBOL;
       if (onlySym) {
         const target = rawSymbol(String(onlySym));
-        recs = recs.filter(a => rawSymbol(String(a.symbol || '')) === target);
+        let pool = [];
+        try {
+          const h = window.__MOSS_CLOUD_HISTORY || {};
+          const mk = (arr) => (arr || []).map((x) => Object.assign({}, x.meta || {}, {
+            symbol: x.symbol, time: x.time, ts: x.ts, _cloud: true
+          }));
+          pool = mk(h.left).concat(mk(h.right));
+        } catch (e) {}
+        if (!pool.length) pool = readLog(LEFT_KEY).concat(readLog(RIGHT_KEY));
+        const seen = {};
+        pool = pool.filter((a) => {
+          const k = String(a.symbol || '') + '|' + String(a.ts || a.time || '');
+          if (seen[k]) return false;
+          seen[k] = 1;
+          return true;
+        });
+        recs = pool.filter((a) => rawSymbol(String(a.symbol || '')) === target);
+        recs.sort((a, b) => Number(b.ts || 0) - Number(a.ts || 0));
       }
       const isRight = logView === 'right';
       if (!recs.length) {
@@ -13849,6 +13870,8 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
     const openRow = (row, lane, fromCard) => {
       setDrawerMode('detail');
       open(lane, true);
+      // 先渲染历史：后面解析元素出问题也不影响这块
+      try { renderCaptureLog(); } catch (e) {}
       // 点代币 → 一定显示「当前详情」（直接操作 DOM，确保不被后续覆盖）
       try {
         const allTabs = [...sr.querySelectorAll('[data-nv-tab]')];
@@ -13856,6 +13879,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
         allTabs.forEach(t => t.classList.toggle('on', t.dataset.nvTab === 'current'));
         allPanes.forEach(pn => { pn.hidden = pn.dataset.pane !== 'current'; });
       } catch (e) {}
+      try {
       const sym = rawSymbol((row.querySelector('.nv-sym')?.textContent || '').replace(/^[★○]\s*/, ''));
       const changeText = row.querySelector('.nv-change')?.textContent || '0%';
       const oiText = row.querySelectorAll('.nv-row-oi span')[0]?.textContent || '';
@@ -13929,6 +13953,7 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       sr.querySelector('#nvEntrySide').textContent = lane === 'focus' ? '顺势' : '回避';
       // 榜单行 → 当前详情；卡片 → 历史记录（各自独立）
       showTab(fromCard ? 'history' : 'current');
+      } catch (e) { console.log('[MOSS] openRow partial fail:', String(e).slice(0, 120)); }
       try { renderCaptureLog(); } catch (e) {}
     };
     const openAlerts = () => {
@@ -13954,7 +13979,8 @@ window.__NOVA_BOTTOM = { focus: mk(f), imported: mk(im) };
       const row = window.__MOSS_SIGNAL_ROW;
       const lane = window.__MOSS_SIGNAL_LANE || 'gain';
       hideSignal();
-      if (row) openRow(row, lane);
+      if (row) openRow(row, lane, true);   // fromCard=true → 直接看历史
+        else open(lane);
     });
     signalEl && signalEl.addEventListener('click', (e) => { if (e.target === signalEl) hideSignal(); });
     const demoMode = new URLSearchParams(location.search).get('demo');
