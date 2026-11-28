@@ -58,6 +58,7 @@ def connect():
     return conn
 
 
+
 def init():
     with connect() as db:
         db.executescript("""
@@ -87,6 +88,8 @@ def init():
             db.execute("ALTER TABLE codes ADD COLUMN code_plain TEXT")
         if "features" not in cols:
             db.execute("ALTER TABLE codes ADD COLUMN features TEXT DEFAULT '{}'")
+        if "note" not in cols:
+            db.execute("ALTER TABLE codes ADD COLUMN note TEXT NOT NULL DEFAULT ''")
 
 
 def create_code(max_devices=1, days=365):
@@ -303,7 +306,19 @@ def list_codes():
     init()
     with connect() as db:
         return [dict(r) for r in db.execute(
-            "SELECT c.id,c.code_hint,c.code_plain,c.max_devices,c.expires_at,c.revoked,c.created_at,c.features,"
+            "SELECT c.id,c.code_hint,c.code_plain,c.max_devices,c.expires_at,c.revoked,c.created_at,c.features,c.note,"
             "(SELECT COUNT(*) FROM devices d WHERE d.code_id=c.id AND d.revoked=0) active_devices "
             "FROM codes c ORDER BY c.id DESC"
         ).fetchall()]
+
+def set_code_note(code_id, note):
+    """设置邀请码备注（谁在用）。"""
+    init()
+    with connect() as db:
+        row = db.execute("SELECT id FROM codes WHERE id=?", (int(code_id),)).fetchone()
+        if not row:
+            return False
+        db.execute("UPDATE codes SET note=? WHERE id=?", (str(note or "")[:120], int(code_id)))
+        db.commit()
+        return True
+

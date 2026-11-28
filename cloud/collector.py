@@ -131,7 +131,7 @@ th{color:#827664;font-weight:500}.hint{color:#827664;font-size:12px}.err{color:#
 <div class="stats-grid"><div><span>ONLINE COMPUTERS</span><b id="statOnline">0</b><small>最近 5 分钟有数据请求</small></div><div><span>ACTIVE DEVICES</span><b id="statDevices">0</b><small>有效许可证设备</small></div><div><span>NEW TODAY</span><b id="statNew">0</b><small>今天首次激活</small></div><div><span>ACTIVE CODES</span><b id="statCodes">0</b><small>有效邀请码</small></div></div>
 <div class="panel"><div class="online-head"><b>设备状态</b><span>每 15 分钟刷新 · 绿点在线 / 灰点离线</span></div><div id="deviceList"></div></div>
 <div class="panel"><div class="row" style="justify-content:space-between"><b>邀请码列表</b><span class="hint">完整邀请码仅管理员可见，可直接复制</span></div>
-<div class="table-wrap"><table><thead><tr><th>ID</th><th>邀请码</th><th>设备数</th><th>有效期</th><th>状态</th><th>已绑定</th><th>操作</th></tr></thead><tbody id="list"></tbody></table></div></div></div>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>邀请码</th><th>备注</th><th>设备数</th><th>有效期</th><th>状态</th><th>已绑定</th><th>操作</th></tr></thead><tbody id="list"></tbody></table></div></div></div>
 <script>
 async function api(path, body){
   const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
@@ -220,6 +220,19 @@ async function loadList(){
     codeTd.textContent=full||`旧码 · 仅后四位 ${c.code_hint}`;
     if(!full)codeTd.classList.add('muted-cell');
     tr.appendChild(codeTd);
+    const noteTd=document.createElement('td');
+    const noteIn=document.createElement('input');
+    noteIn.value=c.note||'';
+    noteIn.placeholder='谁在用？';
+    noteIn.maxLength=60;
+    noteIn.style.cssText='width:130px;background:#0b0d0c;border:1px solid #2a2f2c;color:#e8e4dc;padding:4px 6px;font-size:12px;border-radius:3px';
+    noteIn.addEventListener('change',async()=>{
+      const r=await api('/admin/api/note',{id:c.id,note:noteIn.value});
+      if(!r.ok)alert('备注保存失败');
+      else{noteIn.style.borderColor='#4ea87a';setTimeout(()=>noteIn.style.borderColor='#2a2f2c',900);}
+    });
+    noteTd.appendChild(noteIn);
+    tr.appendChild(noteTd);
     for(const v of [c.max_devices,c.expires_at?new Date(c.expires_at).toLocaleDateString():'永久',c.revoked?'停用':'启用',c.active_devices]){
       const td=document.createElement('td');td.textContent=v==null?'':v;tr.appendChild(td);
     }
@@ -650,6 +663,15 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 feature = str(data.get("feature") or "trade")
                 ok = license_core.set_code_feature(code_id, feature, bool(data.get("enabled")))
+                self.send_json({"ok": ok})
+                return
+            if path == "/admin/api/note":
+                try:
+                    code_id = int(data.get("id"))
+                except (TypeError, ValueError):
+                    self.send_json({"ok": False, "error": "invalid_id"}, 400)
+                    return
+                ok = license_core.set_code_note(code_id, str(data.get("note") or ""))
                 self.send_json({"ok": ok})
                 return
             if path == "/admin/api/delete":
